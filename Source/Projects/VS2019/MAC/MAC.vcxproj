@@ -587,6 +587,7 @@
     <ClInclude Include="..\..\..\MAC\FormatPluginInfoDlg.h" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="..\..\..\MAC\res\APE_Buttons.bmp" />
     <Image Include="..\..\..\MAC\res\MAC.ico" />
     <Image Include="..\..\..\MAC\res\Monkey_Watermark.bmp" />
     <Image Include="..\..\..\MAC\res\Options_Icons.bmp" />
@@ -594,6 +595,7 @@
     <Image Include="..\..\..\MAC\res\Toolbar_Full.bmp" />
     <Image Include="..\..\..\MAC\res\Toolbar_Small.bmp" />
     <Image Include="..\..\..\MAC\res\Tree_Icons.bmp" />
+    <Image Include="res\APE_Buttons.bmp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\MAC\res\MAC.rc2" />

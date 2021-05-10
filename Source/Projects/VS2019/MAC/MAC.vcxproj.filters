@@ -261,6 +261,12 @@
     <Image Include="..\..\..\MAC\res\Tree_Icons.bmp">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="res\APE_Buttons.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="..\..\..\MAC\res\APE_Buttons.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\MAC\res\MAC.rc2">

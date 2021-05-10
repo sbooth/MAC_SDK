@@ -27,6 +27,7 @@ else
 	CMDNAME	   = mac
 
 	CXXOPTS	  += -fPIC
+	DLLLDOPTS += -Wl,-soname,$(DLLNAME)
 
 #	Use the .dylib extension for shared objects on macOS.
 	ifeq ($(UNAME),Darwin)
