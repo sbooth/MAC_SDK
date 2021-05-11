@@ -369,14 +369,6 @@
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MaxSpeed</Optimization>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MaxSpeed</Optimization>
     </ClCompile>
-    <ClCompile Include="..\..\..\MAC\OptionsAdvancedDlg.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MaxSpeed</Optimization>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MaxSpeed</Optimization>
-    </ClCompile>
     <ClCompile Include="..\..\..\MAC\StdAfx.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
       <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
@@ -493,14 +485,6 @@
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MaxSpeed</Optimization>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MaxSpeed</Optimization>
     </ClCompile>
-    <ClCompile Include="..\..\..\MAC\OptionsTreeCtrl.cpp">
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Disabled</Optimization>
-      <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">EnableFastChecks</BasicRuntimeChecks>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MaxSpeed</Optimization>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MaxSpeed</Optimization>
-    </ClCompile>
     <ClCompile Include="..\..\..\MAC\FormatAPE.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
       <BasicRuntimeChecks Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">EnableFastChecks</BasicRuntimeChecks>
@@ -562,7 +546,6 @@
     <ClInclude Include="..\..\..\MAC\MACSettings.h" />
     <ClInclude Include="..\..\..\MAC\Resource.h" />
     <ClInclude Include="..\..\..\MAC\StdAfx.h" />
-    <ClInclude Include="..\..\..\MAC\OptionsAdvancedDlg.h" />
     <ClInclude Include="..\..\..\MAC\OptionsDlg.h" />
     <ClInclude Include="..\..\..\MAC\OptionsGeneralDlg.h" />
     <ClInclude Include="..\..\..\MAC\OptionsOutputDlg.h" />
@@ -578,7 +561,6 @@
     <ClInclude Include="..\..\..\MAC\HyperLink.h" />
     <ClInclude Include="..\..\..\MAC\MACListCtrl.h" />
     <ClInclude Include="..\..\..\MAC\MACStatusBar.h" />
-    <ClInclude Include="..\..\..\MAC\OptionsTreeCtrl.h" />
     <ClInclude Include="..\..\..\MAC\Format.h" />
     <ClInclude Include="..\..\..\MAC\FormatAPE.h" />
     <ClInclude Include="..\..\..\MAC\FormatArray.h" />
