@@ -1,6 +1,9 @@
 #include "All.h"
+
+#ifdef APE_SUPPORT_COMPRESS
+
 #include "APECompress.h"
-#include IO_HEADER_FILE
+#include "IO.h"
 #include "APECompressCreate.h"
 #include "WAVInputSource.h"
 
@@ -30,14 +33,14 @@ CAPECompress::~CAPECompress()
     }
 }
 
-int CAPECompress::Start(const wchar_t * pOutputFilename, const WAVEFORMATEX * pwfeInput, int64 nMaxAudioBytes, intn nCompressionLevel, const void * pHeaderData, int64 nHeaderBytes, int nFlags)
+int CAPECompress::Start(const wchar_t * pOutputFilename, const WAVEFORMATEX * pwfeInput, int64 nMaxAudioBytes, int nCompressionLevel, const void * pHeaderData, int64 nHeaderBytes, int nFlags)
 {
     if (m_pioOutput)
     {
         SAFE_DELETE(m_pioOutput)
     }
 
-    m_pioOutput = new IO_CLASS_NAME;
+    m_pioOutput = CreateCIO();
     m_bOwnsOutputIO = true;
     
     if (m_pioOutput->Create(pOutputFilename) != 0)
@@ -56,7 +59,7 @@ int CAPECompress::Start(const wchar_t * pOutputFilename, const WAVEFORMATEX * pw
     return nStartResult;
 }
 
-int CAPECompress::StartEx(CIO * pioOutput, const WAVEFORMATEX * pwfeInput, int64 nMaxAudioBytes, intn nCompressionLevel, const void * pHeaderData, int64 nHeaderBytes)
+int CAPECompress::StartEx(CIO * pioOutput, const WAVEFORMATEX * pwfeInput, int64 nMaxAudioBytes, int nCompressionLevel, const void * pHeaderData, int64 nHeaderBytes)
 {
     m_pioOutput = pioOutput;
     m_bOwnsOutputIO = false;
@@ -144,7 +147,7 @@ int64 CAPECompress::AddData(unsigned char * pData, int64 nBytes)
 int CAPECompress::Finish(unsigned char * pTerminatingData, int64 nTerminatingBytes, int64 nWAVTerminatingBytes)
 {
     RETURN_ON_ERROR(ProcessBuffer(true))
-    return m_spAPECompressCreate->Finish(pTerminatingData, nTerminatingBytes, nWAVTerminatingBytes);
+    return m_spAPECompressCreate->Finish(pTerminatingData, (int) nTerminatingBytes, (int) nWAVTerminatingBytes);
 }
 
 int CAPECompress::Kill()
@@ -168,7 +171,7 @@ int CAPECompress::ProcessBuffer(bool bFinalize)
             if (nFrameBytes == 0)
                 break;
 
-            int nResult = m_spAPECompressCreate->EncodeFrame(&m_pBuffer[m_nBufferHead], nFrameBytes);
+            int nResult = m_spAPECompressCreate->EncodeFrame(&m_pBuffer[m_nBufferHead], (int) nFrameBytes);
             if (nResult != 0) { return nResult; }
             
             m_nBufferHead += nFrameBytes;
@@ -255,3 +258,5 @@ int64 CAPECompress::AddDataFromInputSource(CInputSource * pInputSource, int64 nM
 }
 
 }
+
+#endif

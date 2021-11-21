@@ -17,13 +17,13 @@ public:
         SAFE_ARRAY_DELETE(m_pData);
     }
 
-    int Create(intn nWindowElements, intn nHistoryElements)
+    int Create(int nWindowElements, int nHistoryElements)
     {
         SAFE_ARRAY_DELETE(m_pData)
-        m_nWindowElements = nWindowElements;
         m_nHistoryElements = nHistoryElements;
+        m_nTotalElements = nWindowElements + m_nHistoryElements;
 
-        m_pData = new TYPE[m_nWindowElements + m_nHistoryElements];
+        m_pData = new TYPE[m_nTotalElements];
         if (m_pData == NULL)
             return ERROR_INSUFFICIENT_MEMORY;
 
@@ -46,7 +46,7 @@ public:
     __forceinline void IncrementSafe()
     {
         m_pCurrent++;
-        if (m_pCurrent == &m_pData[m_nWindowElements + m_nHistoryElements])
+        if (m_pCurrent == &m_pData[m_nTotalElements])
             Roll();
     }
 
@@ -55,7 +55,7 @@ public:
         m_pCurrent++;
     }
 
-    __forceinline TYPE & operator[](const intn nIndex) const
+    __forceinline TYPE & operator[](const int nIndex) const
     {
         return m_pCurrent[nIndex];
     }
@@ -63,8 +63,8 @@ public:
 protected:
     TYPE * m_pData;
     TYPE * m_pCurrent;
-    intn m_nHistoryElements;
-    intn m_nWindowElements;
+    int m_nHistoryElements;
+    int m_nTotalElements;
 };
 
 template <class TYPE, int WINDOW_ELEMENTS, int HISTORY_ELEMENTS> class CRollBufferFast

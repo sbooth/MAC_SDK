@@ -1,8 +1,7 @@
 #include "All.h"
 #include "APELink.h"
 #include "CharacterHelper.h"
-#include IO_HEADER_FILE
-
+#include "IO.h"
 namespace APE
 {
 
@@ -20,15 +19,15 @@ CAPELink::CAPELink(const str_utfn * pFilename)
     m_cImageFilename[0] = 0;
 
     // open the file
-    IO_CLASS_NAME ioLinkFile;
-    if (ioLinkFile.Open(pFilename) == ERROR_SUCCESS)
+    CSmartPtr<CIO> spioLinkFile(CreateCIO());
+    if (spioLinkFile->Open(pFilename) == ERROR_SUCCESS)
     {
         // create a buffer
         CSmartPtr<char> spBuffer(new char [1024], true);
         
         // fill the buffer from the file and null terminate it
         unsigned int nBytesRead = 0;
-        ioLinkFile.Read(spBuffer.GetPtr(), 1023, &nBytesRead);
+        spioLinkFile->Read(spBuffer.GetPtr(), 1023, &nBytesRead);
         spBuffer[nBytesRead] = 0;
 
         // call the other constructor (uses a buffer instead of opening the file)

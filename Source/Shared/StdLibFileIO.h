@@ -27,6 +27,7 @@ public:
     
     // other functions
     int SetEOF();
+    int SetReadWholeFile() { return ERROR_SUCCESS; }
 
     // creation / destruction
     int Create(const wchar_t * pName);

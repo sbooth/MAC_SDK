@@ -3,7 +3,7 @@
 #include "CharacterHelper.h"
 #include "IO.h"
 #include "GlobalFunctions.h"
-#include IO_HEADER_FILE
+#include "IO.h"
 
 namespace APE
 {
@@ -109,7 +109,7 @@ const wchar_t * CAPETag::s_aryID3GenreNames[CAPETag::s_nID3GenreCount] =
 
 CAPETag::CAPETag(const str_utfn * pFilename, bool bAnalyze)
 {
-    m_spIO.Assign(new IO_CLASS_NAME);
+    m_spIO.Assign(CreateCIO());
     m_spIO->Open(pFilename);
 
     m_bAnalyzed = false;

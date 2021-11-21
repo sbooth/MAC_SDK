@@ -62,15 +62,15 @@ Version
 #include "Version.h"
 
 // year in the copyright strings
-#define MAC_YEAR 2021
+#define MAC_YEAR 2022
 
 // build the version string
 #define STRINGIZE2(s) #s
 #define STRINGIZE(s) STRINGIZE2(s)
-#define MAC_VER_FILE_VERSION_STR        STRINGIZE(MAC_VERSION_MAJOR) _T(".") STRINGIZE(MAC_VERSION_REVISION) 
-#define MAC_VER_FILE_VERSION_STR_NARROW STRINGIZE(MAC_VERSION_MAJOR) "." STRINGIZE(MAC_VERSION_REVISION) 
-#define MAC_VER_FILE_VERSION_STR_FULL    STRINGIZE(MAC_VERSION_MAJOR) _T(".") STRINGIZE(MAC_VERSION_REVISION) _T(".0.0")
-#define MAC_VER_FILE_VERSION_FULL_NO_DOT APE_VERSION_MAJOR APE_VERSION_REVISION
+#define MAC_VER_FILE_VERSION_STR               STRINGIZE(MAC_VERSION_MAJOR) _T(".") STRINGIZE(MAC_VERSION_REVISION) 
+#define MAC_VER_FILE_VERSION_STR_NARROW        STRINGIZE(MAC_VERSION_MAJOR) "." STRINGIZE(MAC_VERSION_REVISION) 
+#define MAC_VER_FILE_VERSION_STR_FULL          STRINGIZE(MAC_VERSION_MAJOR) _T(".") STRINGIZE(MAC_VERSION_REVISION) _T(".0.0")
+#define MAC_VER_FILE_VERSION_FULL_NO_DOT       APE_VERSION_MAJOR APE_VERSION_REVISION
 
 #define MAC_FILE_VERSION_NUMBER                         3990
 #define MAC_VERSION_STRING                              MAC_VER_FILE_VERSION_STR
@@ -93,16 +93,22 @@ Global compiler settings (useful for porting)
 #endif
 
 // assembly code (helps performance, but limits portability)
-#if !defined(PLATFORM_ARM) && !defined(PLATFORM_ANDROID)
-    #if defined __SSE2__ || _M_IX86_FP == 2 || defined _M_X64
-        #define ENABLE_SSE_ASSEMBLY
-    #elif defined(_M_IX86)
-        #define ENABLE_SSE_ASSEMBLY
+#if defined __SSE2__
+    #define ENABLE_SSE_ASSEMBLY
+#endif
+
+#if defined __AVX2__
+    #define ENABLE_AVX_ASSEMBLY
+#endif
+
+#ifdef _MSC_VER // doesn't compile in gcc
+    #if defined(_M_IX86)
+        #define ENABLE_MMX_ASSEMBLY
     #endif
-    #ifdef _MSC_VER // doesn't compile in gcc
-        #if defined(_M_IX86)
-            #define ENABLE_MMX_ASSEMBLY
-        #endif
+
+    #if defined(_M_IX86) || defined(_M_X64)
+        #define ENABLE_SSE_ASSEMBLY
+        #define ENABLE_AVX_ASSEMBLY
     #endif
 #endif
 
@@ -114,6 +120,9 @@ Global compiler settings (useful for porting)
 #if !defined(PLATFORM_ANDROID)
     #define APE_BACKWARDS_COMPATIBILITY
 #endif
+
+// disable this to turn off compression code
+#define APE_SUPPORT_COMPRESS
 
 // compression modes
 #define ENABLE_COMPRESSION_MODE_FAST
@@ -157,8 +166,6 @@ Global macros
 
 #if defined(PLATFORM_WINDOWS)
     #define IO_USE_WIN_FILE_IO
-    #define IO_HEADER_FILE                              "WinFileIO.h"
-    #define IO_CLASS_NAME                               CWinFileIO
     #define DLLEXPORT                                   __declspec(dllexport)
     #define SLEEP(MILLISECONDS)                         ::Sleep(MILLISECONDS)
     #define MESSAGEBOX(PARENT, TEXT, CAPTION, TYPE)     ::MessageBox(PARENT, TEXT, CAPTION, TYPE)
@@ -177,8 +184,6 @@ Global macros
     #endif
 #else
     #define IO_USE_STD_LIB_FILE_IO
-    #define IO_HEADER_FILE                              "StdLibFileIO.h"
-    #define IO_CLASS_NAME                               CStdLibFileIO
     #define DLLEXPORT
     #define SLEEP(MILLISECONDS)                         { struct timespec t; t.tv_sec = (MILLISECONDS) / 1000; t.tv_nsec = (MILLISECONDS) % 1000 * 1000000; nanosleep(&t, NULL); }
     #define MESSAGEBOX(PARENT, TEXT, CAPTION, TYPE)
@@ -225,13 +230,16 @@ Global defines
 #else
     #define APE_FILENAME_SLASH '/'
 #endif
+#define BYTES_IN_KILOBYTE            1024
+#define BYTES_IN_MEGABYTE            (1024 * BYTES_IN_KILOBYTE)
+#define BYTES_IN_GIGABYTE            int64(1024 * BYTES_IN_MEGABYTE)
 
 /**************************************************************************************************
 Byte order
 **************************************************************************************************/
-#define __LITTLE_ENDIAN     1234
-#define __BIG_ENDIAN        4321
-#define __BYTE_ORDER        __LITTLE_ENDIAN
+#define APE_LITTLE_ENDIAN     1234
+#define APE_BIG_ENDIAN        4321
+#define APE_BYTE_ORDER        APE_LITTLE_ENDIAN
 
 /**************************************************************************************************
 Macros

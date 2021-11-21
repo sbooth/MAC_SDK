@@ -4,10 +4,12 @@
 #include "Prepare.h"
 #include "NewPredictor.h"
 
+#ifdef APE_SUPPORT_COMPRESS
+
 namespace APE
 {
     
-CAPECompressCore::CAPECompressCore(CIO * pIO, const WAVEFORMATEX * pwfeInput, intn nMaxFrameBlocks, intn nCompressionLevel)
+CAPECompressCore::CAPECompressCore(CIO * pIO, const WAVEFORMATEX * pwfeInput, int nMaxFrameBlocks, int nCompressionLevel)
 {
     m_nMaxFrameBlocks = nMaxFrameBlocks;
     m_spBitArray.Assign(new CBitArray(pIO));
@@ -17,7 +19,10 @@ CAPECompressCore::CAPECompressCore(CIO * pIO, const WAVEFORMATEX * pwfeInput, in
     m_spPrepare.Assign(new CPrepare);
     memset(m_aryPredictors, 0, 32 * sizeof(IPredictorCompress*));
     for (int nChannel = 0; nChannel < nChannels; nChannel++)
-        m_aryPredictors[nChannel] = new CPredictorCompressNormal(nCompressionLevel, pwfeInput->wBitsPerSample);
+        if (pwfeInput->wBitsPerSample < 32)
+            m_aryPredictors[nChannel] = new CPredictorCompressNormal<int>(nCompressionLevel, pwfeInput->wBitsPerSample);
+        else
+            m_aryPredictors[nChannel] = new CPredictorCompressNormal<int64>(nCompressionLevel, pwfeInput->wBitsPerSample);
 
     memcpy(&m_wfeInput, pwfeInput, sizeof(WAVEFORMATEX));
     m_nPeakLevel = 0;
@@ -32,10 +37,10 @@ CAPECompressCore::~CAPECompressCore()
     }
 }
 
-int CAPECompressCore::EncodeFrame(const void * pInputData, int64 nInputBytes)
+int CAPECompressCore::EncodeFrame(const void * pInputData, int nInputBytes)
 {
     // variables
-    const int64 nInputBlocks = nInputBytes / m_wfeInput.nBlockAlign;
+    const int nInputBlocks = nInputBytes / m_wfeInput.nBlockAlign;
     int nSpecialCodes = 0;
 
     // always start a new frame on a byte boundary
@@ -73,7 +78,7 @@ int CAPECompressCore::EncodeFrame(const void * pInputData, int64 nInputBytes)
         
         if (bEncodeX && bEncodeY)
         {
-            int64 nLastX = 0;
+            int nLastX = 0;
             for (int z = 0; z < nInputBlocks; z++)
             {
                 m_spBitArray->EncodeValue(m_aryPredictors[1]->CompressValue(m_spData[m_nMaxFrameBlocks + z], nLastX), m_aryBitArrayStates[1]);
@@ -124,7 +129,7 @@ int CAPECompressCore::EncodeFrame(const void * pInputData, int64 nInputBytes)
     return ERROR_SUCCESS;
 }
 
-int CAPECompressCore::Prepare(const void * pInputData, int64 nInputBytes, int * pSpecialCodes)
+int CAPECompressCore::Prepare(const void * pInputData, int nInputBytes, int * pSpecialCodes)
 {
     // variable declares
     *pSpecialCodes = 0;
@@ -147,3 +152,5 @@ int CAPECompressCore::Prepare(const void * pInputData, int64 nInputBytes, int * 
 }
 
 }
+
+#endif

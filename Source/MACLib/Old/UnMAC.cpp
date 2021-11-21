@@ -154,8 +154,8 @@ intn CUnMAC::DecompressFrameOld(unsigned char *pOutputData, int32 FrameIndex, in
     if (FrameIndex >= m_pAPEDecompress->GetInfo(APE_INFO_TOTAL_FRAMES)) { return ERROR_SUCCESS; }
 
     // get the number of samples in the frame
-    intn nBlocks = 0;
-    nBlocks = ((FrameIndex + 1) >= m_pAPEDecompress->GetInfo(APE_INFO_TOTAL_FRAMES)) ? intn(m_pAPEDecompress->GetInfo(APE_INFO_FINAL_FRAME_BLOCKS)) : intn(m_pAPEDecompress->GetInfo(APE_INFO_BLOCKS_PER_FRAME));
+    int nBlocks = 0;
+    nBlocks = ((FrameIndex + 1) >= m_pAPEDecompress->GetInfo(APE_INFO_TOTAL_FRAMES)) ? int(m_pAPEDecompress->GetInfo(APE_INFO_FINAL_FRAME_BLOCKS)) : int(m_pAPEDecompress->GetInfo(APE_INFO_BLOCKS_PER_FRAME));
     if (nBlocks == 0)
         return -1; // nothing to do (file must be zero length) (have to return error)
 
@@ -201,7 +201,7 @@ intn CUnMAC::DecompressFrameOld(unsigned char *pOutputData, int32 FrameIndex, in
 
         WAVEFORMATEX WaveFormatEx; m_pAPEDecompress->GetInfo(APE_INFO_WAVEFORMATEX, (int64) &WaveFormatEx);
         m_pPrepare->UnprepareOld(m_pAPEDecompressCore->GetDataX(), m_pAPEDecompressCore->GetDataY(), nBlocks, &WaveFormatEx, 
-            pOutputData, (unsigned int *) &CRC, (int *) &nSpecialCodes, (intn) m_pAPEDecompress->GetInfo(APE_INFO_FILE_VERSION));
+            pOutputData, (unsigned int *) &CRC, (int *) &nSpecialCodes, (int) m_pAPEDecompress->GetInfo(APE_INFO_FILE_VERSION));
     }
     else if (m_pAPEDecompress->GetInfo(APE_INFO_CHANNELS) == 1) 
     {
@@ -209,7 +209,7 @@ intn CUnMAC::DecompressFrameOld(unsigned char *pOutputData, int32 FrameIndex, in
         
         WAVEFORMATEX WaveFormatEx; m_pAPEDecompress->GetInfo(APE_INFO_WAVEFORMATEX, (int64) &WaveFormatEx);
         m_pPrepare->UnprepareOld(m_pAPEDecompressCore->GetDataX(), NULL, nBlocks, &WaveFormatEx, 
-            pOutputData, (unsigned int *) &CRC, (int *) &nSpecialCodes, (intn) m_pAPEDecompress->GetInfo(APE_INFO_FILE_VERSION));
+            pOutputData, (unsigned int *) &CRC, (int *) &nSpecialCodes, (int) m_pAPEDecompress->GetInfo(APE_INFO_FILE_VERSION));
     }
 
     if (GET_USES_SPECIAL_FRAMES(m_pAPEDecompress))

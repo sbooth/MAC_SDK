@@ -26,10 +26,10 @@ class IPredictorDecompress;
 class CPrepare
 {
 public:
-    int Prepare(const unsigned char * pRawData, int64 nBytes, const WAVEFORMATEX * pWaveFormatEx, int * pOutput, intn nFrameBlocks, unsigned int * pCRC, int * pSpecialCodes, intn * pPeakLevel);
-    void Unprepare(int64 * paryValues, const WAVEFORMATEX * pWaveFormatEx, unsigned char * pOutput);
+    int Prepare(const unsigned char * pRawData, int nBytes, const WAVEFORMATEX * pWaveFormatEx, int * pOutput, int nFrameBlocks, unsigned int * pCRC, int * pSpecialCodes, int * pPeakLevel);
+    void Unprepare(int * paryValues, const WAVEFORMATEX * pWaveFormatEx, unsigned char * pOutput);
 #ifdef APE_BACKWARDS_COMPATIBILITY
-    int UnprepareOld(int * pInputX, int * pInputY, intn nBlocks, const WAVEFORMATEX * pWaveFormatEx, unsigned char * pRawData, unsigned int * pCRC, int * pSpecialCodes, intn nFileVersion);
+    int UnprepareOld(int * pInputX, int * pInputY, int nBlocks, const WAVEFORMATEX * pWaveFormatEx, unsigned char * pRawData, unsigned int * pCRC, int * pSpecialCodes, int nFileVersion);
 #endif
 };
 

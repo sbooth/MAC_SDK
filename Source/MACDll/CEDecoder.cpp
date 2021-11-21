@@ -25,7 +25,7 @@ __declspec(dllexport) HANDLE FAR PASCAL OpenFilterInput( LPSTR lpstrFilename, in
     // open the APE file
     ///////////////////////////////////////////////////////////////////////////////    
     CSmartPtr<wchar_t> spUTF16(CAPECharacterHelper::GetUTF16FromANSI(lpstrFilename), TRUE);
-    IAPEDecompress * pAPEDecompress = CreateIAPEDecompress(spUTF16, NULL, true);
+    IAPEDecompress * pAPEDecompress = CreateIAPEDecompress(spUTF16, NULL, true, true, false);
     if (pAPEDecompress == NULL)
         return NULL;
     

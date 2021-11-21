@@ -1,5 +1,7 @@
 #pragma once
 
+#ifdef APE_SUPPORT_COMPRESS
+
 #include "MACLib.h"
 
 namespace APE
@@ -16,8 +18,8 @@ public:
     ~CAPECompress();
 
     // start encoding
-    int Start(const wchar_t * pOutputFilename, const WAVEFORMATEX * pwfeInput, int64 nMaxAudioBytes, intn nCompressionLevel = MAC_COMPRESSION_LEVEL_NORMAL, const void * pHeaderData = NULL, int64 nHeaderBytes = CREATE_WAV_HEADER_ON_DECOMPRESSION, int nFlags = 0);
-    int StartEx(CIO * pioOutput, const WAVEFORMATEX * pwfeInput, int64 nMaxAudioBytes, intn nCompressionLevel = MAC_COMPRESSION_LEVEL_NORMAL, const void * pHeaderData = NULL, int64 nHeaderBytes = CREATE_WAV_HEADER_ON_DECOMPRESSION);
+    int Start(const wchar_t * pOutputFilename, const WAVEFORMATEX * pwfeInput, int64 nMaxAudioBytes, int nCompressionLevel = MAC_COMPRESSION_LEVEL_NORMAL, const void * pHeaderData = NULL, int64 nHeaderBytes = CREATE_WAV_HEADER_ON_DECOMPRESSION, int nFlags = 0);
+    int StartEx(CIO * pioOutput, const WAVEFORMATEX * pwfeInput, int64 nMaxAudioBytes, int nCompressionLevel = MAC_COMPRESSION_LEVEL_NORMAL, const void * pHeaderData = NULL, int64 nHeaderBytes = CREATE_WAV_HEADER_ON_DECOMPRESSION);
     
     // add data / compress data
 
@@ -53,3 +55,5 @@ private:
 };
 
 }
+
+#endif

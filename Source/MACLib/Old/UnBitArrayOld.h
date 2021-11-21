@@ -17,7 +17,7 @@ public:
     
     // functions
     void GenerateArray(int * pOutputArray, int nElements, intn nBytesRequired = -1);
-    uint64 DecodeValue(DECODE_VALUE_METHOD DecodeMethod, int nParam1 = 0, int nParam2 = 0);
+    uint32 DecodeValue(DECODE_VALUE_METHOD DecodeMethod, int nParam1 = 0, int nParam2 = 0);
     
 private:
     // helpers

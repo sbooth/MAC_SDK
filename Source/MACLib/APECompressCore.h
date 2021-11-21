@@ -3,6 +3,8 @@
 #include "APECompress.h"
 #include "BitArray.h"
 
+#ifdef APE_SUPPORT_COMPRESS
+
 namespace APE
 {
 
@@ -15,16 +17,16 @@ CAPECompressCore - manages the core of compression and bitstream output
 class  CAPECompressCore
 {
 public:
-    CAPECompressCore(CIO * pIO, const WAVEFORMATEX * pwfeInput, intn nMaxFrameBlocks, intn nCompressionLevel);
+    CAPECompressCore(CIO * pIO, const WAVEFORMATEX * pwfeInput, int nMaxFrameBlocks, int nCompressionLevel);
     virtual ~CAPECompressCore();
 
-    int EncodeFrame(const void * pInputData, int64 nInputBytes);
+    int EncodeFrame(const void * pInputData, int nInputBytes);
 
     CBitArray * GetBitArray() { return m_spBitArray.GetPtr(); }
     intn GetPeakLevel() { return m_nPeakLevel; }
 
 private:
-    int Prepare(const void * pInputData, int64 nInputBytes, int * pSpecialCodes);
+    int Prepare(const void * pInputData, int nInputBytes, int * pSpecialCodes);
 
     CSmartPtr<CBitArray> m_spBitArray;
     IPredictorCompress * m_aryPredictors[32];
@@ -33,8 +35,10 @@ private:
     CSmartPtr<int> m_spTempData;
     CSmartPtr<CPrepare> m_spPrepare;
     WAVEFORMATEX m_wfeInput;
-    intn m_nPeakLevel;
-    intn m_nMaxFrameBlocks;
+    int m_nPeakLevel;
+    int m_nMaxFrameBlocks;
 };
 
 }
+
+#endif

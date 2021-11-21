@@ -1,5 +1,7 @@
 #pragma once
 
+#ifdef APE_SUPPORT_COMPRESS
+
 #include "APECompress.h"
 
 namespace APE
@@ -15,14 +17,14 @@ public:
     int InitializeFile(CIO * pIO, const WAVEFORMATEX * pwfeInput, intn nMaxFrames, intn nCompressionLevel, const void * pHeaderData, int64 nHeaderBytes, int32 nFlags);
     int FinalizeFile(CIO * pIO, int nNumberOfFrames, int nFinalFrameBlocks, const void * pTerminatingData, int64 nTerminatingBytes, int64 nWAVTerminatingBytes);
     
-    int SetSeekByte(int nFrame, int nByteOffset);
+    int SetSeekByte(int nFrame, uint32 nByteOffset);
 
-    int Start(CIO * pioOutput, const WAVEFORMATEX * pwfeInput, int64 nMaxAudioBytes, intn nCompressionLevel = MAC_COMPRESSION_LEVEL_NORMAL, const void * pHeaderData = NULL, int64 nHeaderBytes = CREATE_WAV_HEADER_ON_DECOMPRESSION, int32 nFlags = 0);
+    int Start(CIO * pioOutput, const WAVEFORMATEX * pwfeInput, int64 nMaxAudioBytes, int nCompressionLevel = MAC_COMPRESSION_LEVEL_NORMAL, const void * pHeaderData = NULL, int64 nHeaderBytes = CREATE_WAV_HEADER_ON_DECOMPRESSION, int32 nFlags = 0);
         
     intn GetFullFrameBytes();
-    int EncodeFrame(const void * pInputData, int64 nInputBytes);
+    int EncodeFrame(const void * pInputData, int nInputBytes);
 
-    int Finish(const void * pTerminatingData, int64 nTerminatingBytes, int64 nWAVTerminatingBytes);
+    int Finish(const void * pTerminatingData, int nTerminatingBytes, int nWAVTerminatingBytes);
 
     bool GetTooMuchData() { return m_bTooMuchData; }
     
@@ -34,11 +36,13 @@ private:
     CSmartPtr<CAPECompressCore> m_spAPECompressCore;
     
     WAVEFORMATEX m_wfeInput;
-    intn m_nCompressionLevel;
-    intn m_nSamplesPerFrame;
-    intn m_nFrameIndex;
-    intn m_nLastFrameBlocks;
+    int m_nCompressionLevel;
+    int m_nBlocksPerFrame;
+    int m_nFrameIndex;
+    int m_nLastFrameBlocks;
     bool m_bTooMuchData;
 };
 
 }
+
+#endif

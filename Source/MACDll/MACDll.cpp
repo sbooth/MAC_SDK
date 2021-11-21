@@ -3,13 +3,10 @@
 #include "MACDll.h"
 
 using namespace APE;
-
+#include "IO.h"
 #ifdef PLATFORM_WINDOWS
-    #include "WinFileIO.h"
     #include "APEInfoDialog.h"
     #include "WAVInfoDialog.h"
-#else
-    #include "StdLibFileIO.h"
 #endif
 
 #include "APEDecompress.h"
@@ -104,11 +101,11 @@ int __stdcall TagFileSimple(const str_ansi * pFilename, const char * pArtist, co
 {
     CSmartPtr<wchar_t> spFilename(CAPECharacterHelper::GetUTF16FromANSI(pFilename), TRUE);
 
-    IO_CLASS_NAME FileIO;
-    if (FileIO.Open(spFilename) != 0)
+    CSmartPtr<CIO> spFileIO(CreateCIO());
+    if (spFileIO->Open(spFilename) != 0)
         return ERROR_UNDEFINED;
     
-    CAPETag APETag(&FileIO, TRUE);
+    CAPETag APETag(spFileIO, true);
 
     if (bClearFirst)
         APETag.ClearFields();    
@@ -137,11 +134,11 @@ int __stdcall GetID3Tag(const str_ansi * pFilename, ID3_TAG * pID3Tag)
 
 int __stdcall GetID3TagW(const str_utfn * pFilename, ID3_TAG* pID3Tag)
 {
-    IO_CLASS_NAME FileIO;
-    if (FileIO.Open(pFilename) != 0)
+    CSmartPtr<CIO> spFileIO(CreateCIO());
+    if (spFileIO->Open(pFilename) != 0)
         return ERROR_UNDEFINED;
 
-    CAPETag APETag(&FileIO, TRUE);
+    CAPETag APETag(spFileIO, TRUE);
 
     return APETag.CreateID3Tag(pID3Tag);
 }
@@ -156,7 +153,7 @@ int __stdcall RemoveTagW(const str_utfn * pFilename)
 {
     // create a decompress object
     int nErrorCode = ERROR_SUCCESS;
-    CSmartPtr<IAPEDecompress> spAPEDecompress(CreateIAPEDecompress(pFilename, &nErrorCode, false));
+    CSmartPtr<IAPEDecompress> spAPEDecompress(CreateIAPEDecompress(pFilename, &nErrorCode, false, true, false));
 
     // error check creation
     if (nErrorCode != ERROR_SUCCESS)
@@ -176,12 +173,12 @@ CAPEDecompress wrapper(s)
 APE_DECOMPRESS_HANDLE __stdcall c_APEDecompress_Create(const str_ansi * pFilename, int * pErrorCode)
 {
     CSmartPtr<wchar_t> spFilename(CAPECharacterHelper::GetUTF16FromANSI(pFilename), true);
-    return (APE_DECOMPRESS_HANDLE) CreateIAPEDecompress(spFilename, pErrorCode, false);
+    return (APE_DECOMPRESS_HANDLE) CreateIAPEDecompress(spFilename, pErrorCode, true, true, false);
 }
 
 APE_DECOMPRESS_HANDLE __stdcall c_APEDecompress_CreateW(const str_utfn * pFilename, int * pErrorCode)
 {
-    return (APE_DECOMPRESS_HANDLE) CreateIAPEDecompress(pFilename, pErrorCode, false);
+    return (APE_DECOMPRESS_HANDLE) CreateIAPEDecompress(pFilename, pErrorCode, true, true, false);
 }
 
 void __stdcall c_APEDecompress_Destroy(APE_DECOMPRESS_HANDLE hAPEDecompress)

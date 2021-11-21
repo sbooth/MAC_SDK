@@ -4,7 +4,7 @@ CAPEInfo:
 **************************************************************************************************/
 #include "All.h"
 #include "APEInfo.h"
-#include IO_HEADER_FILE
+#include "IO.h"
 #include "APECompress.h"
 #include "APEHeader.h"
 #include "GlobalFunctions.h"
@@ -15,7 +15,7 @@ namespace APE
 /**************************************************************************************************
 Construction
 **************************************************************************************************/
-CAPEInfo::CAPEInfo(int * pErrorCode, const wchar_t * pFilename, CAPETag * pTag, bool bAPL, bool bReadOnly)
+CAPEInfo::CAPEInfo(int * pErrorCode, const wchar_t * pFilename, CAPETag * pTag, bool bAPL, bool bReadOnly, bool bAnalyzeTagNow, bool bReadWholeFile)
 {
     *pErrorCode = ERROR_SUCCESS;
     CloseFile();
@@ -24,7 +24,7 @@ CAPEInfo::CAPEInfo(int * pErrorCode, const wchar_t * pFilename, CAPETag * pTag, 
     m_bAPL = bAPL;
 
     // open the file
-    m_spIO.Assign(new IO_CLASS_NAME);
+    m_spIO.Assign(CreateCIO());
     
     *pErrorCode = m_spIO->Open(pFilename, bReadOnly);
     if (*pErrorCode != ERROR_SUCCESS)
@@ -32,7 +32,18 @@ CAPEInfo::CAPEInfo(int * pErrorCode, const wchar_t * pFilename, CAPETag * pTag, 
         CloseFile();
         return;
     }
-    
+
+    // flag to read the whole file if specified
+    if (bReadWholeFile)
+    {
+        *pErrorCode = m_spIO->SetReadWholeFile();
+        if (*pErrorCode != ERROR_SUCCESS)
+        {
+            CloseFile();
+            return;
+        }
+    }
+
     // get the file information
     if (GetFileInformation(true) != 0)
     {
@@ -46,16 +57,15 @@ CAPEInfo::CAPEInfo(int * pErrorCode, const wchar_t * pFilename, CAPETag * pTag, 
     {
         // we don't want to analyze right away for non-local files
         // since a single I/O object is shared, we can't tag and read at the same time(i.e.in multiple threads)
-        bool bAnalyzeNow = true;
         if (StringIsEqual(pFilename, L"http://", false, 7) ||
             StringIsEqual(pFilename, L"m01p://", false, 7) ||
             StringIsEqual(pFilename, L"https://", false, 8) ||
             StringIsEqual(pFilename, L"m01ps://", false, 8))
         {
-            bAnalyzeNow = false;
+            bAnalyzeTagNow = false;
         }
 
-        m_spAPETag.Assign(new CAPETag(m_spIO, bAnalyzeNow));
+        m_spAPETag.Assign(new CAPETag(m_spIO, bAnalyzeTagNow));
     }
     else
     {
@@ -199,6 +209,11 @@ int64 CAPEInfo::GetInfo(APE_DECOMPRESS_FIELDS Field, int64 nParam1, int64 nParam
         break;
     case APE_INFO_FORMAT_FLAGS:
         nResult = m_APEFileInfo.nFormatFlags;
+        
+        // add the big endian for AIFF since we didn't save that at first
+        if (nResult & MAC_FORMAT_FLAG_AIFF)
+            nResult |= MAC_FORMAT_FLAG_BIG_ENDIAN;
+
         break;
     case APE_INFO_SAMPLE_RATE:
         nResult = m_APEFileInfo.nSampleRate;

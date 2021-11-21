@@ -121,7 +121,7 @@ Exit_Loop:
     AntiPredictor.AntiPredict(pInputArray, pOutputArray, NumberOfElements);
 }
 
-void CAntiPredictorExtraHigh3600To3700::AntiPredictorOffset(int* Input_Array, int* Output_Array, int Number_of_Elements, uint64 g1, uint64 g2, int Max_Order) 
+void CAntiPredictorExtraHigh3600To3700::AntiPredictorOffset(int * Input_Array, int * Output_Array, int Number_of_Elements, uint64 g1, uint64 g2, int Max_Order) 
 {
     int q;
 

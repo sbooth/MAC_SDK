@@ -108,6 +108,11 @@
 namespace APE
 {
 
+CIO * CreateCIO()
+{
+    return new CStdLibFileIO;
+}
+
 CStdLibFileIO::CStdLibFileIO()
 {
     memset(m_cFileName, 0, sizeof(m_cFileName));

@@ -3,7 +3,7 @@
 namespace APE
 {
 
-template <int64 MULTIPLY, int64 SHIFT> class CScaledFirstOrderFilter
+template <class INTTYPE, int MULTIPLY, int SHIFT> class CScaledFirstOrderFilter
 {
 public:
     
@@ -12,21 +12,21 @@ public:
         m_nLastValue = 0;
     }
 
-    __forceinline int64 Compress(const int64 nInput)
+    __forceinline INTTYPE Compress(const int32 nInput)
     {
-        int64 nResult = nInput - ((m_nLastValue * MULTIPLY) >> SHIFT);
+        INTTYPE nResult = INTTYPE(nInput) - ((INTTYPE(m_nLastValue) * MULTIPLY) >> SHIFT);
         m_nLastValue = nInput;
         return nResult;
     }
 
-    __forceinline int64 Decompress(const int64 nInput)
+    __forceinline int32 Decompress(const INTTYPE nInput)
     {
-        m_nLastValue = nInput + ((m_nLastValue * MULTIPLY) >> SHIFT);
+        m_nLastValue = int32(nInput + ((INTTYPE(m_nLastValue) * MULTIPLY) >> SHIFT));
         return m_nLastValue;
     }
 
 protected:
-    int64 m_nLastValue;
+    int32 m_nLastValue;
 };
 
 }

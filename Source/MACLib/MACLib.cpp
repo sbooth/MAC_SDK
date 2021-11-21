@@ -61,7 +61,7 @@ IAPEDecompress * CreateIAPEDecompressCore(CAPEInfo * pAPEInfo, int nStartBlock, 
     return pAPEDecompress;
 }
 
-IAPEDecompress * __stdcall CreateIAPEDecompress(const str_utfn * pFilename, int * pErrorCode, bool bReadOnly)
+IAPEDecompress * __stdcall CreateIAPEDecompress(const str_utfn * pFilename, int * pErrorCode, bool bReadOnly, bool bAnalyzeTagNow, bool bReadWholeFile)
 {
     // error check the parameters
     if ((pFilename == NULL) || (wcslen(pFilename) == 0))
@@ -94,7 +94,7 @@ IAPEDecompress * __stdcall CreateIAPEDecompress(const str_utfn * pFilename, int 
     else if (StringIsEqual(pExtension, L".mac", false) || StringIsEqual(pExtension, L".ape", false))
     {
         // plain .ape file
-        pAPEInfo = new CAPEInfo(&nErrorCode, pFilename, NULL, false, bReadOnly);
+        pAPEInfo = new CAPEInfo(&nErrorCode, pFilename, NULL, false, bReadOnly, bAnalyzeTagNow, bReadWholeFile);
     }
 
     // fail if we couldn't get the file information
@@ -134,6 +134,7 @@ IAPEDecompress * __stdcall CreateIAPEDecompressEx2(CAPEInfo * pAPEInfo, int nSta
     return pAPEDecompress;
 }
 
+#ifdef APE_SUPPORT_COMPRESS
 IAPECompress * __stdcall CreateIAPECompress(int * pErrorCode)
 {
     if (pErrorCode)
@@ -141,6 +142,7 @@ IAPECompress * __stdcall CreateIAPECompress(int * pErrorCode)
 
     return new CAPECompress();
 }
+#endif
 
 int __stdcall FillWaveFormatEx(APE::WAVEFORMATEX * pWaveFormatEx, int nFormatTag, int nSampleRate, int nBitsPerSample, int nChannels)
 {

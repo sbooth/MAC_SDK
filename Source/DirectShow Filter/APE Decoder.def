@@ -1,4 +1,4 @@
-LIBRARY         APE.ax
+LIBRARY
 EXPORTS
     DllGetClassObject        PRIVATE
     DllCanUnloadNow            PRIVATE

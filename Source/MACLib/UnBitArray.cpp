@@ -41,7 +41,7 @@ CUnBitArray::~CUnBitArray()
     SAFE_ARRAY_DELETE(m_pBitArray)
 }
 
-uint64 CUnBitArray::DecodeValue(DECODE_VALUE_METHOD DecodeMethod, int nParam1, int nParam2)
+uint32 CUnBitArray::DecodeValue(DECODE_VALUE_METHOD DecodeMethod, int nParam1, int nParam2)
 {
     switch (DecodeMethod)
     {
@@ -70,7 +70,7 @@ inline uint32 CUnBitArray::DecodeByte()
     return nByte;
 }
 
-inline int64 CUnBitArray::RangeDecodeFast(int nShift)
+inline uint32 CUnBitArray::RangeDecodeFast(int nShift)
 {
     while (m_RangeCoderInfo.range <= BOTTOM_VALUE)
     {   
@@ -84,12 +84,12 @@ inline int64 CUnBitArray::RangeDecodeFast(int nShift)
     }
 
     // decode
-    m_RangeCoderInfo.range = m_RangeCoderInfo.range >> nShift;
+    m_RangeCoderInfo.range >>= nShift;
     
     return m_RangeCoderInfo.low / m_RangeCoderInfo.range;
 }
 
-inline int64 CUnBitArray::RangeDecodeFastWithUpdate(int nShift)
+inline uint32 CUnBitArray::RangeDecodeFastWithUpdate(int nShift)
 {
     // update range
     while (m_RangeCoderInfo.range <= BOTTOM_VALUE)
@@ -108,7 +108,7 @@ inline int64 CUnBitArray::RangeDecodeFastWithUpdate(int nShift)
     }
 
     // decode
-    m_RangeCoderInfo.range = m_RangeCoderInfo.range >> nShift;
+    m_RangeCoderInfo.range >>= nShift;
 
     // check for an invalid range value
     if (m_RangeCoderInfo.range == 0)
@@ -118,8 +118,8 @@ inline int64 CUnBitArray::RangeDecodeFastWithUpdate(int nShift)
     }
 
     // get the result
-    int nResult = m_RangeCoderInfo.low / m_RangeCoderInfo.range;
-    m_RangeCoderInfo.low -= m_RangeCoderInfo.range * nResult;
+    uint32 nResult = m_RangeCoderInfo.low / m_RangeCoderInfo.range;
+    m_RangeCoderInfo.low = m_RangeCoderInfo.low % m_RangeCoderInfo.range;
     return nResult;
 }
 
@@ -130,13 +130,13 @@ int64 CUnBitArray::DecodeValueRange(UNBIT_ARRAY_STATE & BitArrayState)
     if (m_nVersion >= 3990)
     {
         // figure the pivot value
-        int64 nPivotValue = ape_max(BitArrayState.nKSum / 32, (uint32)1);
+        uint32 nPivotValue = ape_max(BitArrayState.nKSum / 32, (uint32)1);
         
         // get the overflow
-        int64 nOverflow = 0;
+        uint32 nOverflow = 0;
         {
             // decode
-            int64 nRangeTotal = RangeDecodeFast(RANGE_OVERFLOW_SHIFT);
+            uint32 nRangeTotal = RangeDecodeFast(RANGE_OVERFLOW_SHIFT);
             if (nRangeTotal >= 65536) 
                 throw(ERROR_INVALID_INPUT_FILE);
 
@@ -157,26 +157,16 @@ int64 CUnBitArray::DecodeValueRange(UNBIT_ARRAY_STATE & BitArrayState)
         }
 
         // get the value
-        int64 nBase = 0;
+        uint32 nBase = 0;
         {
             if (nPivotValue >= (1 << 16))
             {
-                int64 nPivotValueBits = 0;
+                uint32 nPivotValueBits = 0;
                 while ((nPivotValue >> nPivotValueBits) > 0) { nPivotValueBits++; }
-                int64 nSplitFactor = int64(1) << int64(nPivotValueBits - 16);
+                uint32 nSplitFactor = 1 << (nPivotValueBits - 16);
 
-                int64 nPivotValueA = (nPivotValue / nSplitFactor) + 1;
-                int64 nPivotValueB = nSplitFactor;
-
-                while (m_RangeCoderInfo.range <= BOTTOM_VALUE)
-                {   
-                    m_RangeCoderInfo.buffer = (m_RangeCoderInfo.buffer << 8) | DecodeByte();
-                    m_RangeCoderInfo.low = (m_RangeCoderInfo.low << 8) | ((m_RangeCoderInfo.buffer >> 1) & 0xFF);
-                    m_RangeCoderInfo.range <<= 8;
-                }
-                m_RangeCoderInfo.range = (unsigned int) (m_RangeCoderInfo.range / nPivotValueA);
-                int64 nBaseA = m_RangeCoderInfo.low / m_RangeCoderInfo.range;
-                m_RangeCoderInfo.low -= (unsigned int) (m_RangeCoderInfo.range * nBaseA);
+                uint32 nPivotValueA = (nPivotValue / nSplitFactor) + 1;
+                uint32 nPivotValueB = nSplitFactor;
 
                 while (m_RangeCoderInfo.range <= BOTTOM_VALUE)
                 {   
@@ -184,9 +174,19 @@ int64 CUnBitArray::DecodeValueRange(UNBIT_ARRAY_STATE & BitArrayState)
                     m_RangeCoderInfo.low = (m_RangeCoderInfo.low << 8) | ((m_RangeCoderInfo.buffer >> 1) & 0xFF);
                     m_RangeCoderInfo.range <<= 8;
                 }
-                m_RangeCoderInfo.range = (unsigned int) (m_RangeCoderInfo.range / nPivotValueB);
-                int64 nBaseB = m_RangeCoderInfo.low / m_RangeCoderInfo.range;
-                m_RangeCoderInfo.low -= (unsigned int) (m_RangeCoderInfo.range * nBaseB);
+                m_RangeCoderInfo.range /= nPivotValueA;
+                uint32 nBaseA = m_RangeCoderInfo.low / m_RangeCoderInfo.range;
+                m_RangeCoderInfo.low = m_RangeCoderInfo.low % m_RangeCoderInfo.range;
+
+                while (m_RangeCoderInfo.range <= BOTTOM_VALUE)
+                {   
+                    m_RangeCoderInfo.buffer = (m_RangeCoderInfo.buffer << 8) | DecodeByte();
+                    m_RangeCoderInfo.low = (m_RangeCoderInfo.low << 8) | ((m_RangeCoderInfo.buffer >> 1) & 0xFF);
+                    m_RangeCoderInfo.range <<= 8;
+                }
+                m_RangeCoderInfo.range /= nPivotValueB;
+                uint32 nBaseB = m_RangeCoderInfo.low / m_RangeCoderInfo.range;
+                m_RangeCoderInfo.low = m_RangeCoderInfo.low % m_RangeCoderInfo.range;
 
                 nBase = nBaseA * nSplitFactor + nBaseB;
             }
@@ -204,26 +204,26 @@ int64 CUnBitArray::DecodeValueRange(UNBIT_ARRAY_STATE & BitArrayState)
                 }
 
                 // decode
-                m_RangeCoderInfo.range = (unsigned int) (m_RangeCoderInfo.range / nPivotValue);
-                int64 nBaseLower = m_RangeCoderInfo.low / m_RangeCoderInfo.range;
-                m_RangeCoderInfo.low -= (unsigned int) (m_RangeCoderInfo.range * nBaseLower);
+                m_RangeCoderInfo.range /= nPivotValue;
+                uint32 nBaseLower = m_RangeCoderInfo.low / m_RangeCoderInfo.range;
+                m_RangeCoderInfo.low = m_RangeCoderInfo.low % m_RangeCoderInfo.range;
 
                 nBase = nBaseLower;
             }
         }
 
         // build the value
-        nValue = nBase + (nOverflow * nPivotValue);
+        nValue = int64(nBase) + (int64(nOverflow) * nPivotValue);
     }
     else
     {
         // decode
-        int64 nRangeTotal = RangeDecodeFast(RANGE_OVERFLOW_SHIFT);
+        uint32 nRangeTotal = RangeDecodeFast(RANGE_OVERFLOW_SHIFT);
         if (nRangeTotal >= 65536)
             throw(ERROR_INVALID_INPUT_FILE);
 
         // lookup the symbol (must be a faster way than this)
-        int64 nOverflow = 0;
+        uint32 nOverflow = 0;
         while (nRangeTotal >= int(RANGE_TOTAL_1[nOverflow + 1])) { nOverflow++; }
         
         // update
@@ -231,7 +231,7 @@ int64 CUnBitArray::DecodeValueRange(UNBIT_ARRAY_STATE & BitArrayState)
         m_RangeCoderInfo.range = m_RangeCoderInfo.range * RANGE_WIDTH_1[nOverflow];
         
         // get the working k
-        int64 nTempK;
+        uint32 nTempK;
         if (nOverflow == (MODEL_ELEMENTS - 1))
         {
             nTempK = RangeDecodeFastWithUpdate(5);
@@ -248,9 +248,9 @@ int64 CUnBitArray::DecodeValueRange(UNBIT_ARRAY_STATE & BitArrayState)
             nValue = RangeDecodeFastWithUpdate(int(nTempK));
         }                    
         else
-        {    
-            int64 nX1 = RangeDecodeFastWithUpdate(16);
-            int64 nX2 = RangeDecodeFastWithUpdate(int(nTempK - 16));
+        {
+            uint32 nX1 = RangeDecodeFastWithUpdate(16);
+            uint32 nX2 = RangeDecodeFastWithUpdate(int(nTempK - 16));
             nValue = nX1 | (nX2 << 16);
         }
             

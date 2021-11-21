@@ -43,7 +43,7 @@ __declspec(dllexport) BOOL FAR PASCAL FilterUnderstandsFormat(LPSTR filename)
     CATCH_ERRORS
     (
         CSmartPtr<wchar_t> spUTF16(CAPECharacterHelper::GetUTF16FromANSI(filename), TRUE);
-        IAPEDecompress * pAPEDecompress = CreateIAPEDecompress(spUTF16, NULL, true);
+        IAPEDecompress * pAPEDecompress = CreateIAPEDecompress(spUTF16, NULL, true, true, false);
         if (pAPEDecompress != NULL)
         {
             bValid = TRUE;
