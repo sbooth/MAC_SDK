@@ -5,7 +5,7 @@
 namespace APE
 {
 
-int CPrepare::Prepare(const unsigned char * pRawData, int64 nBytes, const WAVEFORMATEX * pWaveFormatEx, int * pOutput, intn nFrameBlocks, unsigned int * pCRC, int * pSpecialCodes, intn * pPeakLevel)
+int CPrepare::Prepare(const unsigned char * pRawData, int nBytes, const WAVEFORMATEX * pWaveFormatEx, int * pOutput, int nFrameBlocks, unsigned int * pCRC, int * pSpecialCodes, int * pPeakLevel)
 {
     // error check the parameters
     if (pRawData == NULL || pWaveFormatEx == NULL)
@@ -17,7 +17,7 @@ int CPrepare::Prepare(const unsigned char * pRawData, int64 nBytes, const WAVEFO
 
     // variables
     uint32 CRC = 0xFFFFFFFF;
-    const int64 nTotalBlocks = nBytes / pWaveFormatEx->nBlockAlign;
+    const int nTotalBlocks = nBytes / pWaveFormatEx->nBlockAlign;
     int R,L;
 
     // calculate CRC
@@ -121,21 +121,13 @@ int CPrepare::Prepare(const unsigned char * pRawData, int64 nBytes, const WAVEFO
                     R |= (*pRawData++ << 0);
                     R |= (*pRawData++ << 8);
                     R |= (*pRawData++ << 16);
-
-                    if (R & 0x800000)
-                        R = (int)(R & 0x7FFFFF) - 0x800000;
-                    else
-                        R = (int)(R & 0x7FFFFF);
+                    R = (R << 8) >> 8;
 
                     L = 0;
                     L |= (*pRawData++ << 0);
                     L |= (*pRawData++ << 8);
                     L |= (*pRawData++ << 16);
-
-                    if (L & 0x800000)
-                        L = (int)(L & 0x7FFFFF) - 0x800000;
-                    else
-                        L = (int)(L & 0x7FFFFF);
+                    L = (L << 8) >> 8;
 
                     // check the peak
                     if (labs(L) > * pPeakLevel)
@@ -154,21 +146,13 @@ int CPrepare::Prepare(const unsigned char * pRawData, int64 nBytes, const WAVEFO
                     R |= (*pRawData++ << 0);
                     R |= (*pRawData++ << 8);
                     R |= (*pRawData++ << 16);
-
-                    if (R & 0x800000)
-                        R = (int)(R & 0x7FFFFF) - 0x800000;
-                    else
-                        R = (int)(R & 0x7FFFFF);
+                    R = (R << 8) >> 8;
 
                     L = 0;
                     L |= (*pRawData++ << 0);
                     L |= (*pRawData++ << 8);
                     L |= (*pRawData++ << 16);
-
-                    if (L & 0x800000)
-                        L = (int)(L & 0x7FFFFF) - 0x800000;
-                    else
-                        L = (int)(L & 0x7FFFFF);
+                    L = (L << 8) >> 8;
 
                     // check the peak
                     if (labs(L) > * pPeakLevel)
@@ -192,27 +176,19 @@ int CPrepare::Prepare(const unsigned char * pRawData, int64 nBytes, const WAVEFO
                     R |= (*pRawData++ << 0);
                     R |= (*pRawData++ << 8);
                     R |= (*pRawData++ << 16);
-
-                    if (R & 0x800000)
-                        R = (int)(R & 0x7FFFFF) - 0x800000;
-                    else
-                        R = (int)(R & 0x7FFFFF);
+                    R = (R << 8) >> 8;
 
                     L = 0;
                     L |= (*pRawData++ << 0);
                     L |= (*pRawData++ << 8);
                     L |= (*pRawData++ << 16);
+                    L = (L << 8) >> 8;
 
-                    if (L & 0x800000)
-                        L = (int)(L & 0x7FFFFF) - 0x800000;
-                    else
-                        L = (int)(L & 0x7FFFFF);
-                    
                     // check the peak
-                    if (labs(L) > * pPeakLevel)
-                        * pPeakLevel = labs(L);
-                    if (labs(R) > * pPeakLevel)
-                        * pPeakLevel = labs(R);
+                    if (labs(L) > *pPeakLevel)
+                        *pPeakLevel = labs(L);
+                    if (labs(R) > *pPeakLevel)
+                        *pPeakLevel = labs(R);
 
                     pOutput[(1 * nFrameBlocks) + nBlockIndex] = L - R;
                     pOutput[(0 * nFrameBlocks) + nBlockIndex] = R + (pOutput[(1 * nFrameBlocks) + nBlockIndex] / 2);
@@ -225,27 +201,19 @@ int CPrepare::Prepare(const unsigned char * pRawData, int64 nBytes, const WAVEFO
                     R |= (*pRawData++ << 0);
                     R |= (*pRawData++ << 8);
                     R |= (*pRawData++ << 16);
+                    R = (R << 8) >> 8;
 
-                    if (R & 0x800000)
-                        R = (int)(R & 0x7FFFFF) - 0x800000;
-                    else
-                        R = (int)(R & 0x7FFFFF);
-                    
                     L = 0;
                     L |= (*pRawData++ << 0);
                     L |= (*pRawData++ << 8);
                     L |= (*pRawData++ << 16);
-
-                    if (L & 0x800000)
-                        L = (int)(L & 0x7FFFFF) - 0x800000;
-                    else
-                        L = (int)(L & 0x7FFFFF);
+                    L = (L << 8) >> 8;
 
                     // check the peak
-                    if (labs(L) > * pPeakLevel)
-                        * pPeakLevel = labs(L);
-                    if (labs(R) > * pPeakLevel)
-                        * pPeakLevel = labs(R);
+                    if (labs(L) > *pPeakLevel)
+                        *pPeakLevel = labs(L);
+                    if (labs(R) > *pPeakLevel)
+                        *pPeakLevel = labs(R);
 
                     pOutput[(3 * nFrameBlocks) + nBlockIndex] = L;
                     pOutput[(2 * nFrameBlocks) + nBlockIndex] = R;
@@ -258,27 +226,19 @@ int CPrepare::Prepare(const unsigned char * pRawData, int64 nBytes, const WAVEFO
                     R |= (*pRawData++ << 0);
                     R |= (*pRawData++ << 8);
                     R |= (*pRawData++ << 16);
+                    R = (R << 8) >> 8;
 
-                    if (R & 0x800000)
-                        R = (int)(R & 0x7FFFFF) - 0x800000;
-                    else
-                        R = (int)(R & 0x7FFFFF);
-                    
                     L = 0;
                     L |= (*pRawData++ << 0);
                     L |= (*pRawData++ << 8);
                     L |= (*pRawData++ << 16);
-
-                    if (L & 0x800000)
-                        L = (int)(L & 0x7FFFFF) - 0x800000;
-                    else
-                        L = (int)(L & 0x7FFFFF);
+                    L = (L << 8) >> 8;
 
                     // check the peak
-                    if (labs(L) > * pPeakLevel)
-                        * pPeakLevel = labs(L);
-                    if (labs(R) > * pPeakLevel)
-                        * pPeakLevel = labs(R);
+                    if (labs(L) > *pPeakLevel)
+                        *pPeakLevel = labs(L);
+                    if (labs(R) > *pPeakLevel)
+                        *pPeakLevel = labs(R);
 
                     pOutput[(5 * nFrameBlocks) + nBlockIndex] = L - R;
                     pOutput[(4 * nFrameBlocks) + nBlockIndex] = R + (pOutput[(5 * nFrameBlocks) + nBlockIndex] / 2);
@@ -292,27 +252,19 @@ int CPrepare::Prepare(const unsigned char * pRawData, int64 nBytes, const WAVEFO
                     R |= (*pRawData++ << 0);
                     R |= (*pRawData++ << 8);
                     R |= (*pRawData++ << 16);
-
-                    if (R & 0x800000)
-                        R = (int)(R & 0x7FFFFF) - 0x800000;
-                    else
-                        R = (int)(R & 0x7FFFFF);
+                    R = (R << 8) >> 8;
 
                     L = 0;
                     L |= (*pRawData++ << 0);
                     L |= (*pRawData++ << 8);
                     L |= (*pRawData++ << 16);
-
-                    if (L & 0x800000)
-                        L = (int)(L & 0x7FFFFF) - 0x800000;
-                    else
-                        L = (int)(L & 0x7FFFFF);
+                    L = (L << 8) >> 8;
 
                     // check the peak
-                    if (labs(L) > * pPeakLevel)
-                        * pPeakLevel = labs(L);
-                    if (labs(R) > * pPeakLevel)
-                        * pPeakLevel = labs(R);
+                    if (labs(L) > *pPeakLevel)
+                        *pPeakLevel = labs(L);
+                    if (labs(R) > *pPeakLevel)
+                        *pPeakLevel = labs(R);
 
                     pOutput[(7 * nFrameBlocks) + nBlockIndex] = L - R;
                     pOutput[(6 * nFrameBlocks) + nBlockIndex] = R + (pOutput[(7 * nFrameBlocks) + nBlockIndex] / 2);
@@ -327,14 +279,10 @@ int CPrepare::Prepare(const unsigned char * pRawData, int64 nBytes, const WAVEFO
                     nValue |= (*pRawData++ << 0);
                     nValue |= (*pRawData++ << 8);
                     nValue |= (*pRawData++ << 16);
-
-                    if (nValue & 0x800000)
-                        nValue = (int)(nValue & 0x7FFFFF) - 0x800000;
-                    else
-                        nValue = (int)(nValue & 0x7FFFFF);
+                    nValue = (nValue << 8) >> 8;
 
                     // check the peak
-                    if (labs(nValue) > * pPeakLevel)
+                    if (labs(nValue) > *pPeakLevel)
                         *pPeakLevel = labs(nValue);
 
                     // convert to x,y
@@ -346,28 +294,18 @@ int CPrepare::Prepare(const unsigned char * pRawData, int64 nBytes, const WAVEFO
         {
             for (int nBlockIndex = 0; nBlockIndex < nTotalBlocks; nBlockIndex++) 
             {
-                uint32 nTemp = 0;
-                
-                nTemp |= (*pRawData++ << 0);
-                nTemp |= (*pRawData++ << 8);
-                nTemp |= (*pRawData++ << 16);
+                R = 0;
+                R |= (*pRawData++ << 0);
+                R |= (*pRawData++ << 8);
+                R |= (*pRawData++ << 16);
+                R = (R << 8) >> 8;
 
-                if (nTemp & 0x800000)
-                    R = (int) (nTemp & 0x7FFFFF) - 0x800000;
-                else
-                    R = (int) (nTemp & 0x7FFFFF);
-
-                nTemp = 0;
-
-                nTemp |= (*pRawData++ << 0);                
-                nTemp |= (*pRawData++ << 8);                
-                nTemp |= (*pRawData++ << 16);
+                L = 0;
+                L |= (*pRawData++ << 0);
+                L |= (*pRawData++ << 8);
+                L |= (*pRawData++ << 16);
+                L = (L << 8) >> 8;
                                 
-                if (nTemp & 0x800000)
-                    L = (int) (nTemp & 0x7FFFFF) - 0x800000;
-                else
-                    L = (int) (nTemp & 0x7FFFFF);
-
                 // check the peak
                 if (labs(L) > *pPeakLevel)
                     *pPeakLevel = labs(L);
@@ -383,16 +321,11 @@ int CPrepare::Prepare(const unsigned char * pRawData, int64 nBytes, const WAVEFO
         {
             for (int nBlockIndex = 0; nBlockIndex < nTotalBlocks; nBlockIndex++) 
             {
-                uint32 nTemp = 0;
-                
-                nTemp |= (*pRawData++ << 0);                
-                nTemp |= (*pRawData++ << 8);                
-                nTemp |= (*pRawData++ << 16);
-                
-                if (nTemp & 0x800000)
-                    R = (int) (nTemp & 0x7FFFFF) - 0x800000;
-                else
-                    R = (int) (nTemp & 0x7FFFFF);
+                R = 0;
+                R |= (*pRawData++ << 0);
+                R |= (*pRawData++ << 8);
+                R |= (*pRawData++ << 16);
+                R = (R << 8) >> 8;
     
                 // check the peak
                 if (labs(R) > *pPeakLevel)
@@ -400,6 +333,27 @@ int CPrepare::Prepare(const unsigned char * pRawData, int64 nBytes, const WAVEFO
 
                 // convert to x,y
                 pOutput[nBlockIndex] = R;
+            }
+        }
+        else
+        {
+            for (int nBlockIndex = 0; nBlockIndex < nTotalBlocks; nBlockIndex++)
+            {
+                for (int nChannel = 0; nChannel < pWaveFormatEx->nChannels; nChannel++)
+                {
+                    int nValue = 0;
+
+                    nValue |= (*pRawData++ << 0);
+                    nValue |= (*pRawData++ << 8);
+                    nValue |= (*pRawData++ << 16);
+                    nValue = (nValue << 8) >> 8;
+
+                    // check the peak
+                    if (labs(nValue) > *pPeakLevel)
+                        *pPeakLevel = labs(nValue);
+
+                    pOutput[(nChannel * nFrameBlocks) + nBlockIndex] = nValue;
+                }
             }
         }
     }
@@ -544,7 +498,7 @@ int CPrepare::Prepare(const unsigned char * pRawData, int64 nBytes, const WAVEFO
         {
             int LPeak = 0;
             int RPeak = 0;
-            int64 nBlockIndex = 0;
+            int nBlockIndex = 0;
             for (nBlockIndex = 0; nBlockIndex < nTotalBlocks; nBlockIndex++) 
             {
                 R = (int) *((int16 *) pRawData); pRawData += 2;
@@ -598,6 +552,22 @@ int CPrepare::Prepare(const unsigned char * pRawData, int64 nBytes, const WAVEFO
                 *pPeakLevel = nPeak;
             if (nPeak == 0) { *pSpecialCodes |= SPECIAL_FRAME_MONO_SILENCE; }
         }
+        else
+        {
+            for (int nBlockIndex = 0; nBlockIndex < nTotalBlocks; nBlockIndex++)
+            {
+                for (int nChannel = 0; nChannel < pWaveFormatEx->nChannels; nChannel++)
+                {
+                    R = (int) *((int16 *) pRawData); pRawData += 2;
+
+                    // check the peak
+                    if (labs(R) > *pPeakLevel)
+                        *pPeakLevel = labs(R);
+
+                    pOutput[(nChannel * nFrameBlocks) + nBlockIndex] = R;
+                }
+            }
+        }
     }
 
     CRC = CRC ^ 0xFFFFFFFF;
@@ -615,7 +585,7 @@ int CPrepare::Prepare(const unsigned char * pRawData, int64 nBytes, const WAVEFO
     return ERROR_SUCCESS;
 }
 
-void CPrepare::Unprepare(int64 * paryValues, const WAVEFORMATEX * pWaveFormatEx, unsigned char * pOutput)
+void CPrepare::Unprepare(int * paryValues, const WAVEFORMATEX * pWaveFormatEx, unsigned char * pOutput)
 {
     // decompress and convert from (x,y) -> (l,r)
     if (pWaveFormatEx->wBitsPerSample == 32)
@@ -649,17 +619,8 @@ void CPrepare::Unprepare(int64 * paryValues, const WAVEFORMATEX * pWaveFormatEx,
                     int nL = (int) (paryValues[0] - (paryValues[1] / 2));
                     int nR = nL + int(paryValues[1]);
 
-                    uint32 nTempL = 0;
-                    if (nL < 0)
-                        nTempL = ((uint32)(nL + 0x800000)) | 0x800000;
-                    else
-                        nTempL = (uint32)nL;
-
-                    uint32 nTempR = 0;
-                    if (nTempR < 0)
-                        nTempR = ((uint32)(nR + 0x800000)) | 0x800000;
-                    else
-                        nTempR = (uint32)nR;
+                    uint32 nTempL = (uint32) nL;
+                    uint32 nTempR = (uint32) nR;
 
                     *pOutput++ = (unsigned char)((nTempL >> 0) & 0xFF);
                     *pOutput++ = (unsigned char)((nTempL >> 8) & 0xFF);
@@ -675,17 +636,8 @@ void CPrepare::Unprepare(int64 * paryValues, const WAVEFORMATEX * pWaveFormatEx,
                     int nL = (int) (paryValues[2] - (paryValues[3] / 2));
                     int nR = nL + int(paryValues[3]);
 
-                    uint32 nTempL = 0;
-                    if (nL < 0)
-                        nTempL = ((uint32)(nL + 0x800000)) | 0x800000;
-                    else
-                        nTempL = (uint32)nL;
-
-                    uint32 nTempR = 0;
-                    if (nTempR < 0)
-                        nTempR = ((uint32)(nR + 0x800000)) | 0x800000;
-                    else
-                        nTempR = (uint32)nR;
+                    uint32 nTempL = (uint32) nL;
+                    uint32 nTempR = (uint32) nR;
 
                     *pOutput++ = (unsigned char)((nTempL >> 0) & 0xFF);
                     *pOutput++ = (unsigned char)((nTempL >> 8) & 0xFF);
@@ -703,17 +655,8 @@ void CPrepare::Unprepare(int64 * paryValues, const WAVEFORMATEX * pWaveFormatEx,
                     int nL = (int) (paryValues[0] - (paryValues[1] / 2));
                     int nR = (int) (nL + paryValues[1]);
 
-                    uint32 nTempL = 0;
-                    if (nL < 0)
-                        nTempL = ((uint32)(nL + 0x800000)) | 0x800000;
-                    else
-                        nTempL = (uint32)nL;
-
-                    uint32 nTempR = 0;
-                    if (nTempR < 0)
-                        nTempR = ((uint32)(nR + 0x800000)) | 0x800000;
-                    else
-                        nTempR = (uint32)nR;
+                    uint32 nTempL = (uint32) nL;
+                    uint32 nTempR = (uint32) nR;
 
                     *pOutput++ = (unsigned char)((nTempL >> 0) & 0xFF);
                     *pOutput++ = (unsigned char)((nTempL >> 8) & 0xFF);
@@ -729,17 +672,8 @@ void CPrepare::Unprepare(int64 * paryValues, const WAVEFORMATEX * pWaveFormatEx,
                     int nL = (int) paryValues[2];
                     int nR = (int) paryValues[3];
 
-                    uint32 nTempL = 0;
-                    if (nL < 0)
-                        nTempL = ((uint32)(nL + 0x800000)) | 0x800000;
-                    else
-                        nTempL = (uint32)nL;
-
-                    uint32 nTempR = 0;
-                    if (nTempR < 0)
-                        nTempR = ((uint32)(nR + 0x800000)) | 0x800000;
-                    else
-                        nTempR = (uint32)nR;
+                    uint32 nTempL = (uint32) nL;
+                    uint32 nTempR = (uint32) nR;
 
                     *pOutput++ = (unsigned char)((nTempL >> 0) & 0xFF);
                     *pOutput++ = (unsigned char)((nTempL >> 8) & 0xFF);
@@ -755,17 +689,8 @@ void CPrepare::Unprepare(int64 * paryValues, const WAVEFORMATEX * pWaveFormatEx,
                     int nL = (int) (paryValues[4] - (paryValues[5] / 2));
                     int nR = (int) (nL + paryValues[5]);
 
-                    uint32 nTempL = 0;
-                    if (nL < 0)
-                        nTempL = ((uint32)(nL + 0x800000)) | 0x800000;
-                    else
-                        nTempL = (uint32)nL;
-
-                    uint32 nTempR = 0;
-                    if (nTempR < 0)
-                        nTempR = ((uint32)(nR + 0x800000)) | 0x800000;
-                    else
-                        nTempR = (uint32)nR;
+                    uint32 nTempL = (uint32) nL;
+                    uint32 nTempR = (uint32) nR;
 
                     *pOutput++ = (unsigned char)((nTempL >> 0) & 0xFF);
                     *pOutput++ = (unsigned char)((nTempL >> 8) & 0xFF);
@@ -782,17 +707,8 @@ void CPrepare::Unprepare(int64 * paryValues, const WAVEFORMATEX * pWaveFormatEx,
                     int nL = (int) (paryValues[6] - (paryValues[7] / 2));
                     int nR = (int) (nL + paryValues[7]);
 
-                    uint32 nTempL = 0;
-                    if (nL < 0)
-                        nTempL = ((uint32)(nL + 0x800000)) | 0x800000;
-                    else
-                        nTempL = (uint32)nL;
-
-                    uint32 nTempR = 0;
-                    if (nTempR < 0)
-                        nTempR = ((uint32)(nR + 0x800000)) | 0x800000;
-                    else
-                        nTempR = (uint32)nR;
+                    uint32 nTempL = (uint32) nL;
+                    uint32 nTempR = (uint32) nR;
 
                     *pOutput++ = (unsigned char)((nTempL >> 0) & 0xFF);
                     *pOutput++ = (unsigned char)((nTempL >> 8) & 0xFF);
@@ -808,11 +724,7 @@ void CPrepare::Unprepare(int64 * paryValues, const WAVEFORMATEX * pWaveFormatEx,
                 {
                     int nValue = (int) paryValues[nChannel];
 
-                    uint32 nTemp = 0;
-                    if (nValue < 0)
-                        nTemp = ((uint32) (nValue + 0x800000)) | 0x800000;
-                    else
-                        nTemp = (uint32) nValue;
+                    uint32 nTemp = (uint32) nValue;
 
                     *pOutput++ = (unsigned char)((nTemp >> 0) & 0xFF);
                     *pOutput++ = (unsigned char)((nTemp >> 8) & 0xFF);
@@ -825,11 +737,7 @@ void CPrepare::Unprepare(int64 * paryValues, const WAVEFORMATEX * pWaveFormatEx,
                 {
                     int nValue = (int) paryValues[nChannel];
 
-                    uint32 nTemp = 0;
-                    if (nValue < 0)
-                        nTemp = ((uint32)(nValue + 0x800000)) | 0x800000;
-                    else
-                        nTemp = (uint32)nValue;
+                    uint32 nTemp = (uint32) nValue;
 
                     *pOutput++ = (unsigned char)((nTemp >> 0) & 0xFF);
                     *pOutput++ = (unsigned char)((nTemp >> 8) & 0xFF);
@@ -1044,7 +952,7 @@ void CPrepare::Unprepare(int64 * paryValues, const WAVEFORMATEX * pWaveFormatEx,
 
 #ifdef APE_BACKWARDS_COMPATIBILITY
 
-int CPrepare::UnprepareOld(int * pInputX, int * pInputY, intn nBlocks, const WAVEFORMATEX * pWaveFormatEx, unsigned char * pRawData, unsigned int * pCRC, int * pSpecialCodes, intn nFileVersion)
+int CPrepare::UnprepareOld(int * pInputX, int * pInputY, int nBlocks, const WAVEFORMATEX * pWaveFormatEx, unsigned char * pRawData, unsigned int * pCRC, int * pSpecialCodes, int nFileVersion)
 {
     // decompress and convert from (x,y) -> (l,r)
     if (pWaveFormatEx->nChannels == 2) 

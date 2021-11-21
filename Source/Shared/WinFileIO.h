@@ -28,6 +28,7 @@ public:
     
     // other functions
     int SetEOF();
+    int SetReadWholeFile();
 
     // creation / destruction
     int Create(const wchar_t * pName);
@@ -40,9 +41,12 @@ public:
 
 private:
     
-    HANDLE        m_hFile;
-    wchar_t        m_cFileName[MAX_PATH];
+    HANDLE      m_hFile;
+    wchar_t     m_cFileName[MAX_PATH];
     bool        m_bReadOnly;
+    bool        m_bWholeFile;
+    unsigned char * m_pWholeFile;
+    int64       m_nWholeFilePointer;
 };
 
 }

@@ -1,16 +1,24 @@
 #include "All.h"
 #include "APECompress.h"
 #include "NewPredictor.h"
-    
+#include "MACLib.h"
+
+#ifdef _MSC_VER
+    // disable warning of constant conditional expressions
+    #pragma warning( disable : 4127 )
+#endif
+
 namespace APE
 {
 
 /**************************************************************************************************
 CPredictorCompressNormal
 **************************************************************************************************/
-CPredictorCompressNormal::CPredictorCompressNormal(intn nCompressionLevel, intn nBitsPerSample)
+template <class INTTYPE> CPredictorCompressNormal<INTTYPE>::CPredictorCompressNormal(int nCompressionLevel, int nBitsPerSample)
     : IPredictorCompress(nCompressionLevel)
 {
+    m_nBitsPerSample = nBitsPerSample;
+
     if (nCompressionLevel == MAC_COMPRESSION_LEVEL_FAST)
     {
         m_pNNFilter = NULL;
@@ -19,27 +27,27 @@ CPredictorCompressNormal::CPredictorCompressNormal(intn nCompressionLevel, intn 
     }
     else if (nCompressionLevel == MAC_COMPRESSION_LEVEL_NORMAL)
     {
-        m_pNNFilter = new CNNFilter(16, 11, MAC_FILE_VERSION_NUMBER, (nBitsPerSample == 32), NULL);
+        m_pNNFilter = new CNNFilter<INTTYPE>(16, 11, MAC_FILE_VERSION_NUMBER);
         m_pNNFilter1 = NULL;
         m_pNNFilter2 = NULL;
     }
     else if (nCompressionLevel == MAC_COMPRESSION_LEVEL_HIGH)
     {
-        m_pNNFilter = new CNNFilter(64, 11, MAC_FILE_VERSION_NUMBER, (nBitsPerSample == 32), NULL);
+        m_pNNFilter = new CNNFilter<INTTYPE>(64, 11, MAC_FILE_VERSION_NUMBER);
         m_pNNFilter1 = NULL;
         m_pNNFilter2 = NULL;
     }
     else if (nCompressionLevel == MAC_COMPRESSION_LEVEL_EXTRA_HIGH)
     {
-        m_pNNFilter = new CNNFilter(256, 13, MAC_FILE_VERSION_NUMBER, (nBitsPerSample == 32), NULL);
-        m_pNNFilter1 = new CNNFilter(32, 10, MAC_FILE_VERSION_NUMBER, (nBitsPerSample == 32), NULL);
+        m_pNNFilter = new CNNFilter<INTTYPE>(256, 13, MAC_FILE_VERSION_NUMBER);
+        m_pNNFilter1 = new CNNFilter<INTTYPE>(32, 10, MAC_FILE_VERSION_NUMBER);
         m_pNNFilter2 = NULL;
     }
     else if (nCompressionLevel == MAC_COMPRESSION_LEVEL_INSANE)
     {
-        m_pNNFilter = new CNNFilter(1024 + 256, 15, MAC_FILE_VERSION_NUMBER, (nBitsPerSample == 32), NULL);
-        m_pNNFilter1 = new CNNFilter(256, 13, MAC_FILE_VERSION_NUMBER, (nBitsPerSample == 32), NULL);
-        m_pNNFilter2 = new CNNFilter(16, 11, MAC_FILE_VERSION_NUMBER, (nBitsPerSample == 32), NULL);
+        m_pNNFilter = new CNNFilter<INTTYPE>(1024 + 256, 15, MAC_FILE_VERSION_NUMBER);
+        m_pNNFilter1 = new CNNFilter<INTTYPE>(256, 13, MAC_FILE_VERSION_NUMBER);
+        m_pNNFilter2 = new CNNFilter<INTTYPE>(16, 11, MAC_FILE_VERSION_NUMBER);
     }
     else
     {
@@ -47,14 +55,14 @@ CPredictorCompressNormal::CPredictorCompressNormal(intn nCompressionLevel, intn 
     }
 }
 
-CPredictorCompressNormal::~CPredictorCompressNormal()
+template <class INTTYPE> CPredictorCompressNormal<INTTYPE>::~CPredictorCompressNormal()
 {
     SAFE_DELETE(m_pNNFilter)
     SAFE_DELETE(m_pNNFilter1)
     SAFE_DELETE(m_pNNFilter2)
 }
     
-int CPredictorCompressNormal::Flush()
+template <class INTTYPE> int CPredictorCompressNormal<INTTYPE>::Flush()
 {
     if (m_pNNFilter) m_pNNFilter->Flush();
     if (m_pNNFilter1) m_pNNFilter1->Flush();
@@ -66,7 +74,7 @@ int CPredictorCompressNormal::Flush()
 
     memset(m_aryM, 0, sizeof(m_aryM));
 
-    int64 * paryM = &m_aryM[8];
+    INTTYPE * paryM = &m_aryM[8];
     paryM[0] = 360;
     paryM[-1] = 317;
     paryM[-2] = -109;
@@ -77,7 +85,7 @@ int CPredictorCompressNormal::Flush()
     return ERROR_SUCCESS;
 }
 
-int64 CPredictorCompressNormal::CompressValue(int64 nA, int64 nB)
+template <class INTTYPE> int64 CPredictorCompressNormal<INTTYPE>::CompressValue(int _nA, int _nB)
 {
     // roll the buffers if necessary
     if (m_nCurrentIndex == WINDOW_BLOCKS)
@@ -87,8 +95,8 @@ int64 CPredictorCompressNormal::CompressValue(int64 nA, int64 nB)
     }
 
     // stage 1: simple, non-adaptive order 1 prediction
-    nA = m_Stage1FilterA.Compress(nA);
-    nB = m_Stage1FilterB.Compress(nB);
+    INTTYPE nA = m_Stage1FilterA.Compress(_nA);
+    INTTYPE nB = m_Stage1FilterB.Compress(_nB);
 
     // stage 2: adaptive offset filter(s)
     m_rbPrediction[0] = nA;
@@ -97,12 +105,23 @@ int64 CPredictorCompressNormal::CompressValue(int64 nA, int64 nB)
     m_rbPrediction[-5] = nB;
     m_rbPrediction[-6] = m_rbPrediction[-5] - m_rbPrediction[-6];
 
-    int64 * paryM = &m_aryM[8];
+    INTTYPE * paryM = &m_aryM[8];
+    INTTYPE nOutput;
 
-    int64 nPredictionA = (m_rbPrediction[-1] * paryM[0]) + (m_rbPrediction[-2] * paryM[-1]) + (m_rbPrediction[-3] * paryM[-2]) + (m_rbPrediction[-4] * paryM[-3]);
-    int64 nPredictionB = (m_rbPrediction[-5] * paryM[-4]) + (m_rbPrediction[-6] * paryM[-5]) + (m_rbPrediction[-7] * paryM[-6]) + (m_rbPrediction[-8] * paryM[-7]) + (m_rbPrediction[-9] * paryM[-8]);
+    if (sizeof(INTTYPE) == 8 || m_nBitsPerSample == 16)
+    {
+        INTTYPE nPredictionA = (m_rbPrediction[-1] * paryM[0]) + (m_rbPrediction[-2] * paryM[-1]) + (m_rbPrediction[-3] * paryM[-2]) + (m_rbPrediction[-4] * paryM[-3]);
+        INTTYPE nPredictionB = (m_rbPrediction[-5] * paryM[-4]) + (m_rbPrediction[-6] * paryM[-5]) + (m_rbPrediction[-7] * paryM[-6]) + (m_rbPrediction[-8] * paryM[-7]) + (m_rbPrediction[-9] * paryM[-8]);
 
-    int64 nOutput = nA - ((nPredictionA + (nPredictionB >> 1)) >> 10);
+        nOutput = nA - INTTYPE((nPredictionA + (nPredictionB >> 1)) >> 10);
+    }
+    else
+    {
+        int64 nPredictionA = (int64(m_rbPrediction[-1]) * paryM[0]) + (int64(m_rbPrediction[-2]) * paryM[-1]) + (int64(m_rbPrediction[-3]) * paryM[-2]) + (int64(m_rbPrediction[-4]) * paryM[-3]);
+        int64 nPredictionB = (int64(m_rbPrediction[-5]) * paryM[-4]) + (int64(m_rbPrediction[-6]) * paryM[-5]) + (int64(m_rbPrediction[-7]) * paryM[-6]) + (int64(m_rbPrediction[-8]) * paryM[-7]) + (int64(m_rbPrediction[-9]) * paryM[-8]);
+
+        nOutput = nA - INTTYPE((nPredictionA + (nPredictionB >> 1)) >> 10);
+    }
 
     // adapt
     m_rbAdapt[0] = (m_rbPrediction[-1]) ? ((m_rbPrediction[-1] >> 30) & 2) - 1 : 0;
@@ -112,12 +131,12 @@ int64 CPredictorCompressNormal::CompressValue(int64 nA, int64 nB)
 
     if (nOutput > 0) 
     {
-        int64 * pM = &paryM[-8]; int64 * pAdapt = &m_rbAdapt[-8];
+        INTTYPE * pM = &paryM[-8]; INTTYPE * pAdapt = &m_rbAdapt[-8];
         EXPAND_9_TIMES(*pM++ -= *pAdapt++;)
     }
     else if (nOutput < 0) 
     {
-        int64 * pM = &paryM[-8]; int64 * pAdapt = &m_rbAdapt[-8];
+        INTTYPE * pM = &paryM[-8]; INTTYPE * pAdapt = &m_rbAdapt[-8];
         EXPAND_9_TIMES(*pM++ += *pAdapt++;)
     }
 
@@ -141,13 +160,16 @@ int64 CPredictorCompressNormal::CompressValue(int64 nA, int64 nB)
     return nOutput;
 }
 
+template class CPredictorCompressNormal<int>;
+template class CPredictorCompressNormal<int64>;
+
 /**************************************************************************************************
 CPredictorDecompressNormal3930to3950
 **************************************************************************************************/
-CPredictorDecompressNormal3930to3950::CPredictorDecompressNormal3930to3950(intn nCompressionLevel, intn nVersion)
+CPredictorDecompressNormal3930to3950::CPredictorDecompressNormal3930to3950(int nCompressionLevel, int nVersion)
     : IPredictorDecompress(nCompressionLevel, nVersion)
 {
-    m_pBuffer[0] = new int64 [HISTORY_ELEMENTS + WINDOW_BLOCKS];
+    m_pBuffer[0] = new int [HISTORY_ELEMENTS + WINDOW_BLOCKS];
 
     if (nCompressionLevel == MAC_COMPRESSION_LEVEL_FAST)
     {
@@ -156,18 +178,18 @@ CPredictorDecompressNormal3930to3950::CPredictorDecompressNormal3930to3950(intn 
     }
     else if (nCompressionLevel == MAC_COMPRESSION_LEVEL_NORMAL)
     {
-        m_pNNFilter = new CNNFilter(16, 11, nVersion, false, NULL);
+        m_pNNFilter = new CNNFilter<int>(16, 11, nVersion);
         m_pNNFilter1 = NULL;
     }
     else if (nCompressionLevel == MAC_COMPRESSION_LEVEL_HIGH)
     {
-        m_pNNFilter = new CNNFilter(64, 11, nVersion, false, NULL);
+        m_pNNFilter = new CNNFilter<int>(64, 11, nVersion);
         m_pNNFilter1 = NULL;
     }
     else if (nCompressionLevel == MAC_COMPRESSION_LEVEL_EXTRA_HIGH)
     {
-        m_pNNFilter = new CNNFilter(256, 13, nVersion, false, NULL);
-        m_pNNFilter1 = new CNNFilter(32, 10, nVersion, false, NULL);
+        m_pNNFilter = new CNNFilter<int>(256, 13, nVersion);
+        m_pNNFilter1 = new CNNFilter<int>(32, 10, nVersion);
     }
     else
     {
@@ -187,8 +209,8 @@ int CPredictorDecompressNormal3930to3950::Flush()
     if (m_pNNFilter) m_pNNFilter->Flush();
     if (m_pNNFilter1) m_pNNFilter1->Flush();
 
-    ZeroMemory(m_pBuffer[0], (HISTORY_ELEMENTS + 1) * sizeof(int64));    
-    ZeroMemory(&m_aryM[0], M_COUNT * sizeof(int64));
+    ZeroMemory(m_pBuffer[0], (HISTORY_ELEMENTS + 1) * sizeof(int));    
+    ZeroMemory(&m_aryM[0], M_COUNT * sizeof(int));
 
     m_aryM[0] = 360;
     m_aryM[1] = 317;
@@ -203,7 +225,7 @@ int CPredictorDecompressNormal3930to3950::Flush()
     return ERROR_SUCCESS;
 }
 
-int64 CPredictorDecompressNormal3930to3950::DecompressValue(int64 nInput, int64)
+int CPredictorDecompressNormal3930to3950::DecompressValue(int64 _nInput, int64)
 {
     if (m_nCurrentIndex == WINDOW_BLOCKS)
     {
@@ -214,6 +236,8 @@ int64 CPredictorDecompressNormal3930to3950::DecompressValue(int64 nInput, int64)
         m_nCurrentIndex = 0;
     }
 
+    int nInput = int(_nInput);
+
     // stage 2: NNFilter
     if (m_pNNFilter1)
         nInput = m_pNNFilter1->Decompress(nInput);
@@ -221,10 +245,10 @@ int64 CPredictorDecompressNormal3930to3950::DecompressValue(int64 nInput, int64)
         nInput = m_pNNFilter->Decompress(nInput);
 
     // stage 1: multiple predictors (order 2 and offset 1)
-    int64 p1 = m_pInputBuffer[-1];
-    int64 p2 = m_pInputBuffer[-1] - m_pInputBuffer[-2];
-    int64 p3 = m_pInputBuffer[-2] - m_pInputBuffer[-3];
-    int64 p4 = m_pInputBuffer[-3] - m_pInputBuffer[-4];
+    int p1 = m_pInputBuffer[-1];
+    int p2 = m_pInputBuffer[-1] - m_pInputBuffer[-2];
+    int p3 = m_pInputBuffer[-2] - m_pInputBuffer[-3];
+    int p4 = m_pInputBuffer[-3] - m_pInputBuffer[-4];
     
     m_pInputBuffer[0] = nInput + (((p1 * m_aryM[0]) + (p2 * m_aryM[1]) + (p3 * m_aryM[2]) + (p4 * m_aryM[3])) >> 9);
     
@@ -243,7 +267,7 @@ int64 CPredictorDecompressNormal3930to3950::DecompressValue(int64 nInput, int64)
         m_aryM[3] += ((p4 >> 30) & 2) - 1;
     }
 
-    int64 nResult = m_pInputBuffer[0] + ((m_nLastValue * 31) >> 5);
+    int nResult = m_pInputBuffer[0] + ((m_nLastValue * 31) >> 5);
     m_nLastValue = nResult;
 
     m_nCurrentIndex++;
@@ -255,10 +279,11 @@ int64 CPredictorDecompressNormal3930to3950::DecompressValue(int64 nInput, int64)
 /**************************************************************************************************
 CPredictorDecompress3950toCurrent
 **************************************************************************************************/
-CPredictorDecompress3950toCurrent::CPredictorDecompress3950toCurrent(intn nCompressionLevel, intn nVersion, intn nBitsPerSample)
+template <class INTTYPE> CPredictorDecompress3950toCurrent<INTTYPE>::CPredictorDecompress3950toCurrent(int nCompressionLevel, int nVersion, int nBitsPerSample)
     : IPredictorDecompress(nCompressionLevel, nVersion)
 {
     m_nVersion = nVersion;
+    m_nBitsPerSample = nBitsPerSample;
     m_bLegacyDecode = false;
 
     if (nCompressionLevel == MAC_COMPRESSION_LEVEL_FAST)
@@ -269,27 +294,27 @@ CPredictorDecompress3950toCurrent::CPredictorDecompress3950toCurrent(intn nCompr
     }
     else if (nCompressionLevel == MAC_COMPRESSION_LEVEL_NORMAL)
     {
-        m_pNNFilter = new CNNFilter(16, 11, nVersion, (nBitsPerSample == 32), this);
+        m_pNNFilter = new CNNFilter<INTTYPE>(16, 11, nVersion);
         m_pNNFilter1 = NULL;
         m_pNNFilter2 = NULL;
     }
     else if (nCompressionLevel == MAC_COMPRESSION_LEVEL_HIGH)
     {
-        m_pNNFilter = new CNNFilter(64, 11, nVersion, (nBitsPerSample == 32), this);
+        m_pNNFilter = new CNNFilter<INTTYPE>(64, 11, nVersion);
         m_pNNFilter1 = NULL;
         m_pNNFilter2 = NULL;
     }
     else if (nCompressionLevel == MAC_COMPRESSION_LEVEL_EXTRA_HIGH)
     {
-        m_pNNFilter = new CNNFilter(256, 13, nVersion, (nBitsPerSample == 32), this);
-        m_pNNFilter1 = new CNNFilter(32, 10, nVersion, (nBitsPerSample == 32), this);
+        m_pNNFilter = new CNNFilter<INTTYPE>(256, 13, nVersion);
+        m_pNNFilter1 = new CNNFilter<INTTYPE>(32, 10, nVersion);
         m_pNNFilter2 = NULL;
     }
     else if (nCompressionLevel == MAC_COMPRESSION_LEVEL_INSANE)
     {
-        m_pNNFilter = new CNNFilter(1024 + 256, 15, MAC_FILE_VERSION_NUMBER, (nBitsPerSample == 32), this);
-        m_pNNFilter1 = new CNNFilter(256, 13, MAC_FILE_VERSION_NUMBER, (nBitsPerSample == 32), this);
-        m_pNNFilter2 = new CNNFilter(16, 11, MAC_FILE_VERSION_NUMBER, (nBitsPerSample == 32), this);
+        m_pNNFilter = new CNNFilter<INTTYPE>(1024 + 256, 15, nVersion);
+        m_pNNFilter1 = new CNNFilter<INTTYPE>(256, 13, nVersion);
+        m_pNNFilter2 = new CNNFilter<INTTYPE>(16, 11, nVersion);
     }
     else
     {
@@ -297,14 +322,23 @@ CPredictorDecompress3950toCurrent::CPredictorDecompress3950toCurrent(intn nCompr
     }
 }
 
-CPredictorDecompress3950toCurrent::~CPredictorDecompress3950toCurrent()
+template <class INTTYPE> CPredictorDecompress3950toCurrent<INTTYPE>::~CPredictorDecompress3950toCurrent()
 {
     SAFE_DELETE(m_pNNFilter)
     SAFE_DELETE(m_pNNFilter1)
     SAFE_DELETE(m_pNNFilter2)
 }
-    
-int CPredictorDecompress3950toCurrent::Flush()
+
+template <class INTTYPE> void CPredictorDecompress3950toCurrent<INTTYPE>::SetLegacyDecode(bool bSet)
+{
+    m_bLegacyDecode = bSet;
+
+    if (m_pNNFilter) m_pNNFilter->SetLegacyDecode(bSet);
+    if (m_pNNFilter1) m_pNNFilter1->SetLegacyDecode(bSet);
+    if (m_pNNFilter2) m_pNNFilter2->SetLegacyDecode(bSet);
+}
+
+template <class INTTYPE> int CPredictorDecompress3950toCurrent<INTTYPE>::Flush()
 {
     if (m_pNNFilter) m_pNNFilter->Flush();
     if (m_pNNFilter1) m_pNNFilter1->Flush();
@@ -333,7 +367,7 @@ int CPredictorDecompress3950toCurrent::Flush()
     return ERROR_SUCCESS;
 }
 
-int64 CPredictorDecompress3950toCurrent::DecompressValue(int64 nA, int64 nB)
+template <class INTTYPE> int CPredictorDecompress3950toCurrent<INTTYPE>::DecompressValue(int64 _nA, int64 _nB)
 {
     if (m_nCurrentIndex == WINDOW_BLOCKS)
     {
@@ -343,6 +377,9 @@ int64 CPredictorDecompress3950toCurrent::DecompressValue(int64 nA, int64 nB)
 
         m_nCurrentIndex = 0;
     }
+
+    INTTYPE nA = INTTYPE(_nA);
+    INTTYPE nB = INTTYPE(_nB);
 
     // stage 2: NNFilter
     if (m_pNNFilter2)
@@ -356,16 +393,27 @@ int64 CPredictorDecompress3950toCurrent::DecompressValue(int64 nA, int64 nB)
     m_rbPredictionA[0] = m_nLastValueA;
     m_rbPredictionA[-1] = m_rbPredictionA[0] - m_rbPredictionA[-1];
     
-    m_rbPredictionB[0] = m_Stage1FilterB.Compress(nB);
+    m_rbPredictionB[0] = m_Stage1FilterB.Compress(int32(nB));
     m_rbPredictionB[-1] = m_rbPredictionB[0] - m_rbPredictionB[-1];
 
-    int64 nPredictionA = (m_rbPredictionA[0] * m_aryMA[0]) + (m_rbPredictionA[-1] * m_aryMA[1]) + (m_rbPredictionA[-2] * m_aryMA[2]) + (m_rbPredictionA[-3] * m_aryMA[3]);
-    int64 nPredictionB = (m_rbPredictionB[0] * m_aryMB[0]) + (m_rbPredictionB[-1] * m_aryMB[1]) + (m_rbPredictionB[-2] * m_aryMB[2]) + (m_rbPredictionB[-3] * m_aryMB[3]) + (m_rbPredictionB[-4] * m_aryMB[4]);
+    INTTYPE nCurrentA;
 
-    int64 nCurrentA = nA + ((nPredictionA + (nPredictionB >> 1)) >> 10);
-    if (m_bLegacyDecode)
+    if (sizeof(INTTYPE) == 8 || m_nBitsPerSample == 16)
     {
-        nCurrentA = int(nA) + ((int(nPredictionA) + (int(nPredictionB) >> 1)) >> 10);
+        INTTYPE nPredictionA = (m_rbPredictionA[0] * m_aryMA[0]) + (m_rbPredictionA[-1] * m_aryMA[1]) + (m_rbPredictionA[-2] * m_aryMA[2]) + (m_rbPredictionA[-3] * m_aryMA[3]);
+        INTTYPE nPredictionB = (m_rbPredictionB[0] * m_aryMB[0]) + (m_rbPredictionB[-1] * m_aryMB[1]) + (m_rbPredictionB[-2] * m_aryMB[2]) + (m_rbPredictionB[-3] * m_aryMB[3]) + (m_rbPredictionB[-4] * m_aryMB[4]);
+
+        nCurrentA = nA + ((nPredictionA + (nPredictionB >> 1)) >> 10);
+    }
+    else
+    {
+        int64 nPredictionA = (int64(m_rbPredictionA[0]) * m_aryMA[0]) + (int64(m_rbPredictionA[-1]) * m_aryMA[1]) + (int64(m_rbPredictionA[-2]) * m_aryMA[2]) + (int64(m_rbPredictionA[-3]) * m_aryMA[3]);
+        int64 nPredictionB = (int64(m_rbPredictionB[0]) * m_aryMB[0]) + (int64(m_rbPredictionB[-1]) * m_aryMB[1]) + (int64(m_rbPredictionB[-2]) * m_aryMB[2]) + (int64(m_rbPredictionB[-3]) * m_aryMB[3]) + (int64(m_rbPredictionB[-4]) * m_aryMB[4]);
+
+        if (m_bLegacyDecode)
+            nCurrentA = nA + INTTYPE((int(nPredictionA) + (int(nPredictionB) >> 1)) >> 10);
+        else
+            nCurrentA = nA + INTTYPE((nPredictionA + (nPredictionB >> 1)) >> 10);
     }
 
     m_rbAdaptA[0] = (m_rbPredictionA[0]) ? ((m_rbPredictionA[0] >> 30) & 2) - 1 : 0;
@@ -401,7 +449,7 @@ int64 CPredictorDecompress3950toCurrent::DecompressValue(int64 nA, int64 nB)
         m_aryMB[4] += m_rbAdaptB[-4];
     }
 
-    int64 nResult = m_Stage1FilterA.Decompress(nCurrentA);
+    int nResult = m_Stage1FilterA.Decompress(nCurrentA);
     m_nLastValueA = nCurrentA;
     
     m_rbPredictionA.IncrementFast(); m_rbPredictionB.IncrementFast();
@@ -411,4 +459,8 @@ int64 CPredictorDecompress3950toCurrent::DecompressValue(int64 nA, int64 nB)
 
     return nResult;
 }
+
+template class CPredictorDecompress3950toCurrent<int>;
+template class CPredictorDecompress3950toCurrent<int64>;
+
 }

@@ -110,7 +110,7 @@ uint32 CUnBitArrayOld::Get_K(uint32 x)
     return k;    
 }
 
-uint64 CUnBitArrayOld::DecodeValue(DECODE_VALUE_METHOD DecodeMethod, int nParam1, int nParam2)
+uint32 CUnBitArrayOld::DecodeValue(DECODE_VALUE_METHOD DecodeMethod, int nParam1, int nParam2)
 {
     switch (DecodeMethod)
     {
@@ -128,7 +128,7 @@ uint64 CUnBitArrayOld::DecodeValue(DECODE_VALUE_METHOD DecodeMethod, int nParam1
 ////////////////////////////////////////////////////////////////////////////////////
 // Generates an array from the m_nCurrentBitIndexarray
 ////////////////////////////////////////////////////////////////////////////////////
-void CUnBitArrayOld::GenerateArrayOld(int* Output_Array, uint32 Number_of_Elements, int Minimum_nCurrentBitIndex_Array_Bytes)
+void CUnBitArrayOld::GenerateArrayOld(int * Output_Array, uint32 Number_of_Elements, int Minimum_nCurrentBitIndex_Array_Bytes)
 {
     // variable declarations
     uint32 K_Sum;

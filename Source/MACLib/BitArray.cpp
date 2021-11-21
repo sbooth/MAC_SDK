@@ -220,9 +220,9 @@ int CBitArray::EncodeValue(int64 nEncode, BIT_ARRAY_STATE & BitArrayState)
     nEncode = (nEncode > 0) ? nEncode * 2 - 1 : -nEncode * 2;
 
     // figure the pivot value
-    int64 nPivotValue = ape_max(BitArrayState.nKSum / 32, (uint32)1);
-    int64 nOverflow = nEncode / nPivotValue;
-    int64 nBase = nEncode - (nOverflow * nPivotValue);
+    uint32 nPivotValue = ape_max(BitArrayState.nKSum / 32, (uint32)1);
+    uint32 nOverflow = uint32(nEncode / nPivotValue);
+    uint32 nBase = uint32(nEncode - (nOverflow * nPivotValue));
 
     // update nKSum
     BitArrayState.nKSum += (uint32) (((nEncode + 1) / 2) - ((BitArrayState.nKSum + 16) >> 5));
@@ -256,9 +256,9 @@ int CBitArray::EncodeValue(int64 nEncode, BIT_ARRAY_STATE & BitArrayState)
     {
         if (nPivotValue >= (1 << 16))
         {
-            int64 nPivotValueBits = 0;
+            uint32 nPivotValueBits = 0;
             while ((nPivotValue >> nPivotValueBits) > 0) { nPivotValueBits++; }
-            int64 nSplitFactor = int64(1) << int64(nPivotValueBits - 16);
+            uint32 nSplitFactor = 1 << (nPivotValueBits - 16);
 
             // we know that base is smaller than pivot coming into this
             // however, after we divide both by an integer, they could be the same
@@ -267,32 +267,32 @@ int CBitArray::EncodeValue(int64 nEncode, BIT_ARRAY_STATE & BitArrayState)
             // that gets one added to it
 
             // encode the pivot as two pieces
-            int64 nPivotValueA = (nPivotValue / nSplitFactor) + 1;
-            int64 nPivotValueB = nSplitFactor;
+            uint32 nPivotValueA = (nPivotValue / nSplitFactor) + 1;
+            uint32 nPivotValueB = nSplitFactor;
 
-            int64 nBaseA = nBase / nSplitFactor;
-            int64 nBaseB = nBase % nSplitFactor;
+            uint32 nBaseA = nBase / nSplitFactor;
+            uint32 nBaseB = nBase % nSplitFactor;
 
             {
                 NORMALIZE_RANGE_CODER
-                const int64 nTemp = m_RangeCoderInfo.range / nPivotValueA;
-                m_RangeCoderInfo.range = (unsigned int) nTemp;
-                m_RangeCoderInfo.low += (unsigned int) (nTemp * nBaseA);
+                const uint32 nTemp = m_RangeCoderInfo.range / nPivotValueA;
+                m_RangeCoderInfo.range = nTemp;
+                m_RangeCoderInfo.low += nTemp * nBaseA;
             }
 
             {
                 NORMALIZE_RANGE_CODER
-                const int64 nTemp = m_RangeCoderInfo.range / nPivotValueB;
-                m_RangeCoderInfo.range = (unsigned int) nTemp;
-                m_RangeCoderInfo.low += (unsigned int) (nTemp * nBaseB);
+                const uint32 nTemp = m_RangeCoderInfo.range / nPivotValueB;
+                m_RangeCoderInfo.range = nTemp;
+                m_RangeCoderInfo.low += nTemp * nBaseB;
             }
         }
         else
         {
             NORMALIZE_RANGE_CODER
-            const int64 nTemp = m_RangeCoderInfo.range / nPivotValue;
-            m_RangeCoderInfo.range = (unsigned int) nTemp;
-            m_RangeCoderInfo.low += (unsigned int) (nTemp * nBase);
+            const uint32 nTemp = m_RangeCoderInfo.range / nPivotValue;
+            m_RangeCoderInfo.range = nTemp;
+            m_RangeCoderInfo.low += nTemp * nBase;
         }
     }
 

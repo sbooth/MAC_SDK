@@ -26,7 +26,7 @@ CAPEDecompress::CAPEDecompress(int * pErrorCode, CAPEInfo * pAPEInfo, int64 nSta
 
     // get format information
     GetInfo(APE_INFO_WAVEFORMATEX, (int64) &m_wfeInput);
-    m_nBlockAlign = GetInfo(APE_INFO_BLOCK_ALIGN);
+    m_nBlockAlign = (int) GetInfo(APE_INFO_BLOCK_ALIGN);
 
     // initialize other stuff
     m_bDecompressorInitialized = false;
@@ -48,7 +48,7 @@ CAPEDecompress::CAPEDecompress(int * pErrorCode, CAPEInfo * pAPEInfo, int64 nSta
     m_bIsRanged = (m_nStartBlock != 0) || (m_nFinishBlock != GetInfo(APE_INFO_TOTAL_BLOCKS));
 
     // channel data
-    m_paryChannelData = new int64 [32];
+    m_paryChannelData = new int [32];
 
     // predictors
     memset(m_aryPredictor, 0, sizeof(m_aryPredictor));
@@ -78,7 +78,7 @@ int CAPEDecompress::InitializeDecompressor()
         return ERROR_INVALID_INPUT_FILE;
 
     // create a frame buffer
-    m_cbFrameBuffer.CreateBuffer((GetInfo(APE_INFO_BLOCKS_PER_FRAME) + DECODE_BLOCK_SIZE) * m_nBlockAlign, m_nBlockAlign * 64);
+    m_cbFrameBuffer.CreateBuffer(int(GetInfo(APE_INFO_BLOCKS_PER_FRAME) + DECODE_BLOCK_SIZE) * m_nBlockAlign, m_nBlockAlign * 64);
     
     // create decoding components
     m_spUnBitArray.Assign((CUnBitArrayBase *) CreateUnBitArray(this, (int) GetInfo(APE_INFO_FILE_VERSION)));
@@ -86,17 +86,18 @@ int CAPEDecompress::InitializeDecompressor()
         return ERROR_UNSUPPORTED_FILE_VERSION;
 
     // create the predictors
-    int64 nChannels = ape_min(ape_max(GetInfo(APE_INFO_CHANNELS), 1), 32);
-    if (GetInfo(APE_INFO_FILE_VERSION) >= 3950)
-    {
-        for (int64 nChannel = 0; nChannel < nChannels; nChannel++)
-            m_aryPredictor[nChannel] = new CPredictorDecompress3950toCurrent((intn) GetInfo(APE_INFO_COMPRESSION_LEVEL), (intn) GetInfo(APE_INFO_FILE_VERSION), (intn) GetInfo(APE_INFO_BITS_PER_SAMPLE));
-    }
-    else
-    {
-        for (int64 nChannel = 0; nChannel < nChannels; nChannel++)
-            m_aryPredictor[nChannel] = new CPredictorDecompressNormal3930to3950((intn) GetInfo(APE_INFO_COMPRESSION_LEVEL), (intn) GetInfo(APE_INFO_FILE_VERSION));
-    }
+    int nChannels = ape_min(ape_max((int) GetInfo(APE_INFO_CHANNELS), 1), 32);
+    int nCompressionLevel = (int) GetInfo(APE_INFO_COMPRESSION_LEVEL);
+    int nVersion = (int) GetInfo(APE_INFO_FILE_VERSION);
+    int nBitsPerSample = (int) GetInfo(APE_INFO_BITS_PER_SAMPLE);
+    for (int nChannel = 0; nChannel < nChannels; nChannel++)
+        if (nVersion >= 3950)
+            if (nBitsPerSample < 32)
+                m_aryPredictor[nChannel] = new CPredictorDecompress3950toCurrent<int>(nCompressionLevel, nVersion, nBitsPerSample);
+            else
+                m_aryPredictor[nChannel] = new CPredictorDecompress3950toCurrent<int64>(nCompressionLevel, nVersion, nBitsPerSample);
+        else
+            m_aryPredictor[nChannel] = new CPredictorDecompressNormal3930to3950(nCompressionLevel, nVersion);
     
     // seek to the beginning
     return Seek(0);
@@ -116,7 +117,7 @@ int CAPEDecompress::GetData(char * pBuffer, int64 nBlocks, int64 * pBlocksRetrie
     
     // get the data
     unsigned char * pOutputBuffer = (unsigned char *) pBuffer;
-    int64 nBlocksLeft = nBlocksToRetrieve; int64 nBlocksThisPass = 1;
+    int64 nBlocksLeft = nBlocksToRetrieve; int nBlocksThisPass = 1;
     while ((nBlocksLeft > 0) && (nBlocksThisPass > 0))
     {
         // fill up the frame buffer
@@ -126,7 +127,7 @@ int CAPEDecompress::GetData(char * pBuffer, int64 nBlocks, int64 * pBlocksRetrie
 
         // analyze how much to remove from the buffer
         const int64 nFrameBufferBlocks = ape_min(m_nFrameBufferFinishedBlocks, m_cbFrameBuffer.MaxGet() / m_nBlockAlign);
-        nBlocksThisPass = ape_min(nBlocksLeft, nFrameBufferBlocks);
+        nBlocksThisPass = (int) ape_min(nBlocksLeft, nFrameBufferBlocks);
 
         // remove as much as possible
         if (nBlocksThisPass > 0)
@@ -251,14 +252,14 @@ int CAPEDecompress::FillFrameBuffer()
         // handle errors (either mid-frame or from a CRC at the end of the frame)
         if (m_bErrorDecodingCurrentFrame)
         {
-            int64 nFrameBlocksDecoded = 0;
+            int nFrameBlocksDecoded = 0;
             if (bEndedFrame)
             {   
                 // remove the frame buffer blocks that have been marked as good
                 m_nFrameBufferFinishedBlocks -= GetInfo(APE_INFO_FRAME_BLOCKS, m_nCurrentFrame - 1);
                 
                 // assume that the frame buffer contains the correct number of blocks for the entire frame
-                nFrameBlocksDecoded = GetInfo(APE_INFO_FRAME_BLOCKS, m_nCurrentFrame - 1);
+                nFrameBlocksDecoded = (int) GetInfo(APE_INFO_FRAME_BLOCKS, m_nCurrentFrame - 1);
             }
             else
             {
@@ -266,11 +267,11 @@ int CAPEDecompress::FillFrameBuffer()
                 m_nCurrentFrame++;
 
                 // calculate how many blocks were output before we errored
-                nFrameBlocksDecoded = m_nCurrentFrameBufferBlock - (GetInfo(APE_INFO_BLOCKS_PER_FRAME) * (m_nCurrentFrame - 1));
+                nFrameBlocksDecoded = (int) (m_nCurrentFrameBufferBlock - (GetInfo(APE_INFO_BLOCKS_PER_FRAME) * (m_nCurrentFrame - 1)));
             }
 
             // remove any decoded data for this frame from the buffer
-            int64 nFrameBytesDecoded = nFrameBlocksDecoded * m_nBlockAlign;
+            int nFrameBytesDecoded = nFrameBlocksDecoded * m_nBlockAlign;
             m_cbFrameBuffer.RemoveTail(nFrameBytesDecoded);
 
             // seek to try to synchronize after an error
@@ -312,8 +313,8 @@ int CAPEDecompress::FillFrameBuffer()
 void CAPEDecompress::DecodeBlocksToFrameBuffer(int64 nBlocks)
 {
     // decode the samples
-    int64 nBlocksProcessed = 0;
-    int64 nFrameBufferBytes = m_cbFrameBuffer.MaxGet();
+    int nBlocksProcessed = 0;
+    int nFrameBufferBytes = m_cbFrameBuffer.MaxGet();
 
     try
     {
@@ -324,7 +325,7 @@ void CAPEDecompress::DecodeBlocksToFrameBuffer(int64 nBlocks)
                 for (int nChannel = 0; nChannel < m_wfeInput.nChannels; nChannel++)
                 {
                     int64 nValue = m_spUnBitArray->DecodeValueRange(m_aryBitArrayStates[nChannel]);
-                    int64 nValue2 = m_aryPredictor[nChannel]->DecompressValue(nValue, 0);
+                    int nValue2 = m_aryPredictor[nChannel]->DecompressValue(nValue, 0);
                     m_paryChannelData[nChannel] = nValue2;
                 }
                 m_Prepare.Unprepare(m_paryChannelData, &m_wfeInput, m_cbFrameBuffer.GetDirectWritePointer());
@@ -338,7 +339,7 @@ void CAPEDecompress::DecodeBlocksToFrameBuffer(int64 nBlocks)
             {
                 for (nBlocksProcessed = 0; nBlocksProcessed < nBlocks; nBlocksProcessed++)
                 {
-                    int64 aryValues[2] = { 0, 0 };
+                    int aryValues[2] = { 0, 0 };
                     m_Prepare.Unprepare(aryValues, &m_wfeInput, m_cbFrameBuffer.GetDirectWritePointer());
                     m_cbFrameBuffer.UpdateAfterDirectWrite(m_nBlockAlign);
                 }
@@ -347,7 +348,7 @@ void CAPEDecompress::DecodeBlocksToFrameBuffer(int64 nBlocks)
             {
                 for (nBlocksProcessed = 0; nBlocksProcessed < nBlocks; nBlocksProcessed++)
                 {
-                    int64 aryValues[2] = { m_aryPredictor[0]->DecompressValue(m_spUnBitArray->DecodeValueRange(m_aryBitArrayStates[0])), 0 };
+                    int aryValues[2] = { m_aryPredictor[0]->DecompressValue(m_spUnBitArray->DecodeValueRange(m_aryBitArrayStates[0])), 0 };
 
                     m_Prepare.Unprepare(aryValues, &m_wfeInput, m_cbFrameBuffer.GetDirectWritePointer());
                     m_cbFrameBuffer.UpdateAfterDirectWrite(m_nBlockAlign);
@@ -361,11 +362,11 @@ void CAPEDecompress::DecodeBlocksToFrameBuffer(int64 nBlocks)
                     {
                         int64 nY = m_spUnBitArray->DecodeValueRange(m_aryBitArrayStates[1]);
                         int64 nX = m_spUnBitArray->DecodeValueRange(m_aryBitArrayStates[0]);
-                        int64 Y = m_aryPredictor[1]->DecompressValue(nY, m_nLastX);
-                        int64 X = m_aryPredictor[0]->DecompressValue(nX, Y);
+                        int Y = m_aryPredictor[1]->DecompressValue(nY, m_nLastX);
+                        int X = m_aryPredictor[0]->DecompressValue(nX, Y);
                         m_nLastX = X;
 
-                        int64 aryValues[2] = { X, Y };
+                        int aryValues[2] = { X, Y };
                         unsigned char * pOutput = m_cbFrameBuffer.GetDirectWritePointer();
                         m_Prepare.Unprepare(aryValues, &m_wfeInput, pOutput);
                         m_cbFrameBuffer.UpdateAfterDirectWrite(m_nBlockAlign);
@@ -375,10 +376,10 @@ void CAPEDecompress::DecodeBlocksToFrameBuffer(int64 nBlocks)
                 {
                     for (nBlocksProcessed = 0; nBlocksProcessed < nBlocks; nBlocksProcessed++)
                     {
-                        int64 X = m_aryPredictor[0]->DecompressValue(m_spUnBitArray->DecodeValueRange(m_aryBitArrayStates[0]));
-                        int64 Y = m_aryPredictor[1]->DecompressValue(m_spUnBitArray->DecodeValueRange(m_aryBitArrayStates[1]));
+                        int X = m_aryPredictor[0]->DecompressValue(m_spUnBitArray->DecodeValueRange(m_aryBitArrayStates[0]));
+                        int Y = m_aryPredictor[1]->DecompressValue(m_spUnBitArray->DecodeValueRange(m_aryBitArrayStates[1]));
 
-                        int64 aryValues[2] = { X, Y };
+                        int aryValues[2] = { X, Y };
                         m_Prepare.Unprepare(aryValues, &m_wfeInput, m_cbFrameBuffer.GetDirectWritePointer());
                         m_cbFrameBuffer.UpdateAfterDirectWrite(m_nBlockAlign);
                     }
@@ -391,7 +392,7 @@ void CAPEDecompress::DecodeBlocksToFrameBuffer(int64 nBlocks)
             {
                 for (nBlocksProcessed = 0; nBlocksProcessed < nBlocks; nBlocksProcessed++)
                 {
-                    int64 aryValues[2] = { 0, 0 };
+                    int aryValues[2] = { 0, 0 };
                     m_Prepare.Unprepare(aryValues, &m_wfeInput, m_cbFrameBuffer.GetDirectWritePointer());
                     m_cbFrameBuffer.UpdateAfterDirectWrite(m_nBlockAlign);
                 }
@@ -400,7 +401,7 @@ void CAPEDecompress::DecodeBlocksToFrameBuffer(int64 nBlocks)
             {
                 for (nBlocksProcessed = 0; nBlocksProcessed < nBlocks; nBlocksProcessed++)
                 {
-                    int64 aryValues[2] = { m_aryPredictor[0]->DecompressValue(m_spUnBitArray->DecodeValueRange(m_aryBitArrayStates[0])), 0 };
+                    int aryValues[2] = { m_aryPredictor[0]->DecompressValue(m_spUnBitArray->DecodeValueRange(m_aryBitArrayStates[0])), 0 };
                     m_Prepare.Unprepare(aryValues, &m_wfeInput, m_cbFrameBuffer.GetDirectWritePointer());
                     m_cbFrameBuffer.UpdateAfterDirectWrite(m_nBlockAlign);
                 }
@@ -413,7 +414,7 @@ void CAPEDecompress::DecodeBlocksToFrameBuffer(int64 nBlocks)
     }
 
     // get actual blocks that have been decoded and added to the frame buffer
-    int64 nActualBlocks = (m_cbFrameBuffer.MaxGet() - nFrameBufferBytes) / m_nBlockAlign;
+    int nActualBlocks = (m_cbFrameBuffer.MaxGet() - nFrameBufferBytes) / m_nBlockAlign;
     nActualBlocks = ape_max(nActualBlocks, 0);
     if (nBlocks != nActualBlocks)
         m_bErrorDecodingCurrentFrame = true;

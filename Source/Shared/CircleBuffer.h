@@ -11,11 +11,11 @@ public:
     virtual ~CCircleBuffer();
 
     // create the buffer
-    void CreateBuffer(int64 nBytes, int64 nMaxDirectWriteBytes);
+    void CreateBuffer(uint32 nBytes, uint32 nMaxDirectWriteBytes);
 
     // query
-    int64 MaxAdd();
-    int64 MaxGet();
+    uint32 MaxAdd();
+    uint32 MaxGet();
 
     // direct writing
     __forceinline unsigned char * GetDirectWritePointer()
@@ -25,7 +25,7 @@ public:
         return &m_pBuffer[m_nTail];
     }
 
-    __forceinline void UpdateAfterDirectWrite(int64 nBytes)
+    __forceinline void UpdateAfterDirectWrite(uint32 nBytes)
     {
         // update the tail
         m_nTail += nBytes;
@@ -39,22 +39,22 @@ public:
     }
 
     // update CRC for last nBytes bytes
-    uint32 UpdateCRC(uint32 nCRC, int64 nBytes);
+    uint32 UpdateCRC(uint32 nCRC, uint32 nBytes);
 
     // get data
-    int64 Get(unsigned char * pBuffer, int64 nBytes);
+    uint32 Get(unsigned char * pBuffer, uint32 nBytes);
 
     // remove / empty
     void Empty();
-    int64 RemoveHead(int64 nBytes);
-    int64 RemoveTail(int64 nBytes);
+    uint32 RemoveHead(uint32 nBytes);
+    uint32 RemoveTail(uint32 nBytes);
 
 private:
-    int64 m_nTotal;
-    int64 m_nMaxDirectWriteBytes;
-    int64 m_nEndCap;
-    int64 m_nHead;
-    int64 m_nTail;
+    uint32 m_nTotal;
+    uint32 m_nMaxDirectWriteBytes;
+    uint32 m_nEndCap;
+    uint32 m_nHead;
+    uint32 m_nTail;
     unsigned char * m_pBuffer;
 };
 

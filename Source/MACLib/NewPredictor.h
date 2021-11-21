@@ -14,98 +14,100 @@ Functions to create the interfaces
 IPredictorCompress * __stdcall CreateIPredictorCompress();
 IPredictorDecompress * __stdcall CreateIPredictorDecompress();
 
-#define WINDOW_BLOCKS           512
+#define WINDOW_BLOCKS           4096
 
 #define BUFFER_COUNT            1
 #define HISTORY_ELEMENTS        8
 #define M_COUNT                 8
 
-class CPredictorCompressNormal : public IPredictorCompress
+template <class INTTYPE> class CPredictorCompressNormal : public IPredictorCompress
 {
 public:
-    CPredictorCompressNormal(intn nCompressionLevel, intn nBitsPerSample);
+    CPredictorCompressNormal(int nCompressionLevel, int nBitsPerSample);
     virtual ~CPredictorCompressNormal();
 
-    int64 CompressValue(int64 nA, int64 nB = 0);
+    int64 CompressValue(int nA, int nB = 0);
     int Flush();
 
 protected:
     // buffer information
-    CRollBufferFast<int64, WINDOW_BLOCKS, 10> m_rbPrediction;
-    CRollBufferFast<int64, WINDOW_BLOCKS, 9> m_rbAdapt;
+    CRollBufferFast<INTTYPE, WINDOW_BLOCKS, 10> m_rbPrediction;
+    CRollBufferFast<INTTYPE, WINDOW_BLOCKS, 9> m_rbAdapt;
 
-    CScaledFirstOrderFilter<31, 5> m_Stage1FilterA;
-    CScaledFirstOrderFilter<31, 5> m_Stage1FilterB;
+    CScaledFirstOrderFilter<INTTYPE, 31, 5> m_Stage1FilterA;
+    CScaledFirstOrderFilter<INTTYPE, 31, 5> m_Stage1FilterB;
 
     // adaption
-    int64 m_aryM[9];
+    INTTYPE m_aryM[9];
     
     // other
     int m_nCurrentIndex;
-    CNNFilter * m_pNNFilter;
-    CNNFilter * m_pNNFilter1;
-    CNNFilter * m_pNNFilter2;
+    int m_nBitsPerSample;
+    CNNFilter<INTTYPE> * m_pNNFilter;
+    CNNFilter<INTTYPE> * m_pNNFilter1;
+    CNNFilter<INTTYPE> * m_pNNFilter2;
 };
 
 class CPredictorDecompressNormal3930to3950 : public IPredictorDecompress
 {
 public:
-    CPredictorDecompressNormal3930to3950(intn nCompressionLevel, intn nVersion);
+    CPredictorDecompressNormal3930to3950(int nCompressionLevel, int nVersion);
     virtual ~CPredictorDecompressNormal3930to3950();
 
-    int64 DecompressValue(int64 nInput, int64);
+    int DecompressValue(int64 nInput, int64);
     int Flush();
     
 protected:
     // buffer information
-    int64 * m_pBuffer[BUFFER_COUNT];
+    int * m_pBuffer[BUFFER_COUNT];
 
     // adaption
-    int64 m_aryM[M_COUNT];
+    int m_aryM[M_COUNT];
     
     // buffer pointers
-    int64 * m_pInputBuffer;
+    int * m_pInputBuffer;
 
     // other
     int m_nCurrentIndex;
-    int64 m_nLastValue;
-    CNNFilter * m_pNNFilter;
-    CNNFilter * m_pNNFilter1;
+    int m_nLastValue;
+    CNNFilter<int> * m_pNNFilter;
+    CNNFilter<int> * m_pNNFilter1;
 };
 
-class CPredictorDecompress3950toCurrent : public IPredictorDecompress
+template <class INTTYPE> class CPredictorDecompress3950toCurrent : public IPredictorDecompress
 {
 public:
-    CPredictorDecompress3950toCurrent(intn nCompressionLevel, intn nVersion, intn nBitsPerSample);
+    CPredictorDecompress3950toCurrent(int nCompressionLevel, int nVersion, int nBitsPerSample);
     virtual ~CPredictorDecompress3950toCurrent();
 
-    int64 DecompressValue(int64 nA, int64 nB = 0);
+    int DecompressValue(int64 nA, int64 nB = 0);
     int Flush();
-    void SetLegacyDecode(bool bSet) { m_bLegacyDecode = bSet; }
-    bool GetLegacyDecode() { return m_bLegacyDecode; }
+
+    void SetLegacyDecode(bool bSet);
 
 protected:
     // adaption
-    int64 m_aryMA[M_COUNT];
-    int64 m_aryMB[M_COUNT];
+    INTTYPE m_aryMA[M_COUNT];
+    INTTYPE m_aryMB[M_COUNT];
     
     // buffer pointers
-    CRollBufferFast<int64, WINDOW_BLOCKS, 8> m_rbPredictionA;
-    CRollBufferFast<int64, WINDOW_BLOCKS, 8> m_rbPredictionB;
+    CRollBufferFast<INTTYPE, WINDOW_BLOCKS, 8> m_rbPredictionA;
+    CRollBufferFast<INTTYPE, WINDOW_BLOCKS, 8> m_rbPredictionB;
 
-    CRollBufferFast<int64, WINDOW_BLOCKS, 8> m_rbAdaptA;
-    CRollBufferFast<int64, WINDOW_BLOCKS, 8> m_rbAdaptB;
+    CRollBufferFast<INTTYPE, WINDOW_BLOCKS, 8> m_rbAdaptA;
+    CRollBufferFast<INTTYPE, WINDOW_BLOCKS, 8> m_rbAdaptB;
 
-    CScaledFirstOrderFilter<31, 5> m_Stage1FilterA;
-    CScaledFirstOrderFilter<31, 5> m_Stage1FilterB;
+    CScaledFirstOrderFilter<INTTYPE, 31, 5> m_Stage1FilterA;
+    CScaledFirstOrderFilter<INTTYPE, 31, 5> m_Stage1FilterB;
 
     // other
-    intn m_nCurrentIndex;
-    int64 m_nLastValueA;
-    intn m_nVersion;
-    CNNFilter * m_pNNFilter;
-    CNNFilter * m_pNNFilter1;
-    CNNFilter * m_pNNFilter2;
+    int m_nCurrentIndex;
+    INTTYPE m_nLastValueA;
+    int m_nVersion;
+    int m_nBitsPerSample;
+    CNNFilter<INTTYPE> * m_pNNFilter;
+    CNNFilter<INTTYPE> * m_pNNFilter1;
+    CNNFilter<INTTYPE> * m_pNNFilter2;
     bool m_bLegacyDecode;
 };
 

@@ -24,7 +24,7 @@
 namespace APE
 {
 
-#if __BYTE_ORDER == __BIG_ENDIAN
+#if APE_BYTE_ORDER == APE_BIG_ENDIAN
 /*
  *  Block copy and convert byte order to little-endian.
  *  dst must be 32bit aligned.
@@ -86,7 +86,7 @@ __MD5Transform ( uint32_t        state [4],
 
     for ( ; repeat; repeat-- ) {
     uint32_t tempBuffer [16];
-#if __BYTE_ORDER == __BIG_ENDIAN
+#if APE_BYTE_ORDER == APE_BIG_ENDIAN
 
     CopyToLittleEndian (tempBuffer, in, 16);
     x = tempBuffer;
@@ -233,7 +233,7 @@ MD5Final ( uint8_t   digest [16],
     finalBlockLength = (byteIndex < 56  ?  56  :  120) - byteIndex;
     finalBlock[0]    = 0x80;
     
-#if __BYTE_ORDER == __BIG_ENDIAN
+#if APE_BYTE_ORDER == APE_BIG_ENDIAN
     CopyToLittleEndian ( bits, (const uint8_t*) context -> count, 2 );
 #else
     memcpy ( bits, context->count, 8 );
@@ -242,7 +242,7 @@ MD5Final ( uint8_t   digest [16],
     MD5Update ( context, finalBlock, finalBlockLength );
     MD5Update ( context, (const uint8_t*) bits, 8 );
     
-#if __BYTE_ORDER == __BIG_ENDIAN
+#if APE_BYTE_ORDER == APE_BIG_ENDIAN
     CopyToLittleEndian ( (uint32_t*) digest, (const uint8_t*) context -> state, 4 );
 #else
     memcpy ( digest, context -> state, 16 );

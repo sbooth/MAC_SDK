@@ -3,6 +3,8 @@
 #include "APECompressCreate.h"
 #include "APECompressCore.h"
 
+#ifdef APE_SUPPORT_COMPRESS
+
 namespace APE
 {
 
@@ -16,7 +18,7 @@ CAPECompressCreate::~CAPECompressCreate()
 {
 }
 
-int CAPECompressCreate::Start(CIO * pioOutput, const WAVEFORMATEX * pwfeInput, int64 nMaxAudioBytes, intn nCompressionLevel, const void * pHeaderData, int64 nHeaderBytes, int32 nFlags)
+int CAPECompressCreate::Start(CIO * pioOutput, const WAVEFORMATEX * pwfeInput, int64 nMaxAudioBytes, int nCompressionLevel, const void * pHeaderData, int64 nHeaderBytes, int32 nFlags)
 {
     // verify the parameters
     if (pioOutput == NULL || pwfeInput == NULL)
@@ -41,14 +43,14 @@ int CAPECompressCreate::Start(CIO * pioOutput, const WAVEFORMATEX * pwfeInput, i
     }
 
     // initialize (creates the base classes)
-    m_nSamplesPerFrame = 73728;
+    m_nBlocksPerFrame = 73728;
     if (nCompressionLevel == MAC_COMPRESSION_LEVEL_EXTRA_HIGH)
-        m_nSamplesPerFrame *= 4;
+        m_nBlocksPerFrame *= 4;
     else if (nCompressionLevel == MAC_COMPRESSION_LEVEL_INSANE)
-        m_nSamplesPerFrame *= 16;
+        m_nBlocksPerFrame *= 16;
 
     m_spIO.Assign(pioOutput, false, false);
-    m_spAPECompressCore.Assign(new CAPECompressCore(m_spIO, pwfeInput, m_nSamplesPerFrame, nCompressionLevel));
+    m_spAPECompressCore.Assign(new CAPECompressCore(m_spIO, pwfeInput, m_nBlocksPerFrame, nCompressionLevel));
     
     // copy the format
     memcpy(&m_wfeInput, pwfeInput, sizeof(WAVEFORMATEX));
@@ -56,12 +58,12 @@ int CAPECompressCreate::Start(CIO * pioOutput, const WAVEFORMATEX * pwfeInput, i
     // the compression level
     m_nCompressionLevel = nCompressionLevel;
     m_nFrameIndex = 0;
-    m_nLastFrameBlocks = m_nSamplesPerFrame;
+    m_nLastFrameBlocks = m_nBlocksPerFrame;
     
     // initialize the file
     uint32 nMaxAudioBlocks = uint32(nMaxAudioBytes / pwfeInput->nBlockAlign);
-    intn nMaxFrames = nMaxAudioBlocks / m_nSamplesPerFrame;
-    if ((nMaxAudioBlocks % m_nSamplesPerFrame) != 0) nMaxFrames++;
+    intn nMaxFrames = nMaxAudioBlocks / m_nBlocksPerFrame;
+    if ((nMaxAudioBlocks % m_nBlocksPerFrame) != 0) nMaxFrames++;
         
     InitializeFile(m_spIO, &m_wfeInput, nMaxFrames,
         m_nCompressionLevel, pHeaderData, nHeaderBytes, nFlags);
@@ -71,21 +73,21 @@ int CAPECompressCreate::Start(CIO * pioOutput, const WAVEFORMATEX * pwfeInput, i
 
 intn CAPECompressCreate::GetFullFrameBytes()
 {
-    return m_nSamplesPerFrame * m_wfeInput.nBlockAlign;
+    return m_nBlocksPerFrame * m_wfeInput.nBlockAlign;
 }
 
-int CAPECompressCreate::EncodeFrame(const void * pInputData, int64 nInputBytes)
+int CAPECompressCreate::EncodeFrame(const void * pInputData, int nInputBytes)
 {
-    int64 nInputBlocks = nInputBytes / m_wfeInput.nBlockAlign;
+    int nInputBlocks = nInputBytes / m_wfeInput.nBlockAlign;
     
-    if ((nInputBlocks < m_nSamplesPerFrame) && (m_nLastFrameBlocks < m_nSamplesPerFrame))
+    if ((nInputBlocks < m_nBlocksPerFrame) && (m_nLastFrameBlocks < m_nBlocksPerFrame))
     {
         return ERROR_UNDEFINED; // can only pass a smaller frame for the very last time
     }
 
     // update the seek table
     m_spAPECompressCore->GetBitArray()->AdvanceToByteBoundary();
-    int nResult = SetSeekByte((int) m_nFrameIndex, (int) m_spIO->GetPosition() + (m_spAPECompressCore->GetBitArray()->GetCurrentBitIndex() / 8));
+    int nResult = SetSeekByte(m_nFrameIndex, (int) m_spIO->GetPosition() + (m_spAPECompressCore->GetBitArray()->GetCurrentBitIndex() / 8));
     if (nResult != ERROR_SUCCESS)
         return nResult;
     
@@ -93,25 +95,25 @@ int CAPECompressCreate::EncodeFrame(const void * pInputData, int64 nInputBytes)
     nResult = m_spAPECompressCore->EncodeFrame(pInputData, nInputBytes);
     
     // update stats
-    m_nLastFrameBlocks = (intn) nInputBlocks;
+    m_nLastFrameBlocks = nInputBlocks;
     m_nFrameIndex++;
 
     return nResult;
 }
 
-int CAPECompressCreate::Finish(const void * pTerminatingData, int64 nTerminatingBytes, int64 nWAVTerminatingBytes)
+int CAPECompressCreate::Finish(const void * pTerminatingData, int nTerminatingBytes, int nWAVTerminatingBytes)
 {
     // clear the bit array
     RETURN_ON_ERROR(m_spAPECompressCore->GetBitArray()->OutputBitArray(true));
     
     // finalize the file
-    RETURN_ON_ERROR(FinalizeFile(m_spIO, (int) m_nFrameIndex, (int) m_nLastFrameBlocks, 
+    RETURN_ON_ERROR(FinalizeFile(m_spIO, m_nFrameIndex, m_nLastFrameBlocks, 
         pTerminatingData, nTerminatingBytes, nWAVTerminatingBytes));
     
     return ERROR_SUCCESS;
 }
 
-int CAPECompressCreate::SetSeekByte(int nFrame, int nByteOffset)
+int CAPECompressCreate::SetSeekByte(int nFrame, uint32 nByteOffset)
 {
     if (nFrame >= m_nMaxFrames)
     {
@@ -152,7 +154,7 @@ int CAPECompressCreate::InitializeFile(CIO * pIO, const WAVEFORMATEX * pwfeInput
     APEHeader.nCompressionLevel = (uint16) nCompressionLevel;
     APEHeader.nFormatFlags = uint16(nFlags) | ((nHeaderBytes == CREATE_WAV_HEADER_ON_DECOMPRESSION) ? MAC_FORMAT_FLAG_CREATE_WAV_HEADER : 0);
     
-    APEHeader.nBlocksPerFrame = (uint32) m_nSamplesPerFrame;
+    APEHeader.nBlocksPerFrame = (uint32) m_nBlocksPerFrame;
 
     // write the data to the file
     unsigned int nBytesWritten = 0;
@@ -214,8 +216,9 @@ int CAPECompressCreate::FinalizeFile(CIO * pIO, int nNumberOfFrames, int nFinalF
     APEHeader.nTotalFrames = nNumberOfFrames;
     
     // update the descriptor
-    APEDescriptor.nAPEFrameDataBytes = (uint32) (nTailPosition - (APEDescriptor.nDescriptorBytes + APEDescriptor.nHeaderBytes + APEDescriptor.nSeekTableBytes + APEDescriptor.nHeaderDataBytes));
-    APEDescriptor.nAPEFrameDataBytesHigh = 0;
+    int64 nFrameDataBytes = nTailPosition - (APEDescriptor.nDescriptorBytes + APEDescriptor.nHeaderBytes + APEDescriptor.nSeekTableBytes + APEDescriptor.nHeaderDataBytes);
+    APEDescriptor.nAPEFrameDataBytes = (uint32) (nFrameDataBytes & 0xFFFFFFFF);
+    APEDescriptor.nAPEFrameDataBytesHigh = (uint32) (nFrameDataBytes >> 32);
     APEDescriptor.nTerminatingDataBytes = (uint32) nWAVTerminatingBytes;
     
     // update the MD5
@@ -237,3 +240,5 @@ int CAPECompressCreate::FinalizeFile(CIO * pIO, int nNumberOfFrames, int nFinalF
 }
 
 }
+
+#endif

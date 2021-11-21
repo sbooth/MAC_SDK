@@ -70,13 +70,13 @@ bool CUnBitArrayBase::EnsureBitsAvailable(uint32 nBits, bool bThrowExceptionOnFa
     bool bResult = true;
 
     // get more data if necessary
-    if ((int64(m_nCurrentBitIndex) + int64(nBits)) >= (int64(m_nGoodBytes) * 8))
+    if ((m_nCurrentBitIndex + nBits) >= (m_nGoodBytes * 8))
     {
         // fill
         FillBitArray();
 
         // if we still don't have enough good bytes, we don't have the bits available
-        if ((int64(m_nCurrentBitIndex) + int64(nBits)) >= (int64(m_nGoodBytes) * 8))
+        if ((m_nCurrentBitIndex + nBits) >= (m_nGoodBytes * 8))
         {
             // overread error
             ASSERT(false);

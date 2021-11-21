@@ -108,13 +108,7 @@
     <ClCompile Include="..\..\..\MAC\FormatPluginInfoDlg.cpp">
       <Filter>Source Files\Format</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\MAC\OptionsViewDlg.cpp">
-      <Filter>Source Files\Options</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\MAC\OptionsDlg.cpp">
-      <Filter>Source Files\Options</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\MAC\OptionsGeneralDlg.cpp">
       <Filter>Source Files\Options</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\MAC\OptionsOutputDlg.cpp">
@@ -211,9 +205,6 @@
     <ClInclude Include="..\..\..\MAC\OptionsDlg.h">
       <Filter>Header Files\Options %28h%29</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\MAC\OptionsGeneralDlg.h">
-      <Filter>Header Files\Options %28h%29</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\MAC\OptionsOutputDlg.h">
       <Filter>Header Files\Options %28h%29</Filter>
     </ClInclude>
@@ -221,9 +212,6 @@
       <Filter>Header Files\Options %28h%29</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\MAC\OptionsShared.h">
-      <Filter>Header Files\Options %28h%29</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\MAC\OptionsViewDlg.h">
       <Filter>Header Files\Options %28h%29</Filter>
     </ClInclude>
   </ItemGroup>

@@ -5,6 +5,9 @@
 #ifdef _MSC_VER
     #include <intrin.h>
 #endif
+#ifdef PLATFORM_ANDROID
+    #include <android/api-level.h>
+#endif
 
 namespace APE
 {
@@ -77,8 +80,8 @@ void * AllocateAligned(intn nBytes, intn nAlignment)
     return _aligned_malloc(nBytes, nAlignment);
 #elif defined(__APPLE__)
     return malloc(nBytes);
-#elif defined(PLATFORM_ANDROID)
-    return malloc(nBytes);
+#elif defined(PLATFORM_ANDROID) && (__ANDROID_API__ < 21)
+    return memalign(nAlignment, nBytes);
 #else
     void * pMemory = NULL;
     if (posix_memalign(&pMemory, nAlignment, nBytes))
@@ -102,7 +105,7 @@ bool GetMMXAvailable()
     return true;
 #else
     bool bMMX = false;
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_X64))
     #define CPU_MMX (1 << 23)
 
     int cpuInfo[4] = { 0 };
@@ -122,11 +125,13 @@ bool GetMMXAvailable()
 
 bool GetSSEAvailable(bool bTestForSSE41)
 {
-#if defined(__SSE2__)
+#if defined(__SSE41__)
     return true;
+#elif defined(__SSE2__)
+    return !bTestForSSE41;
 #else
     bool bSSE = false;
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_X64))
     #define CPU_SSE2 (1 << 26)
     #define CPU_SSE41 (1 << 19)
 
@@ -150,6 +155,30 @@ bool GetSSEAvailable(bool bTestForSSE41)
     }
 #endif
     return bSSE;
+#endif
+}
+
+bool GetAVX2Available()
+{
+#if defined(__AVX2__)
+    return true;
+#else
+    bool bAVX = false;
+#if defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_X64))
+    #define CPU_AVX2 (1 << 5)
+
+    int cpuInfo[4] = { 0 };
+    __cpuid(cpuInfo, 0);
+
+    int nIds = cpuInfo[0];
+    if (nIds >= 7)
+    {
+        __cpuid(cpuInfo, 7);
+        if (cpuInfo[1] & CPU_AVX2)
+            bAVX = true;
+    }
+#endif
+    return bAVX;
 #endif
 }
 

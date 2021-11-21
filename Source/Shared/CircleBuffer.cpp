@@ -20,7 +20,7 @@ CCircleBuffer::~CCircleBuffer()
     SAFE_ARRAY_DELETE(m_pBuffer)
 }
 
-void CCircleBuffer::CreateBuffer(int64 nBytes, int64 nMaxDirectWriteBytes)
+void CCircleBuffer::CreateBuffer(uint32 nBytes, uint32 nMaxDirectWriteBytes)
 {
     SAFE_ARRAY_DELETE(m_pBuffer)
     
@@ -32,21 +32,21 @@ void CCircleBuffer::CreateBuffer(int64 nBytes, int64 nMaxDirectWriteBytes)
     m_nEndCap = m_nTotal;
 }
 
-int64 CCircleBuffer::MaxAdd()
+uint32 CCircleBuffer::MaxAdd()
 {
-    int64 nMaxAdd = (m_nTail >= m_nHead) ? (m_nTotal - 1 - m_nMaxDirectWriteBytes) - (m_nTail - m_nHead) : m_nHead - m_nTail - 1;
+    uint32 nMaxAdd = (m_nTail >= m_nHead) ? (m_nTotal - 1 - m_nMaxDirectWriteBytes) - (m_nTail - m_nHead) : m_nHead - m_nTail - 1;
     return nMaxAdd;
 }
 
-int64 CCircleBuffer::MaxGet()
+uint32 CCircleBuffer::MaxGet()
 {
     return (m_nTail >= m_nHead) ? m_nTail - m_nHead : (m_nEndCap - m_nHead) + m_nTail;
 }
 
-uint32 CCircleBuffer::UpdateCRC(uint32 nCRC, int64 nBytes)
+uint32 CCircleBuffer::UpdateCRC(uint32 nCRC, uint32 nBytes)
 {
-    int64 nFrontBytes = ape_min(m_nTail, nBytes);
-    int64 nHeadBytes = nBytes - nFrontBytes;
+    uint32 nFrontBytes = ape_min(m_nTail, nBytes);
+    uint32 nHeadBytes = nBytes - nFrontBytes;
 
     if (nHeadBytes > 0)
         nCRC = CRC_update(nCRC, &m_pBuffer[m_nEndCap - nHeadBytes], nHeadBytes);
@@ -56,14 +56,14 @@ uint32 CCircleBuffer::UpdateCRC(uint32 nCRC, int64 nBytes)
     return nCRC;
 }
 
-int64 CCircleBuffer::Get(unsigned char * pBuffer, int64 nBytes)
+uint32 CCircleBuffer::Get(unsigned char * pBuffer, uint32 nBytes)
 {
-    int64 nTotalGetBytes = 0;
+    uint32 nTotalGetBytes = 0;
 
     if (pBuffer != NULL && nBytes > 0)
     {
-        int64 nHeadBytes = ape_min(m_nEndCap - m_nHead, nBytes);
-        int64 nFrontBytes = nBytes - nHeadBytes;
+        uint32 nHeadBytes = ape_min(m_nEndCap - m_nHead, nBytes);
+        uint32 nFrontBytes = nBytes - nHeadBytes;
 
         memcpy(&pBuffer[0], &m_pBuffer[m_nHead], (size_t) nHeadBytes);
         nTotalGetBytes = nHeadBytes;
@@ -87,7 +87,7 @@ void CCircleBuffer::Empty()
     m_nEndCap = m_nTotal;
 }
 
-int64 CCircleBuffer::RemoveHead(int64 nBytes)
+uint32 CCircleBuffer::RemoveHead(uint32 nBytes)
 {
     nBytes = ape_min(MaxGet(), nBytes);
     m_nHead += nBytes;
@@ -96,12 +96,12 @@ int64 CCircleBuffer::RemoveHead(int64 nBytes)
     return nBytes;
 }
 
-int64 CCircleBuffer::RemoveTail(int64 nBytes)
+uint32 CCircleBuffer::RemoveTail(uint32 nBytes)
 {
     nBytes = ape_min(MaxGet(), nBytes);
-    m_nTail -= nBytes;
-    if (m_nTail < 0)
+    if (m_nTail < nBytes)
         m_nTail += m_nEndCap;
+    m_nTail -= nBytes;
     return nBytes;
 }
 

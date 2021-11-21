@@ -9,11 +9,19 @@
 namespace APE
 {
 
+CIO * CreateCIO()
+{
+    return new CWinFileIO;
+}
+    
 CWinFileIO::CWinFileIO()
 {
     m_hFile = INVALID_HANDLE_VALUE;
     memset(m_cFileName, 0, sizeof(m_cFileName));
     m_bReadOnly = false;
+    m_bWholeFile = false;
+    m_pWholeFile = NULL;
+    m_nWholeFilePointer = 0;
 }
 
 CWinFileIO::~CWinFileIO()
@@ -73,31 +81,44 @@ int CWinFileIO::Open(const wchar_t * pName, bool bOpenReadOnly)
 int CWinFileIO::Close()
 {
     SAFE_FILE_CLOSE(m_hFile);
+    SAFE_ARRAY_DELETE(m_pWholeFile);
 
     return ERROR_SUCCESS;
 }
     
 int CWinFileIO::Read(void * pBuffer, unsigned int nBytesToRead, unsigned int * pBytesRead)
 {
-    unsigned int nTotalBytesRead = 0;
-    int nBytesLeft = nBytesToRead;
     bool bRetVal = true;
-    unsigned char * pucBuffer = (unsigned char *) pBuffer;
 
-    *pBytesRead = 1;
-    while ((nBytesLeft > 0) && (*pBytesRead > 0) && bRetVal)
+    if (m_bWholeFile)
     {
-        bRetVal = ::ReadFile(m_hFile, &pucBuffer[nBytesToRead - nBytesLeft], nBytesLeft, (unsigned long *) pBytesRead, NULL) ? true : false;
-        if (bRetVal && (*pBytesRead <= 0))
-            bRetVal = false;
-        if (bRetVal)
-        {
-            nBytesLeft -= *pBytesRead;
-            nTotalBytesRead += *pBytesRead;
-        }
+        int64 nBytesLeft = GetSize() - m_nWholeFilePointer;
+        nBytesToRead = ape_min((unsigned int) nBytesLeft, nBytesToRead);
+        memcpy(pBuffer, &m_pWholeFile[m_nWholeFilePointer], nBytesToRead);
+        m_nWholeFilePointer += nBytesToRead;
+        *pBytesRead = nBytesToRead;
     }
-    
-    *pBytesRead = nTotalBytesRead;
+    else
+    {
+        unsigned int nTotalBytesRead = 0;
+        int nBytesLeft = nBytesToRead;
+        unsigned char* pucBuffer = (unsigned char*)pBuffer;
+
+        *pBytesRead = 1;
+        while ((nBytesLeft > 0) && (*pBytesRead > 0) && bRetVal)
+        {
+            bRetVal = ::ReadFile(m_hFile, &pucBuffer[nBytesToRead - nBytesLeft], nBytesLeft, (unsigned long*)pBytesRead, NULL) ? true : false;
+            if (bRetVal && (*pBytesRead <= 0))
+                bRetVal = false;
+            if (bRetVal)
+            {
+                nBytesLeft -= *pBytesRead;
+                nTotalBytesRead += *pBytesRead;
+            }
+        }
+
+        *pBytesRead = nTotalBytesRead;
+    }
     
     return bRetVal ? ERROR_SUCCESS : ERROR_IO_READ;
 }
@@ -114,18 +135,31 @@ int CWinFileIO::Write(const void * pBuffer, unsigned int nBytesToWrite, unsigned
 
 int64 CWinFileIO::PerformSeek()
 {
-    DWORD dwMoveMethod = 0;
-    if (m_nSeekMethod == APE_FILE_BEGIN)
-        dwMoveMethod = FILE_BEGIN;
-    else if (m_nSeekMethod == APE_FILE_END)
-        dwMoveMethod = FILE_END;
-    else if (m_nSeekMethod == APE_FILE_CURRENT)
-        dwMoveMethod = FILE_CURRENT;
+    if (m_bWholeFile)
+    {
+        if (m_nSeekMethod == APE_FILE_BEGIN)
+            m_nWholeFilePointer = m_nSeekPosition;
+        else if (m_nSeekMethod == APE_FILE_END)
+            m_nWholeFilePointer = GetSize() - abs(m_nSeekPosition);
+        else if (m_nSeekMethod == APE_FILE_CURRENT)
+            m_nWholeFilePointer += m_nSeekPosition;
+    }
+    else
+    {
+        DWORD dwMoveMethod = 0;
+        if (m_nSeekMethod == APE_FILE_BEGIN)
+            dwMoveMethod = FILE_BEGIN;
+        else if (m_nSeekMethod == APE_FILE_END)
+            dwMoveMethod = FILE_END;
+        else if (m_nSeekMethod == APE_FILE_CURRENT)
+            dwMoveMethod = FILE_CURRENT;
 
-    LONG Low = (m_nSeekPosition & 0xFFFFFFFF);
-    LONG High = (m_nSeekPosition >> 32);
+        LONG Low = (m_nSeekPosition & 0xFFFFFFFF);
+        LONG High = (m_nSeekPosition >> 32);
 
-    SetFilePointer(m_hFile, Low, &High, dwMoveMethod);
+        SetFilePointer(m_hFile, Low, &High, dwMoveMethod);
+    }
+
     return ERROR_SUCCESS;
 }
 
@@ -134,12 +168,34 @@ int CWinFileIO::SetEOF()
     return SetEndOfFile(m_hFile) ? ERROR_SUCCESS : ERROR_UNDEFINED;
 }
 
+int CWinFileIO::SetReadWholeFile()
+{
+    int nResult = ERROR_SUCCESS;
+    int64 nSize = GetSize();
+    if (nSize < (BYTES_IN_MEGABYTE * 100))
+    {
+        m_pWholeFile = new unsigned char [nSize];
+        unsigned int nBytesRead = 0;
+        nResult = Read(m_pWholeFile, (unsigned int) nSize, &nBytesRead);
+        m_nWholeFilePointer = 0;
+        m_bWholeFile = true; // flag after read or else read will copy out of the buffer
+    }
+    return nResult;
+}
+
 int64 CWinFileIO::GetPosition()
 {
-    LONG nPositionHigh = 0;
-    DWORD dwPositionLow = SetFilePointer(m_hFile, 0, &nPositionHigh, FILE_CURRENT);
-    int64 nPosition = int64(dwPositionLow) + (int64(nPositionHigh) << 32);
-    return nPosition;
+    if (m_bWholeFile)
+    {
+        return m_nWholeFilePointer;
+    }
+    else
+    {
+        LONG nPositionHigh = 0;
+        DWORD dwPositionLow = SetFilePointer(m_hFile, 0, &nPositionHigh, FILE_CURRENT);
+        int64 nPosition = int64(dwPositionLow) + (int64(nPositionHigh) << 32);
+        return nPosition;
+    }
 }
 
 int64 CWinFileIO::GetSize()
@@ -189,6 +245,7 @@ int CWinFileIO::Delete()
         CSmartPtr<char> spName(GetANSIFromUTF16(m_cFileName), true);
     #endif
 
+    SetFileAttributes(spName, FILE_ATTRIBUTE_NORMAL);
     return DeleteFile(spName) ? ERROR_SUCCESS : ERROR_UNDEFINED;
 }
 

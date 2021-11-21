@@ -65,7 +65,7 @@ int CAPEInfoDialog::ShowAPEInfoDialog(const str_utfn * pFilename, HINSTANCE hIns
 
     // open the file
     int nErrorCode = ERROR_SUCCESS;
-    m_pAPEDecompress = CreateIAPEDecompress(pFilename, &nErrorCode, true);
+    m_pAPEDecompress = CreateIAPEDecompress(pFilename, &nErrorCode, true, true, false);
     if (m_pAPEDecompress == NULL || nErrorCode != ERROR_SUCCESS)
         return nErrorCode;
     

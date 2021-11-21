@@ -21,7 +21,7 @@ public:
     CUnBitArray(APE::CIO * pIO, intn nVersion, int64 nFurthestReadByte);
     ~CUnBitArray();
 
-    uint64 DecodeValue(DECODE_VALUE_METHOD DecodeMethod, int nParam1 = 0, int nParam2 = 0);
+    uint32 DecodeValue(DECODE_VALUE_METHOD DecodeMethod, int nParam1 = 0, int nParam2 = 0);
     void GenerateArray(int * pOutputArray, int nElements, intn nBytesRequired);
     int64 DecodeValueRange(UNBIT_ARRAY_STATE & BitArrayState);
     void FlushState(UNBIT_ARRAY_STATE & BitArrayState);
@@ -37,9 +37,9 @@ private:
     
     // functions
     inline uint32 DecodeByte();
-    inline int64 RangeDecodeFast(int nShift);
-    inline int64 RangeDecodeFastWithUpdate(int nShift);
-    void GenerateArrayRange(int* pOutputArray, int nElements);
+    inline uint32 RangeDecodeFast(int nShift);
+    inline uint32 RangeDecodeFastWithUpdate(int nShift);
+    void GenerateArrayRange(int * pOutputArray, int nElements);
 };
 
 }

@@ -11,8 +11,6 @@ Includes
 #include "APEInfoDialog.h"
 #include "APELink.h"
 #include "CharacterHelper.h"
-#define IO_USE_WIN_FILE_IO
-#include "WinFileIO.h"
 
 /************************************************************************************
 Defines
@@ -100,7 +98,7 @@ int CAPEWinampPlugin::Play(char * pFilename)
     
     // open the file
     int nErrorCode = 0;
-    m_spAPEDecompress.Assign(CreateIAPEDecompress(m_cCurrentFilename, &nErrorCode, true));
+    m_spAPEDecompress.Assign(CreateIAPEDecompress(m_cCurrentFilename, &nErrorCode, true, true, false));
     if ((m_spAPEDecompress == NULL) || (nErrorCode != ERROR_SUCCESS))
         return -1;
 
@@ -534,7 +532,7 @@ void CAPEWinampPlugin::GetFileInformation(char * pFilename, char * pTitle, int *
     {
         // different file
         CSmartPtr<wchar_t> spUTF16(CAPECharacterHelper::GetUTF16FromANSI(pFilename), TRUE);
-        spAPEDecompress.Assign(CreateIAPEDecompress(spUTF16, NULL, true));
+        spAPEDecompress.Assign(CreateIAPEDecompress(spUTF16, NULL, true, true, false));
         strFilename = spUTF16;
     }
 
@@ -672,7 +670,7 @@ extern "C"
         CSmartPtr<wchar_t> spUTF16(CAPECharacterHelper::GetUTF16FromANSI(Info.pFilename), TRUE);
         if (spUTF16 != strFilename)
         {
-            spAPEDecompress.Assign(CreateIAPEDecompress(spUTF16, NULL, true));
+            spAPEDecompress.Assign(CreateIAPEDecompress(spUTF16, NULL, true, true, false));
             strFilename = spUTF16;
         }
 

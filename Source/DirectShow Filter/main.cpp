@@ -363,7 +363,7 @@ HRESULT CAPEStream::OpenAPEFile(LPWSTR pFileName)
 
     int iRet;
 
-    m_pDecoder = CreateIAPEDecompress(pFileName, &iRet, true);
+    m_pDecoder = CreateIAPEDecompress(pFileName, &iRet, true, true, false);
 
     // ak sa nepodarilo otvorit, koncime...
     if (m_pDecoder == NULL) return E_FAIL;

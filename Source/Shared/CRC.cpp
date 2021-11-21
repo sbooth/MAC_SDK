@@ -3,6 +3,50 @@
 
 namespace APE
 {
+#ifdef ENABLE_ARM_CRC32_OPT
+
+// 0x04C11DB7 CRC-32 CRC32B, CRC32H, CRC32W, CRC32X
+#define CRC32D(crc, value)  crc = __builtin_arm_crc32d(crc, value)
+#define CRC32W(crc, value)  crc = __builtin_arm_crc32w(crc, value)
+#define CRC32H(crc, value)  crc = __builtin_arm_crc32h(crc, value)
+#define CRC32B(crc, value)  crc = __builtin_arm_crc32b(crc, value)
+
+uint32 CRC_update(uint32 crc, const unsigned char * pData, int nBytes)
+{
+    // aligning loop
+    while (((((intptr_t)pData) & (sizeof(uint64)-1)) != 0) && (nBytes != 0))
+    {
+        CRC32B(crc, *pData++);
+        --nBytes;
+    }
+
+    // 64-bit aligned loop
+    while (nBytes >= sizeof(uint64))
+    {
+        CRC32D(crc, *(const uint64 *)pData);
+
+        nBytes -= sizeof(uint64);
+        pData += sizeof(uint64);
+    }
+
+    // leftover
+    if (nBytes & sizeof(uint32))
+    {
+        CRC32W(crc, *(const uint32 *)pData);
+        pData += sizeof(uint32);
+    }
+    if (nBytes & sizeof(uint16))
+    {
+        CRC32H(crc, *(const uint16 *)pData);
+        pData += sizeof(uint16);
+    }
+    if (nBytes & sizeof(uint8))
+        CRC32B(crc, *pData);
+
+    return crc;
+}
+
+#else
 
 static uint32 CRC32_TABLE[8][256];
 
@@ -42,7 +86,7 @@ static bool CRC_init()
 
 static bool CRC_initialized = CRC_init();
 
-uint32 CRC_update(uint32 crc, const unsigned char * pData, int64 nBytes)
+uint32 CRC_update(uint32 crc, const unsigned char * pData, int nBytes)
 {
     while (nBytes >= 8)
     {
@@ -62,4 +106,5 @@ uint32 CRC_update(uint32 crc, const unsigned char * pData, int64 nBytes)
     return crc;
 }
 
+#endif
 }

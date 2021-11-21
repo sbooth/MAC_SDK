@@ -141,7 +141,6 @@ static BOOL CALLBACK CtrlHandlerCallback(DWORD dwCtrlTyp)
 
     fflush(stderr);
     ExitProcess(666);
-    return TRUE;
 }
 #endif
 
@@ -154,7 +153,7 @@ int Tag(const TCHAR * pFilename, const TCHAR * pTagString)
     CSmartPtr<IAPEDecompress> spAPEDecompress;
     try
     {
-        spAPEDecompress.Assign(CreateIAPEDecompress(pFilename, &nFunctionRetVal, false));
+        spAPEDecompress.Assign(CreateIAPEDecompress(pFilename, &nFunctionRetVal, false, true, false));
         if (spAPEDecompress == NULL || nFunctionRetVal != ERROR_SUCCESS) throw(intn(nFunctionRetVal));
 
         // get the input format
@@ -357,6 +356,7 @@ int _tmain(int argc, TCHAR * argv[])
     
     // process
     int nKillFlag = 0;
+#ifdef APE_SUPPORT_COMPRESS
     if (nMode == COMPRESS_MODE) 
     {
         TCHAR cCompressionLevel[16];
@@ -386,6 +386,9 @@ int _tmain(int argc, TCHAR * argv[])
         }
     }
     else if (nMode == DECOMPRESS_MODE) 
+#else
+    if (nMode == DECOMPRESS_MODE)
+#endif
     {
         _ftprintf(stderr, _T("Decompressing...\n"));
         if (_tcsicmp(spOutputFilename, AUTO) == 0)

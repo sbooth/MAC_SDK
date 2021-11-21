@@ -26,7 +26,7 @@ public:
 
 protected:
     // file info
-    int64 m_nBlockAlign;
+    int m_nBlockAlign;
     int64 m_nCurrentFrame;
     
     // start / finish information
@@ -42,7 +42,7 @@ protected:
     unsigned int m_nCRC;
     unsigned int m_nStoredCRC;
     int m_nSpecialCodes;
-    int64 * m_paryChannelData;
+    int * m_paryChannelData;
     
     int SeekToFrame(int64 nFrameIndex);
     void DecodeBlocksToFrameBuffer(int64 nBlocks);
@@ -56,7 +56,7 @@ protected:
     CSmartPtr<CUnBitArrayBase> m_spUnBitArray;
     UNBIT_ARRAY_STATE m_aryBitArrayStates[32];
     IPredictorDecompress * m_aryPredictor[32];
-    int64 m_nLastX;
+    int m_nLastX;
     
     // decoding buffer
     bool m_bErrorDecodingCurrentFrame;
