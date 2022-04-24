@@ -1,6 +1,6 @@
 /***************************************************************************************
 Decompress - Sample 3
-Copyright (C) 2000-2001 by Matthew T. Ashland   All Rights Reserved.
+Copyright (C) 2000-2022 by Matthew T. Ashland   All Rights Reserved.
 Feel free to use this code in any way that you like.
 
 This example illustrates dynamic linkage to MACDll.dll to decompress a whole file
@@ -114,7 +114,11 @@ int main(int argc, char* argv[])
 	///////////////////////////////////////////////////////////////////////////////
 
 	// load the DLL
+#if _WIN64
+	HMODULE hMACDll = LoadLibrary(_T("C:\\Windows\\System32\\MACDll64.dll"));
+#else
 	HMODULE hMACDll = LoadLibrary(_T("C:\\Windows\\SysWOW64\\MACDll.dll"));
+#endif
 	if (hMACDll == NULL) 
 		return -1;
 	
@@ -150,11 +154,11 @@ int main(int argc, char* argv[])
 	///////////////////////////////////////////////////////////////////////////////
 	
 	// make a buffer to hold 1024 blocks of audio data
-	APE::int64 nBlockAlign = MACDll.GetInfo(hAPEDecompress, APE::APE_INFO_BLOCK_ALIGN, 0, 0);
+	APE::int64 nBlockAlign = MACDll.GetInfo(hAPEDecompress, APE::IAPEDecompress::APE_INFO_BLOCK_ALIGN, 0, 0);
 	unsigned char * pBuffer = new unsigned char [size_t(1024 * nBlockAlign)];
 	
 	// loop through the whole file
-	APE::int64 nTotalBlocks = MACDll.GetInfo(hAPEDecompress, APE::APE_DECOMPRESS_TOTAL_BLOCKS, 0, 0);
+	APE::int64 nTotalBlocks = MACDll.GetInfo(hAPEDecompress, APE::IAPEDecompress::APE_DECOMPRESS_TOTAL_BLOCKS, 0, 0);
 	APE::int64 nBlocksRetrieved = 1;
 	APE::int64 nTotalBlocksRetrieved = 0;
 	unsigned int nChecksum = 0;

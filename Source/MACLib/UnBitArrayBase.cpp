@@ -19,13 +19,13 @@ CUnBitArrayBase * CreateUnBitArray(IAPEDecompress * pAPEDecompress, intn nVersio
     if (nFurthestReadByte > 0)
     {
        // terminating data
-       nFurthestReadByte -= pAPEDecompress->GetInfo(APE_INFO_WAV_TERMINATING_BYTES);
+       nFurthestReadByte -= pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_WAV_TERMINATING_BYTES);
 
        // tag (not worth analyzing the tag since we could be a remote file, etc.)
        // also don't not read the tag if we're working on an APL file
-       if (pAPEDecompress->GetInfo(APE_INFO_APL) == 0)
+       if (pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_APL) == 0)
        {
-           CAPETag* pAPETag = (CAPETag*)pAPEDecompress->GetInfo(APE_INFO_TAG);
+           CAPETag* pAPETag = (CAPETag*)pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_TAG);
            if ((pAPETag != NULL) && pAPETag->GetAnalyzed())
                nFurthestReadByte -= pAPETag->GetTagBytes();
        }

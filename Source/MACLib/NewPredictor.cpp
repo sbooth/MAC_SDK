@@ -1,5 +1,4 @@
 #include "All.h"
-#include "APECompress.h"
 #include "NewPredictor.h"
 #include "MACLib.h"
 
@@ -21,33 +20,25 @@ template <class INTTYPE> CPredictorCompressNormal<INTTYPE>::CPredictorCompressNo
 
     if (nCompressionLevel == MAC_COMPRESSION_LEVEL_FAST)
     {
-        m_pNNFilter = NULL;
-        m_pNNFilter1 = NULL;
-        m_pNNFilter2 = NULL;
     }
     else if (nCompressionLevel == MAC_COMPRESSION_LEVEL_NORMAL)
     {
-        m_pNNFilter = new CNNFilter<INTTYPE>(16, 11, MAC_FILE_VERSION_NUMBER);
-        m_pNNFilter1 = NULL;
-        m_pNNFilter2 = NULL;
+        m_spNNFilter.Assign(new CNNFilter<INTTYPE>(16, 11, MAC_FILE_VERSION_NUMBER));
     }
     else if (nCompressionLevel == MAC_COMPRESSION_LEVEL_HIGH)
     {
-        m_pNNFilter = new CNNFilter<INTTYPE>(64, 11, MAC_FILE_VERSION_NUMBER);
-        m_pNNFilter1 = NULL;
-        m_pNNFilter2 = NULL;
+        m_spNNFilter.Assign(new CNNFilter<INTTYPE>(64, 11, MAC_FILE_VERSION_NUMBER));
     }
     else if (nCompressionLevel == MAC_COMPRESSION_LEVEL_EXTRA_HIGH)
     {
-        m_pNNFilter = new CNNFilter<INTTYPE>(256, 13, MAC_FILE_VERSION_NUMBER);
-        m_pNNFilter1 = new CNNFilter<INTTYPE>(32, 10, MAC_FILE_VERSION_NUMBER);
-        m_pNNFilter2 = NULL;
+        m_spNNFilter.Assign(new CNNFilter<INTTYPE>(256, 13, MAC_FILE_VERSION_NUMBER));
+        m_spNNFilter1.Assign(new CNNFilter<INTTYPE>(32, 10, MAC_FILE_VERSION_NUMBER));
     }
     else if (nCompressionLevel == MAC_COMPRESSION_LEVEL_INSANE)
     {
-        m_pNNFilter = new CNNFilter<INTTYPE>(1024 + 256, 15, MAC_FILE_VERSION_NUMBER);
-        m_pNNFilter1 = new CNNFilter<INTTYPE>(256, 13, MAC_FILE_VERSION_NUMBER);
-        m_pNNFilter2 = new CNNFilter<INTTYPE>(16, 11, MAC_FILE_VERSION_NUMBER);
+        m_spNNFilter.Assign(new CNNFilter<INTTYPE>(1024 + 256, 15, MAC_FILE_VERSION_NUMBER));
+        m_spNNFilter1.Assign(new CNNFilter<INTTYPE>(256, 13, MAC_FILE_VERSION_NUMBER));
+        m_spNNFilter2.Assign(new CNNFilter<INTTYPE>(16, 11, MAC_FILE_VERSION_NUMBER));
     }
     else
     {
@@ -57,16 +48,16 @@ template <class INTTYPE> CPredictorCompressNormal<INTTYPE>::CPredictorCompressNo
 
 template <class INTTYPE> CPredictorCompressNormal<INTTYPE>::~CPredictorCompressNormal()
 {
-    SAFE_DELETE(m_pNNFilter)
-    SAFE_DELETE(m_pNNFilter1)
-    SAFE_DELETE(m_pNNFilter2)
+    m_spNNFilter.Delete();
+    m_spNNFilter1.Delete();
+    m_spNNFilter2.Delete();
 }
     
 template <class INTTYPE> int CPredictorCompressNormal<INTTYPE>::Flush()
 {
-    if (m_pNNFilter) m_pNNFilter->Flush();
-    if (m_pNNFilter1) m_pNNFilter1->Flush();
-    if (m_pNNFilter2) m_pNNFilter2->Flush();
+    if (m_spNNFilter) m_spNNFilter->Flush();
+    if (m_spNNFilter1) m_spNNFilter1->Flush();
+    if (m_spNNFilter2) m_spNNFilter2->Flush();
 
     m_rbPrediction.Flush();
     m_rbAdapt.Flush();
@@ -108,7 +99,7 @@ template <class INTTYPE> int64 CPredictorCompressNormal<INTTYPE>::CompressValue(
     INTTYPE * paryM = &m_aryM[8];
     INTTYPE nOutput;
 
-    if (sizeof(INTTYPE) == 8 || m_nBitsPerSample == 16)
+    if ((sizeof(INTTYPE) == 8) || (m_nBitsPerSample <= 16))
     {
         INTTYPE nPredictionA = (m_rbPrediction[-1] * paryM[0]) + (m_rbPrediction[-2] * paryM[-1]) + (m_rbPrediction[-3] * paryM[-2]) + (m_rbPrediction[-4] * paryM[-3]);
         INTTYPE nPredictionB = (m_rbPrediction[-5] * paryM[-4]) + (m_rbPrediction[-6] * paryM[-5]) + (m_rbPrediction[-7] * paryM[-6]) + (m_rbPrediction[-8] * paryM[-7]) + (m_rbPrediction[-9] * paryM[-8]);
@@ -120,7 +111,11 @@ template <class INTTYPE> int64 CPredictorCompressNormal<INTTYPE>::CompressValue(
         int64 nPredictionA = (int64(m_rbPrediction[-1]) * paryM[0]) + (int64(m_rbPrediction[-2]) * paryM[-1]) + (int64(m_rbPrediction[-3]) * paryM[-2]) + (int64(m_rbPrediction[-4]) * paryM[-3]);
         int64 nPredictionB = (int64(m_rbPrediction[-5]) * paryM[-4]) + (int64(m_rbPrediction[-6]) * paryM[-5]) + (int64(m_rbPrediction[-7]) * paryM[-6]) + (int64(m_rbPrediction[-8]) * paryM[-7]) + (int64(m_rbPrediction[-9]) * paryM[-8]);
 
+    #ifdef LEGACY_ENCODE
+        nOutput = nA - INTTYPE((int(nPredictionA) + (int(nPredictionB) >> 1)) >> 10);
+    #else
         nOutput = nA - INTTYPE((nPredictionA + (nPredictionB >> 1)) >> 10);
+    #endif
     }
 
     // adapt
@@ -141,16 +136,16 @@ template <class INTTYPE> int64 CPredictorCompressNormal<INTTYPE>::CompressValue(
     }
 
     // stage 3: NNFilters
-    if (m_pNNFilter)
+    if (m_spNNFilter)
     {
-        nOutput = m_pNNFilter->Compress(nOutput);
+        nOutput = m_spNNFilter->Compress(nOutput);
 
-        if (m_pNNFilter1)
+        if (m_spNNFilter1)
         {
-            nOutput = m_pNNFilter1->Compress(nOutput);
+            nOutput = m_spNNFilter1->Compress(nOutput);
 
-            if (m_pNNFilter2)
-                nOutput = m_pNNFilter2->Compress(nOutput);
+            if (m_spNNFilter2)
+                nOutput = m_spNNFilter2->Compress(nOutput);
         }
     }
 
@@ -169,27 +164,24 @@ CPredictorDecompressNormal3930to3950
 CPredictorDecompressNormal3930to3950::CPredictorDecompressNormal3930to3950(int nCompressionLevel, int nVersion)
     : IPredictorDecompress(nCompressionLevel, nVersion)
 {
-    m_pBuffer[0] = new int [HISTORY_ELEMENTS + WINDOW_BLOCKS];
+    m_spBuffer.Assign(new int [HISTORY_ELEMENTS + WINDOW_BLOCKS], true);
 
     if (nCompressionLevel == MAC_COMPRESSION_LEVEL_FAST)
     {
-        m_pNNFilter = NULL;
-        m_pNNFilter1 = NULL;
+        // no filters
     }
     else if (nCompressionLevel == MAC_COMPRESSION_LEVEL_NORMAL)
     {
-        m_pNNFilter = new CNNFilter<int>(16, 11, nVersion);
-        m_pNNFilter1 = NULL;
+        m_spNNFilter.Assign(new CNNFilter<int>(16, 11, nVersion));
     }
     else if (nCompressionLevel == MAC_COMPRESSION_LEVEL_HIGH)
     {
-        m_pNNFilter = new CNNFilter<int>(64, 11, nVersion);
-        m_pNNFilter1 = NULL;
+        m_spNNFilter.Assign(new CNNFilter<int>(64, 11, nVersion));
     }
     else if (nCompressionLevel == MAC_COMPRESSION_LEVEL_EXTRA_HIGH)
     {
-        m_pNNFilter = new CNNFilter<int>(256, 13, nVersion);
-        m_pNNFilter1 = new CNNFilter<int>(32, 10, nVersion);
+        m_spNNFilter.Assign(new CNNFilter<int>(256, 13, nVersion));
+        m_spNNFilter1.Assign(new CNNFilter<int>(32, 10, nVersion));
     }
     else
     {
@@ -199,17 +191,17 @@ CPredictorDecompressNormal3930to3950::CPredictorDecompressNormal3930to3950(int n
 
 CPredictorDecompressNormal3930to3950::~CPredictorDecompressNormal3930to3950()
 {
-    SAFE_DELETE(m_pNNFilter)
-    SAFE_DELETE(m_pNNFilter1)
-    SAFE_ARRAY_DELETE(m_pBuffer[0])
+    m_spNNFilter.Delete();
+    m_spNNFilter1.Delete();
+    m_spBuffer.Delete();
 }
     
 int CPredictorDecompressNormal3930to3950::Flush()
 {
-    if (m_pNNFilter) m_pNNFilter->Flush();
-    if (m_pNNFilter1) m_pNNFilter1->Flush();
+    if (m_spNNFilter) m_spNNFilter->Flush();
+    if (m_spNNFilter1) m_spNNFilter1->Flush();
 
-    ZeroMemory(m_pBuffer[0], (HISTORY_ELEMENTS + 1) * sizeof(int));    
+    ZeroMemory(m_spBuffer, (HISTORY_ELEMENTS + 1) * sizeof(int));
     ZeroMemory(&m_aryM[0], M_COUNT * sizeof(int));
 
     m_aryM[0] = 360;
@@ -217,7 +209,7 @@ int CPredictorDecompressNormal3930to3950::Flush()
     m_aryM[2] = -109;
     m_aryM[3] = 98;
 
-    m_pInputBuffer = &m_pBuffer[0][HISTORY_ELEMENTS];
+    m_pInputBuffer = &m_spBuffer[HISTORY_ELEMENTS];
     
     m_nLastValue = 0;
     m_nCurrentIndex = 0;
@@ -230,8 +222,8 @@ int CPredictorDecompressNormal3930to3950::DecompressValue(int64 _nInput, int64)
     if (m_nCurrentIndex == WINDOW_BLOCKS)
     {
         // copy forward and adjust pointers
-        memcpy(&m_pBuffer[0][0], &m_pBuffer[0][WINDOW_BLOCKS], HISTORY_ELEMENTS * sizeof(int64));
-        m_pInputBuffer = &m_pBuffer[0][HISTORY_ELEMENTS];
+        memcpy(&m_spBuffer[0], &m_spBuffer[WINDOW_BLOCKS], HISTORY_ELEMENTS * sizeof(int64));
+        m_pInputBuffer = &m_spBuffer[HISTORY_ELEMENTS];
 
         m_nCurrentIndex = 0;
     }
@@ -239,10 +231,10 @@ int CPredictorDecompressNormal3930to3950::DecompressValue(int64 _nInput, int64)
     int nInput = int(_nInput);
 
     // stage 2: NNFilter
-    if (m_pNNFilter1)
-        nInput = m_pNNFilter1->Decompress(nInput);
-    if (m_pNNFilter)
-        nInput = m_pNNFilter->Decompress(nInput);
+    if (m_spNNFilter1)
+        nInput = m_spNNFilter1->Decompress(nInput);
+    if (m_spNNFilter)
+        nInput = m_spNNFilter->Decompress(nInput);
 
     // stage 1: multiple predictors (order 2 and offset 1)
     int p1 = m_pInputBuffer[-1];
@@ -288,33 +280,25 @@ template <class INTTYPE> CPredictorDecompress3950toCurrent<INTTYPE>::CPredictorD
 
     if (nCompressionLevel == MAC_COMPRESSION_LEVEL_FAST)
     {
-        m_pNNFilter = NULL;
-        m_pNNFilter1 = NULL;
-        m_pNNFilter2 = NULL;
     }
     else if (nCompressionLevel == MAC_COMPRESSION_LEVEL_NORMAL)
     {
-        m_pNNFilter = new CNNFilter<INTTYPE>(16, 11, nVersion);
-        m_pNNFilter1 = NULL;
-        m_pNNFilter2 = NULL;
+        m_spNNFilter.Assign(new CNNFilter<INTTYPE>(16, 11, nVersion));
     }
     else if (nCompressionLevel == MAC_COMPRESSION_LEVEL_HIGH)
     {
-        m_pNNFilter = new CNNFilter<INTTYPE>(64, 11, nVersion);
-        m_pNNFilter1 = NULL;
-        m_pNNFilter2 = NULL;
+        m_spNNFilter.Assign(new CNNFilter<INTTYPE>(64, 11, nVersion));
     }
     else if (nCompressionLevel == MAC_COMPRESSION_LEVEL_EXTRA_HIGH)
     {
-        m_pNNFilter = new CNNFilter<INTTYPE>(256, 13, nVersion);
-        m_pNNFilter1 = new CNNFilter<INTTYPE>(32, 10, nVersion);
-        m_pNNFilter2 = NULL;
+        m_spNNFilter.Assign(new CNNFilter<INTTYPE>(256, 13, nVersion));
+        m_spNNFilter1.Assign(new CNNFilter<INTTYPE>(32, 10, nVersion));
     }
     else if (nCompressionLevel == MAC_COMPRESSION_LEVEL_INSANE)
     {
-        m_pNNFilter = new CNNFilter<INTTYPE>(1024 + 256, 15, nVersion);
-        m_pNNFilter1 = new CNNFilter<INTTYPE>(256, 13, nVersion);
-        m_pNNFilter2 = new CNNFilter<INTTYPE>(16, 11, nVersion);
+        m_spNNFilter.Assign(new CNNFilter<INTTYPE>(1024 + 256, 15, nVersion));
+        m_spNNFilter1.Assign(new CNNFilter<INTTYPE>(256, 13, nVersion));
+        m_spNNFilter2.Assign(new CNNFilter<INTTYPE>(16, 11, nVersion));
     }
     else
     {
@@ -324,25 +308,25 @@ template <class INTTYPE> CPredictorDecompress3950toCurrent<INTTYPE>::CPredictorD
 
 template <class INTTYPE> CPredictorDecompress3950toCurrent<INTTYPE>::~CPredictorDecompress3950toCurrent()
 {
-    SAFE_DELETE(m_pNNFilter)
-    SAFE_DELETE(m_pNNFilter1)
-    SAFE_DELETE(m_pNNFilter2)
+    m_spNNFilter.Delete();
+    m_spNNFilter1.Delete();
+    m_spNNFilter2.Delete();
 }
 
 template <class INTTYPE> void CPredictorDecompress3950toCurrent<INTTYPE>::SetLegacyDecode(bool bSet)
 {
     m_bLegacyDecode = bSet;
 
-    if (m_pNNFilter) m_pNNFilter->SetLegacyDecode(bSet);
-    if (m_pNNFilter1) m_pNNFilter1->SetLegacyDecode(bSet);
-    if (m_pNNFilter2) m_pNNFilter2->SetLegacyDecode(bSet);
+    if (m_spNNFilter) m_spNNFilter->SetLegacyDecode(bSet);
+    if (m_spNNFilter1) m_spNNFilter1->SetLegacyDecode(bSet);
+    if (m_spNNFilter2) m_spNNFilter2->SetLegacyDecode(bSet);
 }
 
 template <class INTTYPE> int CPredictorDecompress3950toCurrent<INTTYPE>::Flush()
 {
-    if (m_pNNFilter) m_pNNFilter->Flush();
-    if (m_pNNFilter1) m_pNNFilter1->Flush();
-    if (m_pNNFilter2) m_pNNFilter2->Flush();
+    if (m_spNNFilter) m_spNNFilter->Flush();
+    if (m_spNNFilter1) m_spNNFilter1->Flush();
+    if (m_spNNFilter2) m_spNNFilter2->Flush();
 
     ZeroMemory(m_aryMA, sizeof(m_aryMA));
     ZeroMemory(m_aryMB, sizeof(m_aryMB));
@@ -372,7 +356,7 @@ template <class INTTYPE> int CPredictorDecompress3950toCurrent<INTTYPE>::Decompr
     if (m_nCurrentIndex == WINDOW_BLOCKS)
     {
         // copy forward and adjust pointers
-        m_rbPredictionA.Roll();    m_rbPredictionB.Roll();
+        m_rbPredictionA.Roll(); m_rbPredictionB.Roll();
         m_rbAdaptA.Roll(); m_rbAdaptB.Roll();
 
         m_nCurrentIndex = 0;
@@ -382,12 +366,12 @@ template <class INTTYPE> int CPredictorDecompress3950toCurrent<INTTYPE>::Decompr
     INTTYPE nB = INTTYPE(_nB);
 
     // stage 2: NNFilter
-    if (m_pNNFilter2)
-        nA = m_pNNFilter2->Decompress(nA);
-    if (m_pNNFilter1)
-        nA = m_pNNFilter1->Decompress(nA);
-    if (m_pNNFilter)
-        nA = m_pNNFilter->Decompress(nA);
+    if (m_spNNFilter2)
+        nA = m_spNNFilter2->Decompress(nA);
+    if (m_spNNFilter1)
+        nA = m_spNNFilter1->Decompress(nA);
+    if (m_spNNFilter)
+        nA = m_spNNFilter->Decompress(nA);
 
     // stage 1: multiple predictors (order 2 and offset 1)
     m_rbPredictionA[0] = m_nLastValueA;
@@ -398,7 +382,7 @@ template <class INTTYPE> int CPredictorDecompress3950toCurrent<INTTYPE>::Decompr
 
     INTTYPE nCurrentA;
 
-    if (sizeof(INTTYPE) == 8 || m_nBitsPerSample == 16)
+    if ((sizeof(INTTYPE) == 8) || (m_nBitsPerSample <= 16))
     {
         INTTYPE nPredictionA = (m_rbPredictionA[0] * m_aryMA[0]) + (m_rbPredictionA[-1] * m_aryMA[1]) + (m_rbPredictionA[-2] * m_aryMA[2]) + (m_rbPredictionA[-3] * m_aryMA[3]);
         INTTYPE nPredictionB = (m_rbPredictionB[0] * m_aryMB[0]) + (m_rbPredictionB[-1] * m_aryMB[1]) + (m_rbPredictionB[-2] * m_aryMB[2]) + (m_rbPredictionB[-3] * m_aryMB[3]) + (m_rbPredictionB[-4] * m_aryMB[4]);

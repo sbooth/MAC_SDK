@@ -16,7 +16,6 @@ IPredictorDecompress * __stdcall CreateIPredictorDecompress();
 
 #define WINDOW_BLOCKS           4096
 
-#define BUFFER_COUNT            1
 #define HISTORY_ELEMENTS        8
 #define M_COUNT                 8
 
@@ -43,9 +42,9 @@ protected:
     // other
     int m_nCurrentIndex;
     int m_nBitsPerSample;
-    CNNFilter<INTTYPE> * m_pNNFilter;
-    CNNFilter<INTTYPE> * m_pNNFilter1;
-    CNNFilter<INTTYPE> * m_pNNFilter2;
+    CSmartPtr<CNNFilter<INTTYPE>> m_spNNFilter;
+    CSmartPtr<CNNFilter<INTTYPE>> m_spNNFilter1;
+    CSmartPtr<CNNFilter<INTTYPE>> m_spNNFilter2;
 };
 
 class CPredictorDecompressNormal3930to3950 : public IPredictorDecompress
@@ -59,7 +58,7 @@ public:
     
 protected:
     // buffer information
-    int * m_pBuffer[BUFFER_COUNT];
+    CSmartPtr<int> m_spBuffer;
 
     // adaption
     int m_aryM[M_COUNT];
@@ -70,8 +69,8 @@ protected:
     // other
     int m_nCurrentIndex;
     int m_nLastValue;
-    CNNFilter<int> * m_pNNFilter;
-    CNNFilter<int> * m_pNNFilter1;
+    CSmartPtr<CNNFilter<int>> m_spNNFilter;
+    CSmartPtr<CNNFilter<int>> m_spNNFilter1;
 };
 
 template <class INTTYPE> class CPredictorDecompress3950toCurrent : public IPredictorDecompress
@@ -105,9 +104,9 @@ protected:
     INTTYPE m_nLastValueA;
     int m_nVersion;
     int m_nBitsPerSample;
-    CNNFilter<INTTYPE> * m_pNNFilter;
-    CNNFilter<INTTYPE> * m_pNNFilter1;
-    CNNFilter<INTTYPE> * m_pNNFilter2;
+    CSmartPtr<CNNFilter<INTTYPE>> m_spNNFilter;
+    CSmartPtr<CNNFilter<INTTYPE>> m_spNNFilter1;
+    CSmartPtr<CNNFilter<INTTYPE>> m_spNNFilter2;
     bool m_bLegacyDecode;
 };
 

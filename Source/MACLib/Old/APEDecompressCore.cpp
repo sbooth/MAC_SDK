@@ -5,11 +5,8 @@
 #include "APEDecompressCore.h"
 #include "../APEInfo.h"
 #include "GlobalFunctions.h"
-#include "../UnBitArrayBase.h"
 #include "Anti-Predictor.h"
-#include "UnMAC.h"
 #include "../Prepare.h"
-#include "../UnBitArray.h"
 
 namespace APE
 {
@@ -19,19 +16,21 @@ CAPEDecompressCore::CAPEDecompressCore(CIO * pIO, IAPEDecompress * pAPEDecompres
     m_pAPEDecompress = pAPEDecompress;
 
     // initialize the bit array
-    m_spUnBitArray.Assign(CreateUnBitArray(pAPEDecompress, (intn) pAPEDecompress->GetInfo(APE_INFO_FILE_VERSION)));
+    m_spUnBitArray.Assign(CreateUnBitArray(pAPEDecompress, (intn) pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_FILE_VERSION)));
     
-    if (m_pAPEDecompress->GetInfo(APE_INFO_FILE_VERSION) >= 3930)
+    if (m_pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_FILE_VERSION) >= 3930)
         throw(0);
 
-    m_spAntiPredictorX.Assign(CreateAntiPredictor((intn) pAPEDecompress->GetInfo(APE_INFO_COMPRESSION_LEVEL), (intn) pAPEDecompress->GetInfo(APE_INFO_FILE_VERSION)));
-    m_spAntiPredictorY.Assign(CreateAntiPredictor((intn) pAPEDecompress->GetInfo(APE_INFO_COMPRESSION_LEVEL), (intn) pAPEDecompress->GetInfo(APE_INFO_FILE_VERSION)));
+    m_spAntiPredictorX.Assign(CreateAntiPredictor((intn) pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_COMPRESSION_LEVEL), (intn) pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_FILE_VERSION)));
+    m_spAntiPredictorY.Assign(CreateAntiPredictor((intn) pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_COMPRESSION_LEVEL), (intn) pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_FILE_VERSION)));
     
-    m_spDataX.Assign(new int [int(pAPEDecompress->GetInfo(APE_INFO_BLOCKS_PER_FRAME)) + 16], true);
-    m_spDataY.Assign(new int [int(pAPEDecompress->GetInfo(APE_INFO_BLOCKS_PER_FRAME)) + 16], true);
-    m_spTempData.Assign(new int [int(pAPEDecompress->GetInfo(APE_INFO_BLOCKS_PER_FRAME)) + 16], true);
+    m_spDataX.Assign(new int [int(pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_BLOCKS_PER_FRAME)) + 16], true);
+    m_spDataY.Assign(new int [int(pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_BLOCKS_PER_FRAME)) + 16], true);
+    m_spTempData.Assign(new int [int(pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_BLOCKS_PER_FRAME)) + 16], true);
 
     m_nBlocksProcessed = 0;
+    m_BitArrayStateX = { 0 };
+    m_BitArrayStateY = { 0 };
     
     // check to see if MMX is available
     m_bMMXAvailable = GetMMXAvailable();
@@ -43,7 +42,7 @@ CAPEDecompressCore::~CAPEDecompressCore()
 
 void CAPEDecompressCore::GenerateDecodedArrays(intn nBlocks, intn nSpecialCodes, intn nFrameIndex, intn nCPULoadBalancingFactor)
 {
-    if (m_pAPEDecompress->GetInfo(APE_INFO_CHANNELS) == 2)
+    if (m_pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_CHANNELS) == 2)
     {
         if ((nSpecialCodes & SPECIAL_FRAME_LEFT_SILENCE) && (nSpecialCodes & SPECIAL_FRAME_RIGHT_SILENCE)) 
         {
@@ -77,17 +76,17 @@ void CAPEDecompressCore::GenerateDecodedArrays(intn nBlocks, intn nSpecialCodes,
 
 void CAPEDecompressCore::GenerateDecodedArray(int * Input_Array, uint32 Number_of_Elements, intn Frame_Index, CAntiPredictor *pAntiPredictor, intn CPULoadBalancingFactor)
 {
-    const intn nFrameBytes = (intn) m_pAPEDecompress->GetInfo(APE_INFO_FRAME_BYTES, Frame_Index);
+    const intn nFrameBytes = (intn) m_pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_FRAME_BYTES, Frame_Index);
     if (nFrameBytes <= 0)
         throw(ERROR_INVALID_INPUT_FILE);
 
     // run the prediction sequence
-    switch (m_pAPEDecompress->GetInfo(APE_INFO_COMPRESSION_LEVEL)) 
+    switch (m_pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_COMPRESSION_LEVEL))
     {
 
 #ifdef ENABLE_COMPRESSION_MODE_FAST
         case MAC_COMPRESSION_LEVEL_FAST:
-            if (m_pAPEDecompress->GetInfo(APE_INFO_FILE_VERSION) < 3320)
+            if (m_pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_FILE_VERSION) < 3320)
             {
                 m_spUnBitArray->GenerateArray(m_spTempData, Number_of_Elements, nFrameBytes);
                 pAntiPredictor->AntiPredict(m_spTempData, Input_Array, Number_of_Elements);
@@ -128,32 +127,32 @@ void CAPEDecompressCore::GenerateDecodedArray(int * Input_Array, uint32 Number_o
             uint32 nNumberOfCoefficients;
             
             #define GET_COEFFICIENTS(NumberOfCoefficientsBits, ValueBits)                                            \
-                nNumberOfCoefficients = (uint32) m_spUnBitArray->DecodeValue(DECODE_VALUE_METHOD_X_BITS, NumberOfCoefficientsBits);        \
+                nNumberOfCoefficients = (uint32) m_spUnBitArray->DecodeValue(CUnBitArrayBase::DECODE_VALUE_METHOD_X_BITS, NumberOfCoefficientsBits);        \
                 for (unsigned int z = 0; z <= nNumberOfCoefficients; z++)                                            \
                 {                                                                                                    \
-                    aryCoefficientsA[z] = m_spUnBitArray->DecodeValue(DECODE_VALUE_METHOD_X_BITS, ValueBits);                    \
-                    aryCoefficientsB[z] = m_spUnBitArray->DecodeValue(DECODE_VALUE_METHOD_X_BITS, ValueBits);                    \
+                    aryCoefficientsA[z] = m_spUnBitArray->DecodeValue(CUnBitArrayBase::DECODE_VALUE_METHOD_X_BITS, ValueBits);        \
+                    aryCoefficientsB[z] = m_spUnBitArray->DecodeValue(CUnBitArrayBase::DECODE_VALUE_METHOD_X_BITS, ValueBits);        \
                 }                                                                                                    \
 
-            if (m_pAPEDecompress->GetInfo(APE_INFO_FILE_VERSION) < 3320) 
+            if (m_pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_FILE_VERSION) < 3320)
             {
                 GET_COEFFICIENTS(4, 6)
                 m_spUnBitArray->GenerateArray(m_spTempData, Number_of_Elements, nFrameBytes);
                 ((CAntiPredictorExtraHigh0000To3320 *) pAntiPredictor)->AntiPredict(m_spTempData, Input_Array, Number_of_Elements, nNumberOfCoefficients, &aryCoefficientsA[0], &aryCoefficientsB[0]);
             }
-            else if (m_pAPEDecompress->GetInfo(APE_INFO_FILE_VERSION) < 3600) 
+            else if (m_pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_FILE_VERSION) < 3600)
             {
                 GET_COEFFICIENTS(3, 5)
                 m_spUnBitArray->GenerateArray(m_spTempData, Number_of_Elements, nFrameBytes);
                 ((CAntiPredictorExtraHigh3320To3600 *) pAntiPredictor)->AntiPredict(m_spTempData, Input_Array, Number_of_Elements, nNumberOfCoefficients, &aryCoefficientsA[0], &aryCoefficientsB[0]);
             }
-            else if (m_pAPEDecompress->GetInfo(APE_INFO_FILE_VERSION) < 3700) 
+            else if (m_pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_FILE_VERSION) < 3700)
             {
                 GET_COEFFICIENTS(3, 6)
                 m_spUnBitArray->GenerateArray(m_spTempData, Number_of_Elements, nFrameBytes);
                 ((CAntiPredictorExtraHigh3600To3700 *) pAntiPredictor)->AntiPredict(m_spTempData, Input_Array, Number_of_Elements, nNumberOfCoefficients, &aryCoefficientsA[0], &aryCoefficientsB[0]);
             }
-            else if (m_pAPEDecompress->GetInfo(APE_INFO_FILE_VERSION) < 3800) 
+            else if (m_pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_FILE_VERSION) < 3800)
             {
                 GET_COEFFICIENTS(3, 6)
                 m_spUnBitArray->GenerateArray(m_spTempData, Number_of_Elements, nFrameBytes);
@@ -162,7 +161,7 @@ void CAPEDecompressCore::GenerateDecodedArray(int * Input_Array, uint32 Number_o
             else
             {
                 m_spUnBitArray->GenerateArray(m_spTempData, Number_of_Elements, nFrameBytes);
-                ((CAntiPredictorExtraHigh3800ToCurrent *) pAntiPredictor)->AntiPredict(m_spTempData, Input_Array, Number_of_Elements, m_bMMXAvailable, CPULoadBalancingFactor, (intn) m_pAPEDecompress->GetInfo(APE_INFO_FILE_VERSION));
+                ((CAntiPredictorExtraHigh3800ToCurrent *) pAntiPredictor)->AntiPredict(m_spTempData, Input_Array, Number_of_Elements, m_bMMXAvailable, CPULoadBalancingFactor, (intn) m_pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_FILE_VERSION));
             }
             
             break;

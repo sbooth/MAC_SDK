@@ -8,7 +8,7 @@ namespace APE
 #define SPECIAL_FRAME_RIGHT_SILENCE             2
 #define SPECIAL_FRAME_PSEUDO_STEREO             4
 
-/*****************************************************************************
+/**************************************************************************************************
 Manage the preparation stage of compression and decompression
 
 Tasks:
@@ -18,7 +18,7 @@ Tasks:
 3) calculate the CRC
 4) do simple analysis
 5) check for the peak value
-*****************************************************************************/
+**************************************************************************************************/
 
 class CIO;
 class IPredictorDecompress;

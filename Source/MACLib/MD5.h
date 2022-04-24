@@ -16,8 +16,7 @@
  *  documentation and/or software.
  */
 
-#ifndef MD5SUM_MD5_H
-#define MD5SUM_MD5_H
+#pragma once
 
 namespace APE
 {
@@ -43,18 +42,11 @@ void   MD5Final  ( uint8_t digest [16], MD5_CTX* ctx );
 class CMD5Helper
 {
 public:
-    CMD5Helper(bool bInitialize = true)
-    {
-        if (bInitialize)
-            Initialize();
-    }
-
-    bool Initialize()
+    CMD5Helper()
     {
         memset(&m_MD5Context, 0, sizeof(m_MD5Context));
         MD5Init(&m_MD5Context);
         m_nTotalBytes = 0;
-        return true;
     }
 
     __forceinline void AddData(const void * pData, int64 nBytes)
@@ -77,5 +69,3 @@ protected:
 };
 
 }
-
-#endif /* MD5SUM_MD5_H */

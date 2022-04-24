@@ -48,6 +48,7 @@ protected:
     int AnalyzeOld(APE_FILE_INFO * pInfo);
 
     int FindDescriptor(bool bSeek);
+    void Convert32BitSeekTable(APE_FILE_INFO * pInfo, uint32 * pSeekTable32, int nSeekTableElements);
 
     CIO * m_pIO;
 };

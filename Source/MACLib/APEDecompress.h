@@ -22,7 +22,7 @@ public:
     int GetData(char * pBuffer, int64 nBlocks, int64 * pBlocksRetrieved);
     int Seek(int64 nBlockOffset);
 
-    int64 GetInfo(APE_DECOMPRESS_FIELDS Field, int64 nParam1 = 0, int64 nParam2 = 0);
+    int64 GetInfo(IAPEDecompress::APE_DECOMPRESS_FIELDS Field, int64 nParam1 = 0, int64 nParam2 = 0);
 
 protected:
     // file info
@@ -42,7 +42,7 @@ protected:
     unsigned int m_nCRC;
     unsigned int m_nStoredCRC;
     int m_nSpecialCodes;
-    int * m_paryChannelData;
+    CSmartPtr<int> m_sparyChannelData;
     
     int SeekToFrame(int64 nFrameIndex);
     void DecodeBlocksToFrameBuffer(int64 nBlocks);

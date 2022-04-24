@@ -1,6 +1,6 @@
 /***************************************************************************************
 Decompress - Sample 1
-Copyright (C) 2000-2001 by Matthew T. Ashland   All Rights Reserved.
+Copyright (C) 2000-2022 by Matthew T. Ashland   All Rights Reserved.
 Feel free to use this code in any way that you like.
 
 This example illustrates using MACDLib.lib and the simple IAPESimple class to verify

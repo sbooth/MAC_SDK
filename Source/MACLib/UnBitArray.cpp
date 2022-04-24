@@ -1,7 +1,5 @@
 #include "All.h"
-#include "APEInfo.h"
 #include "UnBitArray.h"
-#include "BitArray.h"
 
 namespace APE
 {
@@ -25,9 +23,9 @@ const uint32 RANGE_WIDTH_2[64] = {19578,16582,12257,7906,4576,2366,1170,536,261,
 
 #define MODEL_ELEMENTS 64
 
-/***********************************************************************************
+/**************************************************************************************************
 CUnBitArray
-***********************************************************************************/
+**************************************************************************************************/
 CUnBitArray::CUnBitArray(CIO * pIO, intn nVersion, int64 nFurthestReadByte) :
     CUnBitArrayBase(nFurthestReadByte)
 {
@@ -243,7 +241,7 @@ int64 CUnBitArray::DecodeValueRange(UNBIT_ARRAY_STATE & BitArrayState)
         }
         
         // figure the extra bits on the left and the left value
-        if (nTempK <= 16 || m_nVersion < 3910)
+        if ((nTempK <= 16) || (m_nVersion < 3910))
         {
             nValue = RangeDecodeFastWithUpdate(int(nTempK));
         }                    

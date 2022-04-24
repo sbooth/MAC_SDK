@@ -10,11 +10,13 @@ public:
     {
         m_pData = NULL;
         m_pCurrent = NULL;
+        m_nHistoryElements = 0;
+        m_nTotalElements = 0;
     }
 
     ~CRollBuffer()
     {
-        SAFE_ARRAY_DELETE(m_pData);
+        SAFE_ARRAY_DELETE(m_pData)
     }
 
     int Create(int nWindowElements, int nHistoryElements)
@@ -33,13 +35,13 @@ public:
 
     void Flush()
     {
-        ZeroMemory(m_pData, (m_nHistoryElements + 1) * sizeof(TYPE));
+        ZeroMemory(m_pData, (m_nHistoryElements + 1) * int(sizeof(TYPE)));
         m_pCurrent = &m_pData[m_nHistoryElements];
     }
 
     void Roll()
     {
-        memmove(&m_pData[0], &m_pCurrent[-m_nHistoryElements], m_nHistoryElements * sizeof(TYPE));
+        memmove(&m_pData[0], &m_pCurrent[-m_nHistoryElements], m_nHistoryElements * int(sizeof(TYPE)));
         m_pCurrent = &m_pData[m_nHistoryElements];
     }
 
@@ -78,7 +80,7 @@ public:
 
     ~CRollBufferFast()
     {
-        SAFE_ARRAY_DELETE(m_pData);
+        SAFE_ARRAY_DELETE(m_pData)
     }
 
     void Flush()

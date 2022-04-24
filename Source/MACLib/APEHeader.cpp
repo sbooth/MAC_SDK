@@ -1,6 +1,5 @@
 #include "All.h"
 #include "APEHeader.h"
-#include "MACLib.h"
 #include "APEInfo.h"
 
 #define WAV_HEADER_SANITY (1024*1024) // no WAV header should be larger than 1MB, do not even try to read if larger
@@ -120,6 +119,19 @@ int CAPEHeader::FindDescriptor(bool bSeek)
     return nJunkBytes;
 }
 
+void CAPEHeader::Convert32BitSeekTable(APE_FILE_INFO * pInfo, uint32 * pSeekTable32, int nSeekTableElements)
+{
+    pInfo->spSeekByteTable64.Assign(new int64 [nSeekTableElements], true);
+    int64 nSeekAdd = 0;
+    for (int z = 0; z < pInfo->nSeekTableElements; z++)
+    {
+        if ((z > 0) && (pSeekTable32[z] < pSeekTable32[z - 1]))
+            nSeekAdd += int64(0xFFFFFFFF) + int64(1);
+
+        pInfo->spSeekByteTable64[z] = nSeekAdd + pSeekTable32[z];
+    }
+}
+
 int CAPEHeader::Analyze(APE_FILE_INFO * pInfo)
 {
     // error check
@@ -210,11 +222,16 @@ int CAPEHeader::AnalyzeCurrent(APE_FILE_INFO * pInfo)
     pInfo->nBytesPerSample        = pInfo->nBitsPerSample / 8;
     pInfo->nBlockAlign            = pInfo->nBytesPerSample * pInfo->nChannels;
     pInfo->nTotalBlocks           = (APEHeader.nTotalFrames == 0) ? 0 : ((APEHeader.nTotalFrames -  1) * pInfo->nBlocksPerFrame) + APEHeader.nFinalFrameBlocks;
-    pInfo->nWAVHeaderBytes        = (APEHeader.nFormatFlags & MAC_FORMAT_FLAG_CREATE_WAV_HEADER) ? sizeof(WAVE_HEADER) : pInfo->spAPEDescriptor->nHeaderDataBytes;
+
+    pInfo->nWAVDataBytes = int64(pInfo->nTotalBlocks) * int64(pInfo->nBlockAlign);
+    pInfo->nWAVTotalBytes = pInfo->nWAVDataBytes + pInfo->nWAVHeaderBytes + pInfo->nWAVTerminatingBytes;
+    pInfo->nAPETotalBytes = m_pIO->GetSize();
+
+    int nWAVHeaderSize = sizeof(WAVE_HEADER);
+    if (pInfo->nWAVDataBytes >= (BYTES_IN_GIGABYTE * 4))
+        nWAVHeaderSize = sizeof(RF64_HEADER);
+    pInfo->nWAVHeaderBytes        = (APEHeader.nFormatFlags & MAC_FORMAT_FLAG_CREATE_WAV_HEADER) ? nWAVHeaderSize : pInfo->spAPEDescriptor->nHeaderDataBytes;
     pInfo->nWAVTerminatingBytes   = pInfo->spAPEDescriptor->nTerminatingDataBytes;
-    pInfo->nWAVDataBytes          = int64(pInfo->nTotalBlocks) * int64(pInfo->nBlockAlign);
-    pInfo->nWAVTotalBytes         = pInfo->nWAVDataBytes + pInfo->nWAVHeaderBytes + pInfo->nWAVTerminatingBytes;
-    pInfo->nAPETotalBytes         = uint32(m_pIO->GetSize());
     pInfo->nLengthMS              = int((double(pInfo->nTotalBlocks) * double(1000)) / double(pInfo->nSampleRate));
     pInfo->nAverageBitrate        = (pInfo->nLengthMS <= 0) ? 0 : int((double(pInfo->nAPETotalBytes) * double(8)) / double(pInfo->nLengthMS));
     pInfo->nDecompressedBitrate   = (pInfo->nBlockAlign * pInfo->nSampleRate * 8) / 1000;
@@ -229,11 +246,15 @@ int CAPEHeader::AnalyzeCurrent(APE_FILE_INFO * pInfo)
     }
 
     // get the seek tables (really no reason to get the whole thing if there's extra)
-    pInfo->spSeekByteTable.Assign(new uint32 [pInfo->nSeekTableElements], true);
-    if (pInfo->spSeekByteTable == NULL) { return ERROR_UNDEFINED; }
+    CSmartPtr<uint32> spSeekByteTable32;
+    spSeekByteTable32.Assign(new uint32 [pInfo->nSeekTableElements], true);
+    if (spSeekByteTable32 == NULL) { return ERROR_UNDEFINED; }
 
-    if (m_pIO->Read((unsigned char *) pInfo->spSeekByteTable.GetPtr(), 4 * pInfo->nSeekTableElements, &nBytesRead) || nBytesRead != 4 * (unsigned)pInfo->nSeekTableElements)
+    if (m_pIO->Read((unsigned char *) spSeekByteTable32.GetPtr(), 4 * pInfo->nSeekTableElements, &nBytesRead) || nBytesRead != 4 * (unsigned) pInfo->nSeekTableElements)
         return ERROR_IO_READ;
+
+    // convert to int64
+    Convert32BitSeekTable(pInfo, spSeekByteTable32, pInfo->nSeekTableElements);
 
     // get the wave header
     if (!(APEHeader.nFormatFlags & MAC_FORMAT_FLAG_CREATE_WAV_HEADER))
@@ -320,7 +341,7 @@ int CAPEHeader::AnalyzeOld(APE_FILE_INFO * pInfo)
     pInfo->nWAVTerminatingBytes   = int(APEHeader.nTerminatingBytes);
     pInfo->nWAVDataBytes          = pInfo->nTotalBlocks * pInfo->nBlockAlign;
     pInfo->nWAVTotalBytes         = pInfo->nWAVDataBytes + pInfo->nWAVHeaderBytes + pInfo->nWAVTerminatingBytes;
-    pInfo->nAPETotalBytes         = uint32(m_pIO->GetSize());
+    pInfo->nAPETotalBytes         = m_pIO->GetSize();
     pInfo->nLengthMS              = int((double(pInfo->nTotalBlocks) * double(1000)) / double(pInfo->nSampleRate));
     pInfo->nAverageBitrate        = (pInfo->nLengthMS <= 0) ? 0 : int((double(pInfo->nAPETotalBytes) * double(8)) / double(pInfo->nLengthMS));
     pInfo->nDecompressedBitrate   = (pInfo->nBlockAlign * pInfo->nSampleRate * 8) / 1000;
@@ -335,7 +356,7 @@ int CAPEHeader::AnalyzeOld(APE_FILE_INFO * pInfo)
         return ERROR_INVALID_INPUT_FILE;
 
     // check for nonsense in nSeekTableElements field
-    if ((unsigned)pInfo->nSeekTableElements > (unsigned)pInfo->nAPETotalBytes/4)
+    if ((unsigned)pInfo->nSeekTableElements > (unsigned)(pInfo->nAPETotalBytes / 4))
     {
         ASSERT(0);
         return ERROR_INVALID_INPUT_FILE;
@@ -353,11 +374,15 @@ int CAPEHeader::AnalyzeOld(APE_FILE_INFO * pInfo)
     }
 
     // get the seek tables (really no reason to get the whole thing if there's extra)
-    pInfo->spSeekByteTable.Assign(new uint32 [pInfo->nSeekTableElements], true);
-    if (pInfo->spSeekByteTable == NULL) { return ERROR_UNDEFINED; }
+    CSmartPtr<uint32> spSeekByteTable32;
+    spSeekByteTable32.Assign(new uint32[pInfo->nSeekTableElements], true);
+    if (spSeekByteTable32 == NULL) { return ERROR_UNDEFINED; }
 
-    if (m_pIO->Read((unsigned char *) pInfo->spSeekByteTable.GetPtr(), 4 * pInfo->nSeekTableElements, &nBytesRead) || nBytesRead != 4 * (unsigned)pInfo->nSeekTableElements)
+    if (m_pIO->Read((unsigned char *) spSeekByteTable32.GetPtr(), 4 * pInfo->nSeekTableElements, &nBytesRead) || nBytesRead != 4 * (unsigned)pInfo->nSeekTableElements)
         return ERROR_IO_READ;
+
+    // convert to int64
+    Convert32BitSeekTable(pInfo, spSeekByteTable32, pInfo->nSeekTableElements);
 
     // seek bit table (for older files)
     if (APEHeader.nVersion <= 3800) 

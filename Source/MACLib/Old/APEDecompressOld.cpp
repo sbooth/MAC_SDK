@@ -2,7 +2,6 @@
 
 #ifdef APE_BACKWARDS_COMPATIBILITY
 
-#include "UnMAC.h"
 #include "APEDecompressOld.h"
 #include "../APEInfo.h"
 

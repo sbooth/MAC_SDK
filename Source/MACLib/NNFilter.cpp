@@ -1,7 +1,6 @@
 #include "All.h"
 #include "GlobalFunctions.h"
 #include "NNFilter.h"
-#include "Predictor.h"
 
 #ifdef ENABLE_SSE_ASSEMBLY
     #include <emmintrin.h> // SSE 2
@@ -59,10 +58,12 @@ template <class INTTYPE> CNNFilter<INTTYPE>::CNNFilter(int nOrder, int nShift, i
 
     m_nOrder = nOrder;
     m_nShift = nShift;
+    m_nOneShiftedByShift = int(1 << (m_nShift - 1));
     m_nVersion = nVersion;
     m_bLegacyDecode = false;
     m_bSSEAvailable = GetSSEAvailable(false);
     m_bAVX2Available = GetAVX2Available();
+    m_nRunningAverage = 0;
 
     m_rbInput16.Create(NN_WINDOW_ELEMENTS, m_nOrder);
     m_rbDeltaM16.Create(NN_WINDOW_ELEMENTS, m_nOrder);
@@ -120,8 +121,12 @@ template <class INTTYPE> INTTYPE CNNFilter<INTTYPE>::Compress(INTTYPE nInput)
                 nDotProduct = CalculateDotProductx16(&m_rbInput16[-m_nOrder], &m_paryM16[0], m_nOrder);
 
         // calculate the output
-        INTTYPE nOutput = INTTYPE(nInput - ((nDotProduct + int(1 << (m_nShift - 1))) >> m_nShift));
-
+        #ifdef LEGACY_ENCODE
+            INTTYPE nOutput = INTTYPE(nInput - ((int(nDotProduct) + m_nOneShiftedByShift) >> m_nShift));
+        #else
+            INTTYPE nOutput = INTTYPE(nInput - ((nDotProduct + m_nOneShiftedByShift) >> m_nShift));
+        #endif
+        
         // adapt
         #ifdef ENABLE_AVX_ASSEMBLY
             if (this->useAVX2())
@@ -167,7 +172,7 @@ template <class INTTYPE> INTTYPE CNNFilter<INTTYPE>::Compress(INTTYPE nInput)
         int64 nDotProduct = CalculateDotProduct(&m_rbInput32[-m_nOrder], &m_paryM32[0], m_nOrder);
 
         // calculate the output
-        INTTYPE nOutput = INTTYPE(nInput - ((nDotProduct + int(1 << (m_nShift - 1))) >> m_nShift));
+        INTTYPE nOutput = INTTYPE(nInput - ((nDotProduct + m_nOneShiftedByShift) >> m_nShift));
 
         // adapt
         #ifdef ENABLE_AVX_ASSEMBLY
@@ -241,9 +246,9 @@ template <class INTTYPE> INTTYPE CNNFilter<INTTYPE>::Decompress(INTTYPE nInput)
         // store the output value
         INTTYPE nOutput;
         if (m_bLegacyDecode)
-            nOutput = INTTYPE(nInput + ((int(nDotProduct) + (1 << (m_nShift - 1))) >> m_nShift));
+            nOutput = INTTYPE(nInput + ((int(nDotProduct) + m_nOneShiftedByShift) >> m_nShift));
         else
-            nOutput = INTTYPE(nInput + ((nDotProduct + int(1 << (m_nShift - 1))) >> m_nShift));
+            nOutput = INTTYPE(nInput + ((nDotProduct + m_nOneShiftedByShift) >> m_nShift));
 
         // update the input buffer
         m_rbInput16[0] = GetSaturatedShortFromInt(nOutput);
@@ -299,8 +304,8 @@ template <class INTTYPE> INTTYPE CNNFilter<INTTYPE>::Decompress(INTTYPE nInput)
                 Adapt(&m_paryM32[0], &m_rbDeltaM32[-m_nOrder], nInput, m_nOrder);
 
         // store the output value
-        INTTYPE nOutput = INTTYPE(nInput + ((nDotProduct + int(1 << (m_nShift - 1))) >> m_nShift));
-
+        INTTYPE nOutput = INTTYPE(nInput + ((nDotProduct + m_nOneShiftedByShift) >> m_nShift));
+    
         // update the input buffer
         m_rbInput32[0] = GetSaturatedShortFromInt(nOutput);
 

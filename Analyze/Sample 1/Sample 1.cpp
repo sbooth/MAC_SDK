@@ -1,6 +1,6 @@
 /***************************************************************************************
 Analyze - Sample 1
-Copyright (C) 2000-2001 by Matthew T. Ashland   All Rights Reserved.
+Copyright (C) 2000-2022 by Matthew T. Ashland   All Rights Reserved.
 Feel free to use this code in any way that you like.
 
 This example opens an APE file and displays some basic information about it. To use it,
@@ -50,7 +50,7 @@ int wmain(int argc, wchar_t* argv[])
 	///////////////////////////////////////////////////////////////////////////////
 	// open the file and error check
 	///////////////////////////////////////////////////////////////////////////////
-	pAPEDecompress = CreateIAPEDecompress(pFilename, &nRetVal);
+	pAPEDecompress = CreateIAPEDecompress(pFilename, &nRetVal, false, true, false);
 	if (pAPEDecompress == NULL)
 	{
 		_tprintf(_T("Error opening APE file. (error code %d)\r\n\r\n"), nRetVal);
@@ -64,8 +64,8 @@ int wmain(int argc, wchar_t* argv[])
 
 	// file format information
 	_tprintf(_T("File Format:\r\n"));
-	_tprintf(_T("\tVersion: %.2f\r\n"), float(pAPEDecompress->GetInfo(APE_INFO_FILE_VERSION)) / float(1000));
-	switch (pAPEDecompress->GetInfo(APE_INFO_COMPRESSION_LEVEL))
+	_tprintf(_T("\tVersion: %.2f\r\n"), float(pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_FILE_VERSION)) / float(1000));
+	switch (pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_COMPRESSION_LEVEL))
 	{
 		case MAC_COMPRESSION_LEVEL_FAST: printf("\tCompression level: Fast\r\n\r\n"); break;
 		case MAC_COMPRESSION_LEVEL_NORMAL: printf("\tCompression level: Normal\r\n\r\n"); break;
@@ -75,20 +75,20 @@ int wmain(int argc, wchar_t* argv[])
 
 	// audio format information
 	_tprintf(_T("Audio Format:\r\n"));
-	_tprintf(_T("\tSamples per second: %I64d\r\n"), pAPEDecompress->GetInfo(APE_INFO_SAMPLE_RATE));
-	_tprintf(_T("\tBits per sample: %I64d\r\n"), pAPEDecompress->GetInfo(APE_INFO_BITS_PER_SAMPLE));
-	_tprintf(_T("\tNumber of channels: %I64d\r\n"), pAPEDecompress->GetInfo(APE_INFO_CHANNELS));
-	_tprintf(_T("\tPeak level: %I64d\r\n\r\n"), pAPEDecompress->GetInfo(APE_INFO_PEAK_LEVEL));
+	_tprintf(_T("\tSamples per second: %I64d\r\n"), pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_SAMPLE_RATE));
+	_tprintf(_T("\tBits per sample: %I64d\r\n"), pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_BITS_PER_SAMPLE));
+	_tprintf(_T("\tNumber of channels: %I64d\r\n"), pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_CHANNELS));
+	_tprintf(_T("\tPeak level: %I64d\r\n\r\n"), pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_PEAK_LEVEL));
 
 	// size and duration information
 	_tprintf(_T("Size and Duration:\r\n"));
-	_tprintf(_T("\tLength of file (s): %I64d\r\n"), pAPEDecompress->GetInfo(APE_INFO_LENGTH_MS) / 1000);
-	_tprintf(_T("\tFile Size (kb): %I64d\r\n\r\n"), pAPEDecompress->GetInfo(APE_INFO_APE_TOTAL_BYTES) / 1024);
+	_tprintf(_T("\tLength of file (s): %I64d\r\n"), pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_LENGTH_MS) / 1000);
+	_tprintf(_T("\tFile Size (kb): %I64d\r\n\r\n"), pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_APE_TOTAL_BYTES) / 1024);
 	
 	// tag information
 	_tprintf(_T("Tag Information:\r\n"));
 	
-	APE::CAPETag * pAPETag = (APE::CAPETag *) pAPEDecompress->GetInfo(APE_INFO_TAG);
+	APE::CAPETag * pAPETag = (APE::CAPETag *) pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_TAG);
 	BOOL bHasID3Tag = pAPETag->GetHasID3Tag();
 	BOOL bHasAPETag = pAPETag->GetHasAPETag();
 	

@@ -13,7 +13,7 @@
 ///////////////////////////////////
 __declspec(dllexport) short FAR PASCAL QueryCoolFilter(COOLQUERY far * cq)
 {   
-    strcpy_s(cq->szName, 24, "Monkey's Audio");        
+    strcpy_s(cq->szName, 24, "Monkey's Audio");
     strcpy_s(cq->szCopyright, 80, "Monkey's Audio file");
     strcpy_s(cq->szExt, 4, "APE");
     strcpy_s(cq->szExt2, 4, "MAC");

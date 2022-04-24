@@ -89,7 +89,9 @@ Version
 Global compiler settings (useful for porting)
 **************************************************************************************************/
 #ifdef _MSC_VER
-    #pragma warning(disable: 4100)
+    #pragma warning(disable: 4100) // this just warns all over for unused parameters, but there are real cases where that is needed (like a virtual override)
+    #pragma warning(disable: 6001) // this gives a warning that a variable is uninitialized, but it's being set to NULL originally and set to a pointer after so I can't figure out why
+    #pragma warning(disable: 26812) // this is about unscoped enums, but sometimes that is desired
 #endif
 
 // assembly code (helps performance, but limits portability)
@@ -129,6 +131,9 @@ Global compiler settings (useful for porting)
 #define ENABLE_COMPRESSION_MODE_NORMAL
 #define ENABLE_COMPRESSION_MODE_HIGH
 #define ENABLE_COMPRESSION_MODE_EXTRA_HIGH
+
+// switch to legacy encoding (for support in FFMpeg, etc.)
+//#define LEGACY_ENCODE
 
 /**************************************************************************************************
 Global types
@@ -171,8 +176,8 @@ Global macros
     #define MESSAGEBOX(PARENT, TEXT, CAPTION, TYPE)     ::MessageBox(PARENT, TEXT, CAPTION, TYPE)
     #define PUMP_MESSAGE_LOOP                           { MSG Msg; while (PeekMessage(&Msg, NULL, 0, 0, PM_REMOVE) != 0) { TranslateMessage(&Msg); DispatchMessage(&Msg); } }
     #define ODS                                         OutputDebugString
-    #define TICK_COUNT_TYPE                             unsigned long
-    #define TICK_COUNT_READ(VARIABLE)                   VARIABLE = GetTickCount()
+    #define TICK_COUNT_TYPE                             unsigned long long
+    #define TICK_COUNT_READ(VARIABLE)                   VARIABLE = GetTickCount64()
     #define TICK_COUNT_FREQ                             1000
 
     #if !defined(ASSERT)
@@ -190,6 +195,8 @@ Global macros
     #define PUMP_MESSAGE_LOOP
     #undef    ODS
     #define ODS                                         printf
+    #define TICK_COUNT_TYPE                             unsigned long long
+    #define TICK_COUNT_READ(VARIABLE)                   { struct timeval t; gettimeofday(&t, NULL); VARIABLE = t.tv_sec * 1000000LLU + t.tv_usec; }
     #define TICK_COUNT_FREQ                             1000000
     #undef    ASSERT
     #define ASSERT(e)
@@ -206,7 +213,7 @@ WAVE format descriptor (binary compatible with Windows define, but in the APE na
 **************************************************************************************************/
 namespace APE
 {
-#pragma pack(push, 1)
+    #pragma pack(push, 1)
     typedef struct tWAVEFORMATEX
     {
         WORD        wFormatTag;         /* format type */
@@ -218,7 +225,24 @@ namespace APE
         WORD        cbSize;             /* the count in bytes of the size of */
         /* extra information (after cbSize) */
     } WAVEFORMATEX, *PWAVEFORMATEX, NEAR *NPWAVEFORMATEX, FAR *LPWAVEFORMATEX;
-#pragma pack(pop)
+    #pragma pack(pop)
+}
+
+/**************************************************************************************************
+Modes
+**************************************************************************************************/
+namespace APE
+{
+    enum MAC_MODES
+    {
+        MODE_COMPRESS,
+        MODE_DECOMPRESS,
+        MODE_VERIFY,
+        MODE_CONVERT,
+        MODE_MAKE_APL,
+        MODE_CHECK,
+        MODE_COUNT,
+    };
 }
 
 /**************************************************************************************************

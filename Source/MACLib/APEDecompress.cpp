@@ -1,8 +1,6 @@
 #include "All.h"
 #include "APEDecompress.h"
 #include "APEInfo.h"
-#include "Prepare.h"
-#include "UnBitArray.h"
 #include "NewPredictor.h"
 
 namespace APE
@@ -48,7 +46,7 @@ CAPEDecompress::CAPEDecompress(int * pErrorCode, CAPEInfo * pAPEInfo, int64 nSta
     m_bIsRanged = (m_nStartBlock != 0) || (m_nFinishBlock != GetInfo(APE_INFO_TOTAL_BLOCKS));
 
     // channel data
-    m_paryChannelData = new int [32];
+    m_sparyChannelData.Assign(new int[32], true);
 
     // predictors
     memset(m_aryPredictor, 0, sizeof(m_aryPredictor));
@@ -56,7 +54,7 @@ CAPEDecompress::CAPEDecompress(int * pErrorCode, CAPEInfo * pAPEInfo, int64 nSta
 
 CAPEDecompress::~CAPEDecompress()
 {
-    delete[] m_paryChannelData;
+    m_sparyChannelData.Delete();
     for (int z = 0; z < 32; z++)
     {
         if (m_aryPredictor[z] != NULL)
@@ -326,9 +324,9 @@ void CAPEDecompress::DecodeBlocksToFrameBuffer(int64 nBlocks)
                 {
                     int64 nValue = m_spUnBitArray->DecodeValueRange(m_aryBitArrayStates[nChannel]);
                     int nValue2 = m_aryPredictor[nChannel]->DecompressValue(nValue, 0);
-                    m_paryChannelData[nChannel] = nValue2;
+                    m_sparyChannelData[nChannel] = nValue2;
                 }
-                m_Prepare.Unprepare(m_paryChannelData, &m_wfeInput, m_cbFrameBuffer.GetDirectWritePointer());
+                m_Prepare.Unprepare(m_sparyChannelData, &m_wfeInput, m_cbFrameBuffer.GetDirectWritePointer());
                 m_cbFrameBuffer.UpdateAfterDirectWrite(m_nBlockAlign);
             }
         }
@@ -431,7 +429,7 @@ void CAPEDecompress::StartFrame()
     m_nCRC = 0xFFFFFFFF;
     
     // get the frame header
-    m_nStoredCRC = (unsigned int) m_spUnBitArray->DecodeValue(DECODE_VALUE_METHOD_UNSIGNED_INT);
+    m_nStoredCRC = (unsigned int) m_spUnBitArray->DecodeValue(CUnBitArrayBase::DECODE_VALUE_METHOD_UNSIGNED_INT);
     m_bErrorDecodingCurrentFrame = false;
     m_nErrorDecodingCurrentFrameOutputSilenceBlocks = 0;
 
@@ -441,7 +439,7 @@ void CAPEDecompress::StartFrame()
     {
         if (m_nStoredCRC & 0x80000000) 
         {
-            m_nSpecialCodes = (int) m_spUnBitArray->DecodeValue(DECODE_VALUE_METHOD_UNSIGNED_INT);
+            m_nSpecialCodes = (int) m_spUnBitArray->DecodeValue(CUnBitArrayBase::DECODE_VALUE_METHOD_UNSIGNED_INT);
         }
         m_nStoredCRC &= 0x7FFFFFFF;
     }
@@ -498,7 +496,7 @@ int CAPEDecompress::SeekToFrame(int64 nFrameIndex)
 /**************************************************************************************************
 Get information from the decompressor
 **************************************************************************************************/
-int64 CAPEDecompress::GetInfo(APE_DECOMPRESS_FIELDS Field, int64 nParam1, int64 nParam2)
+int64 CAPEDecompress::GetInfo(IAPEDecompress::APE_DECOMPRESS_FIELDS Field, int64 nParam1, int64 nParam2)
 {
     int64 nResult = 0;
     bool bHandled = true;
@@ -580,7 +578,8 @@ int64 CAPEDecompress::GetInfo(APE_DECOMPRESS_FIELDS Field, int64 nParam1, int64 
             }
             else
             {
-                WAVEFORMATEX wfeFormat; GetInfo(APE_INFO_WAVEFORMATEX, (int64) &wfeFormat, 0);
+                WAVEFORMATEX wfeFormat = { 0 }; 
+                GetInfo(APE_INFO_WAVEFORMATEX, (int64) &wfeFormat, 0);
                 WAVE_HEADER WAVHeader; FillWaveHeader(&WAVHeader,
                     (m_nFinishBlock - m_nStartBlock) * GetInfo(APE_INFO_BLOCK_ALIGN),
                     &wfeFormat, 0);

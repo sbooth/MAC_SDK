@@ -1,11 +1,11 @@
-/***************************************************************************************
+/**************************************************************************************************
 MAC Console Frontend (MAC.exe)
 
 Pretty simple and straightforward console front end.  If somebody ever wants to add 
 more functionality like tagging, auto-verify, etc., that'd be excellent.
 
-Copyrighted (c) 2000 - 2021 Matthew T. Ashland.  All Rights Reserved.
-***************************************************************************************/
+Copyrighted (c) 2000 - 2022 Matthew T. Ashland.  All Rights Reserved.
+**************************************************************************************************/
 #include "All.h"
 #include <stdio.h>
 #include "GlobalFunctions.h"
@@ -22,20 +22,12 @@ using namespace APE;
 #define TAG_MODE               4
 #define UNDEFINED_MODE        -1
 
-#ifndef PLATFORM_WINDOWS
-    #define TICK_COUNT_TYPE                             unsigned long long
-    #define TICK_COUNT_READ(VARIABLE)                   { struct timeval t; gettimeofday(&t, NULL); VARIABLE = t.tv_sec * 1000000LLU + t.tv_usec; }
-#else
-    #define TICK_COUNT_TYPE                             unsigned long
-    #define TICK_COUNT_READ(VARIABLE)                   VARIABLE = GetTickCount()
-#endif
-
 // global variables
 TICK_COUNT_TYPE g_nInitialTickCount = 0;
 
-/***************************************************************************************
+/**************************************************************************************************
 Gets a parameter from an array
-***************************************************************************************/
+**************************************************************************************************/
 TCHAR * GetParameterFromList(LPCTSTR pList, LPCTSTR pDelimiter, int nCount)
 {
     LPCTSTR pHead = pList;
@@ -71,9 +63,9 @@ TCHAR * GetParameterFromList(LPCTSTR pList, LPCTSTR pDelimiter, int nCount)
     return NULL;
 }
 
-/***************************************************************************************
+/**************************************************************************************************
 Displays the proper usage for MAC.exe
-***************************************************************************************/
+**************************************************************************************************/
 static void DisplayProperUsage(FILE * pFile)
 {
     _ftprintf(pFile, _T("Proper Usage: [EXE] [Input File] [Output File] [Mode]\n\n"));
@@ -99,9 +91,9 @@ static void DisplayProperUsage(FILE * pFile)
     _ftprintf(pFile, _T("    (note: int filenames must be put inside of quotations)\n"));
 }
 
-/***************************************************************************************
+/**************************************************************************************************
 Progress callback
-***************************************************************************************/
+**************************************************************************************************/
 static void CALLBACK ProgressCallback(int nPercentageDone)
 {
     // get the current tick count
@@ -121,9 +113,9 @@ static void CALLBACK ProgressCallback(int nPercentageDone)
     fflush(stderr);
 }
 
-/***************************************************************************************
+/**************************************************************************************************
 CtrlHandler callback
-***************************************************************************************/
+**************************************************************************************************/
 #ifdef PLATFORM_WINDOWS
 static BOOL CALLBACK CtrlHandlerCallback(DWORD dwCtrlTyp)
 {
@@ -158,7 +150,7 @@ int Tag(const TCHAR * pFilename, const TCHAR * pTagString)
 
         // get the input format
         APE::CAPETag * pTag = NULL;
-        pTag = (APE::CAPETag *) spAPEDecompress->GetInfo(APE_INFO_TAG);
+        pTag = (APE::CAPETag *) spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_TAG);
         if (pTag == NULL)
             throw(ERROR_UNDEFINED);
 
@@ -176,24 +168,21 @@ int Tag(const TCHAR * pFilename, const TCHAR * pTagString)
             if (pEqual != NULL)
             {
                 int nCharacters = int(pEqual - pParameter);
-                TCHAR * pLeft = new TCHAR[nCharacters + 1];
-                _tcsncpy_s(pLeft, nCharacters + 1, pParameter, nCharacters);
-                pLeft[nCharacters] = 0;
+                CSmartPtr<TCHAR> spLeft(new TCHAR[nCharacters + 1], true);
+                _tcsncpy_s(spLeft, nCharacters + 1, pParameter, nCharacters);
+                spLeft[nCharacters] = 0;
 
                 nCharacters = (int) _tcslen(&pEqual[1]);
-                TCHAR * pRight = new TCHAR[nCharacters + 1];
-                _tcscpy_s(pRight, nCharacters + 1, &pEqual[1]);
-                pRight[nCharacters] = 0;
+                CSmartPtr<TCHAR> spRight(new TCHAR[nCharacters + 1], true);
+                _tcscpy_s(spRight, nCharacters + 1, &pEqual[1]);
+                spRight[nCharacters] = 0;
 
-                _ftprintf(stderr, pLeft);
+                _ftprintf(stderr, spLeft);
                 _ftprintf(stderr, _T(" -> "));
-                _ftprintf(stderr, pRight);
+                _ftprintf(stderr, spRight);
                 _ftprintf(stderr, _T("\r\n"));
 
-                pTag->SetFieldString(pLeft, pRight);
-
-                delete[] pLeft;
-                delete[] pRight;
+                pTag->SetFieldString(spLeft, spRight);
             }
 
             delete[] pParameter;
@@ -213,9 +202,9 @@ int Tag(const TCHAR * pFilename, const TCHAR * pTagString)
     return nRetVal;
 }
 
-/***************************************************************************************
+/**************************************************************************************************
 Main (the main function)
-***************************************************************************************/
+**************************************************************************************************/
 #ifndef PLATFORM_WINDOWS
 int main(int argc, char * argv[])
 #else

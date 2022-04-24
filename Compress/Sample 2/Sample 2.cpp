@@ -1,6 +1,6 @@
 /***************************************************************************************
 Compress - Sample 2
-Copyright (C) 2000-2020 by Matthew T. Ashland   All Rights Reserved.
+Copyright (C) 2000-2022 by Matthew T. Ashland   All Rights Reserved.
 Feel free to use this code in any way that you like.
 
 This example illustrates dynamic linkage to MACDll.dll to create an APE file using
@@ -132,7 +132,6 @@ int wmain(int argc, wchar_t* argv[])
 	///////////////////////////////////////////////////////////////////////////////
 
 	// load the DLL
-	//HMODULE hMACDll = LoadLibrary(_T("C:\\MAC\\Current\\Source\\Projects\\VS2019\\MACDll\\Debug\\MACDll.dll"));
 	HMODULE hMACDll = LoadLibrary(_T("C:\\Windows\\SysWOW64\\MACDll.dll"));
 	if (hMACDll == NULL) 
 		return -1;
@@ -169,7 +168,7 @@ int wmain(int argc, wchar_t* argv[])
 	}
 	
 	// start the encoder
-	nRetVal = MACDll.StartW(hAPECompress, cOutputFile, &wfeAudioFormat, nTotalAudioBytes, 
+	nRetVal = MACDll.StartW(hAPECompress, cOutputFile, &wfeAudioFormat, MAX_AUDIO_BYTES_UNKNOWN,
 		MAC_COMPRESSION_LEVEL_HIGH, NULL, CREATE_WAV_HEADER_ON_DECOMPRESSION);
 	
 	if (nRetVal != 0)

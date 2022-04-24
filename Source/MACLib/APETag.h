@@ -144,6 +144,7 @@ public:
     bool GetHasHeader() { return (m_nFlags & APE_TAG_FLAG_CONTAINS_HEADER) ? true : false; }
     bool GetIsHeader() { return (m_nFlags & APE_TAG_FLAG_IS_HEADER) ? true : false; }
     int GetVersion() { return m_nVersion; }
+    void Empty() { memset(m_cID, 0, sizeof(m_cID)); }
 
     bool GetIsValid(bool bAllowHeader)
     {
@@ -151,7 +152,7 @@ public:
             (m_nVersion <= CURRENT_APE_TAG_VERSION) &&
             (m_nFields <= 65536) &&
             (m_nSize >= APE_TAG_FOOTER_BYTES) &&
-            (GetFieldBytes() <= (1024 * 1024 * 16));
+            (GetFieldBytes() <= (BYTES_IN_MEGABYTE * 256));
         
         if (bValid && !bAllowHeader && GetIsHeader())
             bValid = false;

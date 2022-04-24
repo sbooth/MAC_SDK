@@ -1,11 +1,7 @@
 #include "All.h"
 #include "MACLib.h"
 #include "APECompress.h"
-#include "APECompressCreate.h"
-#include "APECompressCore.h"
-#include "APECompress.h"
 #include "APEDecompress.h"
-#include "APEInfo.h"
 #include "APELink.h"
 #include "GlobalFunctions.h"
 #ifdef APE_BACKWARDS_COMPATIBILITY
@@ -28,7 +24,7 @@ IAPEDecompress * CreateIAPEDecompressCore(CAPEInfo * pAPEInfo, int nStartBlock, 
             try
             {
                 // create
-                if (pAPEInfo->GetInfo(APE_INFO_FILE_VERSION) >= 3930)
+                if (pAPEInfo->GetInfo(IAPEDecompress::APE_INFO_FILE_VERSION) >= 3930)
                     pAPEDecompress = new CAPEDecompress(pErrorCode, pAPEInfo, nStartBlock, nFinishBlock);
 #ifdef APE_BACKWARDS_COMPATIBILITY
                 else
@@ -176,9 +172,51 @@ int __stdcall FillWaveHeader(WAVE_HEADER * pWAVHeader, APE::int64 nAudioBytes, A
 
         // the data header
         memcpy(pWAVHeader->cDataHeader, "data", 4);
-        pWAVHeader->nDataBytes = (unsigned int) nAudioBytes;
+        if (nAudioBytes >= 0xFFFFFFFF)
+            pWAVHeader->nDataBytes = (unsigned int) - 1;
+        else
+            pWAVHeader->nDataBytes = (unsigned int) nAudioBytes;
 
         return ERROR_SUCCESS;
     }
     catch(...) { return ERROR_UNDEFINED; }
 }
+
+int __stdcall FillRF64Header(RF64_HEADER * pWAVHeader, APE::int64 nAudioBytes, APE::WAVEFORMATEX * pWaveFormatEx, APE::intn nTerminatingBytes)
+{
+    try
+    {
+        // RIFF header
+        memcpy(pWAVHeader->cRIFFHeader, "RF64", 4);
+        pWAVHeader->nRIFFBytes = (unsigned int) -1; // only used for big files
+
+        // WAV header
+        memcpy(pWAVHeader->cDataTypeID, "WAVE", 4);
+
+        // DS64 header
+        memcpy(pWAVHeader->cDS64, "ds64", 4);
+        pWAVHeader->nDSHeaderSize = int((char *) &pWAVHeader->cFormatHeader - (char *) &pWAVHeader->nRIFFSize); // size between nRIFFSize and nTableLength (cFormatHeader is just after nTableLength)
+        pWAVHeader->nRIFFSize = sizeof(RF64_HEADER) + nAudioBytes - 8; // size of entire ds64 chunk minus the very header
+        pWAVHeader->nDataSize = nAudioBytes;
+        pWAVHeader->nSampleCount = nAudioBytes / pWaveFormatEx->nBlockAlign; // it's called sample count, but David Bryant puts blocks in WavPack so I'll do the same
+        pWAVHeader->nTableLength = 0;
+
+        // format header
+        memcpy(pWAVHeader->cFormatHeader, "fmt ", 4);
+        
+        // the format chunk is the first 16 bytes of a waveformatex
+        pWAVHeader->nFormatBytes = 16;
+        memcpy(&pWAVHeader->nFormatTag, pWaveFormatEx, 16);
+
+        // the data header
+        memcpy(pWAVHeader->cDataHeader, "data", 4);
+        if (nAudioBytes >= 0xFFFFFFFF)
+            pWAVHeader->nDataBytes = (unsigned int) -1;
+        else
+            pWAVHeader->nDataBytes = (unsigned int) nAudioBytes;
+
+        return ERROR_SUCCESS;
+    }
+    catch(...) { return ERROR_UNDEFINED; }
+}
+

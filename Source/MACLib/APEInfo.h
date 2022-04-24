@@ -1,16 +1,10 @@
 /**************************************************************************************************
 APEInfo.h
-Copyright (C) 2000-2021 by Matthew T. Ashland   All Rights Reserved.
+Copyright (C) 2000-2022 by Matthew T. Ashland   All Rights Reserved.
 
-Simple method for working with APE files... it encapsulates reading, writing and getting
+Simple method for working with APE files.  It encapsulates reading, writing and getting
 file information.  Just create a CAPEInfo class, call OpenFile(), and use the class methods
-to do whatever you need... the destructor will take care of any cleanup
-
-Notes:
-    -Most all functions return 0 upon success, and some error code (other than 0) on
-    failure.  However, all of the file functions that are wrapped from the Win32 API
-    return 0 on failure and some other number on success.  This applies to ReadFile, 
-    WriteFile, SetFilePointer, etc...
+to do whatever you need.  The destructor will take care of any cleanup.
 **************************************************************************************************/
 
 #pragma once
@@ -43,7 +37,7 @@ struct APE_FILE_INFO
     int64 nWAVDataBytes;                            // data bytes of the original WAV
     uint32 nWAVTerminatingBytes;                    // terminating bytes of the original WAV
     int64 nWAVTotalBytes;                           // total bytes of the original WAV
-    uint32 nAPETotalBytes;                          // total bytes of the APE file
+    int64 nAPETotalBytes;                           // total bytes of the APE file
     int nTotalBlocks;                               // the total number audio blocks
     int nLengthMS;                                  // the length in milliseconds
     int nAverageBitrate;                            // the kbps (i.e. 637 kpbs)
@@ -52,7 +46,7 @@ struct APE_FILE_INFO
     int nSeekTableElements;                         // the number of elements in the seek table(s)
     int nMD5Invalid;                                // whether the MD5 is valid
     
-    CSmartPtr<uint32> spSeekByteTable;              // the seek table (byte)
+    CSmartPtr<int64> spSeekByteTable64;             // the seek table (byte)
     CSmartPtr<unsigned char> spSeekBitTable;        // the seek table (bits -- legacy)
     CSmartPtr<unsigned char> spWaveHeaderData;      // the pre-audio header data
     CSmartPtr<APE_DESCRIPTOR> spAPEDescriptor;      // the descriptor (only with newer files)
@@ -61,11 +55,11 @@ struct APE_FILE_INFO
 /**************************************************************************************************
 Helper macros (sort of hacky)
 **************************************************************************************************/
-#define GET_USES_CRC(APE_INFO) (((APE_INFO)->GetInfo(APE_INFO_FORMAT_FLAGS) & MAC_FORMAT_FLAG_CRC) ? true : false)
-#define GET_FRAMES_START_ON_BYTES_BOUNDARIES(APE_INFO) (((APE_INFO)->GetInfo(APE_INFO_FILE_VERSION) > 3800) ? true : false)
-#define GET_USES_SPECIAL_FRAMES(APE_INFO) (((APE_INFO)->GetInfo(APE_INFO_FILE_VERSION) > 3820) ? true : false)
-#define GET_IO(APE_INFO) ((CIO *) (APE_INFO)->GetInfo(APE_INFO_IO_SOURCE))
-#define GET_TAG(APE_INFO) ((CAPETag *) (APE_INFO)->GetInfo(APE_INFO_TAG))
+#define GET_USES_CRC(APE_INFO) (((APE_INFO)->GetInfo(IAPEDecompress::APE_INFO_FORMAT_FLAGS) & MAC_FORMAT_FLAG_CRC) ? true : false)
+#define GET_FRAMES_START_ON_BYTES_BOUNDARIES(APE_INFO) (((APE_INFO)->GetInfo(IAPEDecompress::APE_INFO_FILE_VERSION) > 3800) ? true : false)
+#define GET_USES_SPECIAL_FRAMES(APE_INFO) (((APE_INFO)->GetInfo(IAPEDecompress::APE_INFO_FILE_VERSION) > 3820) ? true : false)
+#define GET_IO(APE_INFO) ((CIO *) (APE_INFO)->GetInfo(IAPEDecompress::APE_INFO_IO_SOURCE))
+#define GET_TAG(APE_INFO) ((CAPETag *) (APE_INFO)->GetInfo(IAPEDecompress::APE_INFO_TAG))
 
 /**************************************************************************************************
 CAPEInfo - use this for all work with APE files
@@ -80,7 +74,7 @@ public:
     virtual ~CAPEInfo();
 
     // query for information
-    int64 GetInfo(APE_DECOMPRESS_FIELDS Field, int64 nParam1 = 0, int64 nParam2 = 0);
+    int64 GetInfo(IAPEDecompress::APE_DECOMPRESS_FIELDS Field, int64 nParam1 = 0, int64 nParam2 = 0);
     
 private:
     // internal functions

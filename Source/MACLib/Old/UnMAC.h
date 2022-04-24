@@ -1,13 +1,3 @@
-/**************************************************************************************************
-UnMAC.h
-Copyright (C) 2000-2021 by Matthew T. Ashland   All Rights Reserved.
-
-Methods for decompressing or verifying APE files
-
-Notes:
-    -none
-**************************************************************************************************/
-
 #pragma once
 
 #include "../BitArray.h"
@@ -30,14 +20,14 @@ class CUnMAC
 {
 public:
     
-    // construction/destruction
+    // construction / destruction
     CUnMAC();
     ~CUnMAC();
 
     // functions
-    int Initialize(IAPEDecompress *pAPEDecompress);
+    int Initialize(IAPEDecompress * pAPEDecompress);
     int Uninitialize();
-    intn DecompressFrame(unsigned char *pOutputData, int32 FrameIndex, int CPULoadBalancingFactor = 0);
+    intn DecompressFrame(unsigned char * pOutputData, int32 FrameIndex, int CPULoadBalancingFactor = 0);
 
     int SeekToFrame(intn FrameIndex);
     

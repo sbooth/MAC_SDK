@@ -1,6 +1,6 @@
-/************************************************************************************
+/**************************************************************************************************
 Includes
-************************************************************************************/
+**************************************************************************************************/
 #include "stdafx.h"
 #include "MACDllApp.h"
 #include "APETag.h"
@@ -12,9 +12,9 @@ Includes
 #include "APELink.h"
 #include "CharacterHelper.h"
 
-/************************************************************************************
+/**************************************************************************************************
 Defines
-************************************************************************************/
+**************************************************************************************************/
 // post this to the main window at end of file (after playback has stopped)
 #define WM_WA_MPEG_EOF    (WM_USER + 2)
 
@@ -30,21 +30,21 @@ struct extendedFileInfoStruct
     int nReturnBytes;
 };
 
-/************************************************************************************
+/**************************************************************************************************
 The input module (publicly defined)
-************************************************************************************/
+**************************************************************************************************/
 In_Module g_APEWinampPluginModule = 
 {
     IN_VER,                                                        // the version (defined in in2.h)
-    PLUGIN_NAME,                                                // the name of the plugin (defined in all.h)
-    0,                                                            // handle to the main window
-    0,                                                            // handle to the dll instance
-    "APE\0Monkey's Audio File (*.APE)\0"                        // the file type(s) supported
+    PLUGIN_NAME,                                                   // the name of the plugin (defined in all.h)
+    0,                                                             // handle to the main window
+    0,                                                             // handle to the dll instance
+    "APE\0Monkey's Audio File (*.APE)\0"                           // the file type(s) supported
     "MAC\0Monkey's Audio File (*.MAC)\0"
     "APL\0Monkey's Audio File (*.APL)\0",                                        
-    1,                                                            // seekable
-    1,                                                            // uses output
-    CAPEWinampPlugin::ShowConfigurationDialog,                    // all of the functions...
+    1,                                                             // seekable
+    1,                                                             // uses output
+    CAPEWinampPlugin::ShowConfigurationDialog,                     // all of the functions...
     CAPEWinampPlugin::ShowAboutDialog,
     CAPEWinampPlugin::InitializePlugin,
     CAPEWinampPlugin::UninitializePlugin,
@@ -61,16 +61,16 @@ In_Module g_APEWinampPluginModule =
     CAPEWinampPlugin::SetOutputTime,
     CAPEWinampPlugin::SetVolume,
     CAPEWinampPlugin::SetPan,
-    0, 0, 0, 0, 0, 0, 0, 0, 0,                                    // vis stuff
-    0, 0,                                                        // dsp stuff
-    0,                                                            // Set_EQ function
-    NULL,                                                        // setinfo
-    0                                                            // out_mod
+    0, 0, 0, 0, 0, 0, 0, 0, 0,                                     // vis stuff
+    0, 0,                                                          // dsp stuff
+    0,                                                             // Set_EQ function
+    NULL,                                                          // setinfo
+    0                                                              // out_mod
 };
 
-/************************************************************************************
+/**************************************************************************************************
 Global variables -- shoot me now
-************************************************************************************/
+**************************************************************************************************/
 TCHAR CAPEWinampPlugin::m_cCurrentFilename[MAX_PATH] = { 0 };
 int CAPEWinampPlugin::m_nDecodePositionMS = -1;
 int CAPEWinampPlugin::m_nPaused = 0;
@@ -83,9 +83,9 @@ long CAPEWinampPlugin::m_nScaledBytesPerSample = 0;
 CSmartPtr<IAPEDecompress> CAPEWinampPlugin::m_spAPEDecompress;
 long CAPEWinampPlugin::m_nLengthMS = 0;
 
-/************************************************************************************
+/**************************************************************************************************
 Plays a file (called once on the start of a file)
-************************************************************************************/
+**************************************************************************************************/
 int CAPEWinampPlugin::Play(char * pFilename) 
 {
     // reset or initialize any public variables
@@ -103,16 +103,16 @@ int CAPEWinampPlugin::Play(char * pFilename)
         return -1;
 
     // quit if it's a zero length file
-    if (m_spAPEDecompress->GetInfo(APE_DECOMPRESS_TOTAL_BLOCKS) == 0) 
+    if (m_spAPEDecompress->GetInfo(IAPEDecompress::APE_DECOMPRESS_TOTAL_BLOCKS) == 0)
     {
         m_spAPEDecompress.Delete();
         return -1;
     }
 
     // version check
-    if (m_spAPEDecompress->GetInfo(APE_INFO_FILE_VERSION) > MAC_FILE_VERSION_NUMBER)
+    if (m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_FILE_VERSION) > MAC_FILE_VERSION_NUMBER)
     {
-        TCHAR cAPEFileVersion[32]; _stprintf_s(cAPEFileVersion, 32, _T("%.2f"), double(m_spAPEDecompress->GetInfo(APE_INFO_FILE_VERSION)) / double(1000));
+        TCHAR cAPEFileVersion[32]; _stprintf_s(cAPEFileVersion, 32, _T("%.2f"), double(m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_FILE_VERSION)) / double(1000));
         
         TCHAR cMessage[1024];
         _stprintf_s(cMessage, 1024, _T("You are attempting to play an APE file that was encoded with a version of Monkey's Audio which is newer than the installed APE plug-in.  There is a very high likelyhood that this will not work properly.  Please download and install the newest Monkey's Audio plug-in to remedy this problem.\r\n\r\nPlug-in version: %s\r\nAPE file version: %s"), MAC_VERSION_STRING, cAPEFileVersion);
@@ -130,17 +130,17 @@ int CAPEWinampPlugin::Play(char * pFilename)
     }
     else 
     {
-        m_nScaledBitsPerSample = (long) m_spAPEDecompress->GetInfo(APE_INFO_BITS_PER_SAMPLE);
-        m_nScaledBytesPerSample = (long) m_spAPEDecompress->GetInfo(APE_INFO_BYTES_PER_SAMPLE);
+        m_nScaledBitsPerSample = (long) m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_BITS_PER_SAMPLE);
+        m_nScaledBytesPerSample = (long) m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_BYTES_PER_SAMPLE);
     }
 
     // set the length
-    double dBlocks = double(m_spAPEDecompress->GetInfo(APE_DECOMPRESS_TOTAL_BLOCKS));
-    double dMilliseconds = (dBlocks * double(1000)) / double(m_spAPEDecompress->GetInfo(APE_INFO_SAMPLE_RATE));
+    double dBlocks = double(m_spAPEDecompress->GetInfo(IAPEDecompress::APE_DECOMPRESS_TOTAL_BLOCKS));
+    double dMilliseconds = (dBlocks * double(1000)) / double(m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_SAMPLE_RATE));
     m_nLengthMS = long(dMilliseconds);
 
     // open the output module
-    int nMaxLatency = g_APEWinampPluginModule.outMod->Open(int(m_spAPEDecompress->GetInfo(APE_INFO_SAMPLE_RATE)), int(m_spAPEDecompress->GetInfo(APE_INFO_CHANNELS)), m_nScaledBitsPerSample, -1,-1);
+    int nMaxLatency = g_APEWinampPluginModule.outMod->Open(int(m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_SAMPLE_RATE)), int(m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_CHANNELS)), m_nScaledBitsPerSample, -1,-1);
     if (nMaxLatency < 0)
     {
         m_spAPEDecompress.Delete();
@@ -148,14 +148,14 @@ int CAPEWinampPlugin::Play(char * pFilename)
     }
     
     // initialize the visualization stuff
-    g_APEWinampPluginModule.SAVSAInit(nMaxLatency, int(m_spAPEDecompress->GetInfo(APE_INFO_SAMPLE_RATE)));
-    g_APEWinampPluginModule.VSASetInfo(int(m_spAPEDecompress->GetInfo(APE_INFO_SAMPLE_RATE)), int(m_spAPEDecompress->GetInfo(APE_INFO_CHANNELS)));
+    g_APEWinampPluginModule.SAVSAInit(nMaxLatency, int(m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_SAMPLE_RATE)));
+    g_APEWinampPluginModule.VSASetInfo(int(m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_SAMPLE_RATE)), int(m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_CHANNELS)));
 
     // set the default volume
     g_APEWinampPluginModule.outMod->SetVolume(-666);
 
     // set the Winamp info (bitrate, channels, etc.)
-    g_APEWinampPluginModule.SetInfo(int(m_spAPEDecompress->GetInfo(APE_DECOMPRESS_AVERAGE_BITRATE)), int(m_spAPEDecompress->GetInfo(APE_INFO_SAMPLE_RATE) / 1000), int(m_spAPEDecompress->GetInfo(APE_INFO_CHANNELS)), 1);
+    g_APEWinampPluginModule.SetInfo(int(m_spAPEDecompress->GetInfo(IAPEDecompress::APE_DECOMPRESS_AVERAGE_BITRATE)), int(m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_SAMPLE_RATE) / 1000), int(m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_CHANNELS)), 1);
     
     // create the new thread
     m_nKillDecodeThread = 0;
@@ -172,9 +172,9 @@ int CAPEWinampPlugin::Play(char * pFilename)
     return 0; 
 }
 
-/************************************************************************************
+/**************************************************************************************************
 Stops the file (called anytime a file is stopped, or restarted)
-************************************************************************************/
+**************************************************************************************************/
 void CAPEWinampPlugin::Stop() 
 { 
     // if the decode thread is active, kill it
@@ -204,9 +204,9 @@ void CAPEWinampPlugin::Stop()
     g_APEWinampPluginModule.SAVSADeInit();
 }
 
-/************************************************************************************
+/**************************************************************************************************
 Check a buffer for silence
-************************************************************************************/
+**************************************************************************************************/
 BOOL CAPEWinampPlugin::CheckBufferForSilence(void * pBuffer, const unsigned __int32 nSamples) 
 {
     unsigned __int32 nSum = 0;
@@ -235,25 +235,25 @@ BOOL CAPEWinampPlugin::CheckBufferForSilence(void * pBuffer, const unsigned __in
         return TRUE;
 }
 
-/************************************************************************************
+/**************************************************************************************************
 Scale a buffer
-************************************************************************************/
+**************************************************************************************************/
 long CAPEWinampPlugin::ScaleBuffer(IAPEDecompress * pAPEDecompress, unsigned char * pBuffer, long nBlocks)
 {
-    if (pAPEDecompress->GetInfo(APE_INFO_BITS_PER_SAMPLE) == 8) 
+    if (pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_BITS_PER_SAMPLE) == 8)
     {
-        unsigned char *pBuffer8 = &pBuffer[nBlocks * pAPEDecompress->GetInfo(APE_INFO_CHANNELS) - 1];
-        __int16 *pBuffer16 = (__int16 *) &pBuffer[nBlocks * pAPEDecompress->GetInfo(APE_INFO_CHANNELS) * 2 - 2];
+        unsigned char * pBuffer8 = &pBuffer[nBlocks * pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_CHANNELS) - 1];
+        __int16 *pBuffer16 = (__int16 *) &pBuffer[nBlocks * pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_CHANNELS) * 2 - 2];
         while (pBuffer8 >= pBuffer)
         {
             *pBuffer16-- = (__int16) ((long(*pBuffer8--) - 128) << 8);
         }
     }
-    else if (pAPEDecompress->GetInfo(APE_INFO_BITS_PER_SAMPLE) == 24) 
+    else if (pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_BITS_PER_SAMPLE) == 24)
     {
         unsigned char * pBuffer24 = (unsigned char *) pBuffer;
         __int16 * pBuffer16 = (__int16 *) pBuffer;
-        long nElements = nBlocks * long(pAPEDecompress->GetInfo(APE_INFO_CHANNELS));
+        long nElements = nBlocks * long(pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_CHANNELS));
         for (long z = 0; z < nElements; z++, pBuffer16++, pBuffer24 += 3)
         {
             *pBuffer16 = (__int16) (*((long *) pBuffer24) >> 8);
@@ -263,9 +263,9 @@ long CAPEWinampPlugin::ScaleBuffer(IAPEDecompress * pAPEDecompress, unsigned cha
     return 0;
 }
 
-/************************************************************************************
+/**************************************************************************************************
 The decode thread
-************************************************************************************/
+**************************************************************************************************/
 DWORD WINAPI __stdcall CAPEWinampPlugin::DecodeThread(void *bKillSwitch) 
 {
     // variable declares
@@ -273,7 +273,7 @@ DWORD WINAPI __stdcall CAPEWinampPlugin::DecodeThread(void *bKillSwitch)
     long nSilenceMS = 0;
     
     // the sample buffer...must be able to hold twice the original 1152 samples for DSP
-    CSmartPtr<unsigned char> spSampleBuffer(new unsigned char [unsigned int(1152 * 2 * m_spAPEDecompress->GetInfo(APE_INFO_CHANNELS) * m_nScaledBytesPerSample)], TRUE);
+    CSmartPtr<unsigned char> spSampleBuffer(new unsigned char [unsigned int(1152 * 2 * m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_CHANNELS) * m_nScaledBytesPerSample)], TRUE);
 
     // start the decoding loop
     while (! *((int *) bKillSwitch))
@@ -286,9 +286,9 @@ DWORD WINAPI __stdcall CAPEWinampPlugin::DecodeThread(void *bKillSwitch)
             m_nSeekNeeded = -1;
 
             // need to use doubles to avoid overflows (at around 10 minutes)
-            double dLengthMS = (double(m_spAPEDecompress->GetInfo(APE_DECOMPRESS_TOTAL_BLOCKS)) * double(1000)) / double(m_spAPEDecompress->GetInfo(APE_INFO_SAMPLE_RATE));
+            double dLengthMS = (double(m_spAPEDecompress->GetInfo(IAPEDecompress::APE_DECOMPRESS_TOTAL_BLOCKS)) * double(1000)) / double(m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_SAMPLE_RATE));
             double dSeekPercentage = double(m_nDecodePositionMS) / dLengthMS;
-            double dSeekBlock = double(m_spAPEDecompress->GetInfo(APE_DECOMPRESS_TOTAL_BLOCKS)) * dSeekPercentage;
+            double dSeekBlock = double(m_spAPEDecompress->GetInfo(IAPEDecompress::APE_DECOMPRESS_TOTAL_BLOCKS)) * dSeekPercentage;
             
             // seek
             int64 nSeekBlock = (int64) (dSeekBlock + 0.5);
@@ -313,7 +313,7 @@ DWORD WINAPI __stdcall CAPEWinampPlugin::DecodeThread(void *bKillSwitch)
             Sleep(10);
         }        
         // write data into the output stream if there is enough room for one full sample buffer
-        else if (g_APEWinampPluginModule.outMod->CanWrite() >= (((576 * m_nScaledBytesPerSample) * m_spAPEDecompress->GetInfo(APE_INFO_CHANNELS)) << (g_APEWinampPluginModule.dsp_isactive() ? 1 : 0))) 
+        else if (g_APEWinampPluginModule.outMod->CanWrite() >= (((576 * m_nScaledBytesPerSample) * m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_CHANNELS)) << (g_APEWinampPluginModule.dsp_isactive() ? 1 : 0)))
         {
             // decompress the data
             int64 nBlocksDecoded = 0;
@@ -331,7 +331,7 @@ DWORD WINAPI __stdcall CAPEWinampPlugin::DecodeThread(void *bKillSwitch)
                 if (GetSettings()->m_bIgnoreBitstreamErrors == FALSE) 
                 {
                     TCHAR cErrorTime[64];
-                    int nSeconds = int(m_spAPEDecompress->GetInfo(APE_DECOMPRESS_CURRENT_MS) / 1000); int nMinutes = nSeconds / 60; nSeconds = nSeconds % 60; int nHours = nMinutes / 60; nMinutes = nMinutes % 60;
+                    int nSeconds = int(m_spAPEDecompress->GetInfo(IAPEDecompress::APE_DECOMPRESS_CURRENT_MS) / 1000); int nMinutes = nSeconds / 60; nSeconds = nSeconds % 60; int nHours = nMinutes / 60; nMinutes = nMinutes % 60;
                     if (nHours > 0)    _stprintf_s(cErrorTime, 64, _T("%d:%02d:%02d"), nHours, nMinutes, nSeconds);
                     else if (nMinutes > 0) _stprintf_s(cErrorTime, 64, _T("%d:%02d"), nMinutes, nSeconds);
                     else _stprintf_s(cErrorTime, 64, _T("0:%02d"), nSeconds);
@@ -367,14 +367,14 @@ DWORD WINAPI __stdcall CAPEWinampPlugin::DecodeThread(void *bKillSwitch)
                 ScaleBuffer(m_spAPEDecompress, spSampleBuffer, long(nBlocksDecoded));
             }
 
-            int64 nBytesDecodedN = nBlocksDecoded * m_nScaledBytesPerSample * m_spAPEDecompress->GetInfo(APE_INFO_CHANNELS);
+            int64 nBytesDecodedN = nBlocksDecoded * m_nScaledBytesPerSample * m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_CHANNELS);
             long nBytesDecoded = long(nBytesDecodedN);
 
             // pass the samples through the dsp if it's running
             if (g_APEWinampPluginModule.dsp_isactive())
             {
-                nBlocksDecoded = g_APEWinampPluginModule.dsp_dosamples((short *) spSampleBuffer.GetPtr(), int(nBlocksDecoded), m_nScaledBitsPerSample, (int) m_spAPEDecompress->GetInfo(APE_INFO_CHANNELS), (int) m_spAPEDecompress->GetInfo(APE_INFO_SAMPLE_RATE));
-                nBytesDecoded = long(nBlocksDecoded) * m_nScaledBytesPerSample * long(m_spAPEDecompress->GetInfo(APE_INFO_CHANNELS));
+                nBlocksDecoded = g_APEWinampPluginModule.dsp_dosamples((short *) spSampleBuffer.GetPtr(), int(nBlocksDecoded), m_nScaledBitsPerSample, (int) m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_CHANNELS), (int) m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_SAMPLE_RATE));
+                nBytesDecoded = long(nBlocksDecoded) * m_nScaledBytesPerSample * long(m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_CHANNELS));
             }                
 
             if (GetSettings()->m_bSuppressSilence == TRUE) 
@@ -382,7 +382,7 @@ DWORD WINAPI __stdcall CAPEWinampPlugin::DecodeThread(void *bKillSwitch)
                 if (CheckBufferForSilence(spSampleBuffer, nBytesDecoded / m_nScaledBytesPerSample) == FALSE)
                     nSilenceMS = 0;
                 else
-                    nSilenceMS += long(nBlocksDecoded * 1000) / long(m_spAPEDecompress->GetInfo(APE_INFO_SAMPLE_RATE));
+                    nSilenceMS += long(nBlocksDecoded * 1000) / long(m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_SAMPLE_RATE));
             }
             else 
             {
@@ -392,8 +392,8 @@ DWORD WINAPI __stdcall CAPEWinampPlugin::DecodeThread(void *bKillSwitch)
             if (nSilenceMS < 1000) 
             {
                 // add the data to the visualization
-                g_APEWinampPluginModule.SAAddPCMData((char *) spSampleBuffer.GetPtr(), (int) m_spAPEDecompress->GetInfo(APE_INFO_CHANNELS), m_nScaledBitsPerSample, m_nDecodePositionMS);
-                g_APEWinampPluginModule.VSAAddPCMData((char *) spSampleBuffer.GetPtr(), (int) m_spAPEDecompress->GetInfo(APE_INFO_CHANNELS), m_nScaledBitsPerSample, m_nDecodePositionMS);
+                g_APEWinampPluginModule.SAAddPCMData((char *) spSampleBuffer.GetPtr(), (int) m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_CHANNELS), m_nScaledBitsPerSample, m_nDecodePositionMS);
+                g_APEWinampPluginModule.VSAAddPCMData((char *) spSampleBuffer.GetPtr(), (int) m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_CHANNELS), m_nScaledBitsPerSample, m_nDecodePositionMS);
 
                 // write the data to the output stream
                 g_APEWinampPluginModule.outMod->Write((char *) spSampleBuffer.GetPtr(), nBytesDecoded);
@@ -404,10 +404,10 @@ DWORD WINAPI __stdcall CAPEWinampPlugin::DecodeThread(void *bKillSwitch)
             }
 
             // update the VBR display
-            g_APEWinampPluginModule.SetInfo((int) m_spAPEDecompress->GetInfo(APE_DECOMPRESS_CURRENT_BITRATE), -1, -1, bSynched);
+            g_APEWinampPluginModule.SetInfo((int) m_spAPEDecompress->GetInfo(IAPEDecompress::APE_DECOMPRESS_CURRENT_BITRATE), -1, -1, bSynched);
 
             // increment the decode position
-            m_nDecodePositionMS += (int(nBlocksDecoded * 1000) / int(m_spAPEDecompress->GetInfo(APE_INFO_SAMPLE_RATE)));
+            m_nDecodePositionMS += (int(nBlocksDecoded * 1000) / int(m_spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_SAMPLE_RATE)));
         }
 
         // if it wasn't done, and there wasn't room in the output stream, just wait and try again
@@ -422,9 +422,9 @@ DWORD WINAPI __stdcall CAPEWinampPlugin::DecodeThread(void *bKillSwitch)
     return 0;
 }
 
-/************************************************************************************
+/**************************************************************************************************
 Returns the length of the current file in ms
-************************************************************************************/
+**************************************************************************************************/
 int CAPEWinampPlugin::GetFileLength() 
 { 
     int nRetVal = m_nLengthMS; 
@@ -432,26 +432,26 @@ int CAPEWinampPlugin::GetFileLength()
     return nRetVal;
 }
 
-/************************************************************************************
+/**************************************************************************************************
 Returns the output time in ms
-************************************************************************************/
+**************************************************************************************************/
 int CAPEWinampPlugin::GetOutputTime() 
 {
     int nRetVal = m_nDecodePositionMS + (g_APEWinampPluginModule.outMod->GetOutputTime() - g_APEWinampPluginModule.outMod->GetWrittenTime()); 
     return nRetVal;
 }
 
-/************************************************************************************
+/**************************************************************************************************
 Sets the output time in ms
-************************************************************************************/
+**************************************************************************************************/
 void CAPEWinampPlugin::SetOutputTime(int nNewPositionMS) 
 { 
     m_nSeekNeeded = nNewPositionMS; 
 }
 
-/************************************************************************************
+/**************************************************************************************************
 Show the the file info dialog
-************************************************************************************/
+**************************************************************************************************/
 int CAPEWinampPlugin::ShowFileInformationDialog(char * pFilename, HWND hwnd) 
 {
     CSmartPtr<str_utfn> spFilename(CAPECharacterHelper::GetUTF16FromANSI(pFilename), TRUE);
@@ -462,9 +462,9 @@ int CAPEWinampPlugin::ShowFileInformationDialog(char * pFilename, HWND hwnd)
     return 0;
 }
 
-/************************************************************************************
+/**************************************************************************************************
 File info helpers
-************************************************************************************/
+**************************************************************************************************/
 void CAPEWinampPlugin::BuildDescriptionStringFromFilename(CString & strBuffer, const str_utfn * pFilename)
 {
     const str_utfn * p = pFilename + _tcslen(pFilename);
@@ -515,9 +515,9 @@ void CAPEWinampPlugin::BuildDescriptionString(CString & strBuffer, CAPETag * pAP
     strBuffer.Replace(_T("%9"), m_cCurrentFilename);
 }
 
-/************************************************************************************
+/**************************************************************************************************
 Get the file info
-************************************************************************************/
+**************************************************************************************************/
 void CAPEWinampPlugin::GetFileInformation(char * pFilename, char * pTitle, int * pLengthMS) 
 {
     CSmartPtr<IAPEDecompress> spAPEDecompress;
@@ -540,7 +540,7 @@ void CAPEWinampPlugin::GetFileInformation(char * pFilename, char * pTitle, int *
     {
         if (pLengthMS)
         {
-            *pLengthMS = int(spAPEDecompress->GetInfo(APE_DECOMPRESS_LENGTH_MS));
+            *pLengthMS = int(spAPEDecompress->GetInfo(IAPEDecompress::APE_DECOMPRESS_LENGTH_MS));
         }
         
         if (pTitle) 
@@ -557,94 +557,94 @@ void CAPEWinampPlugin::GetFileInformation(char * pFilename, char * pTitle, int *
     }
 }
 
-/************************************************************************************
+/**************************************************************************************************
 Displays the configuration dialog
-************************************************************************************/
+**************************************************************************************************/
 void CAPEWinampPlugin::ShowConfigurationDialog(HWND hwndParent) 
 {
     GetSettings()->Show(hwndParent);
 }
 
-/************************************************************************************
+/**************************************************************************************************
 Show the about dialog
-************************************************************************************/
+**************************************************************************************************/
 void CAPEWinampPlugin::ShowAboutDialog(HWND hwndParent) 
 {
     MessageBox(hwndParent, PLUGIN_ABOUT, _T("Monkey's Audio Player"), MB_OK);
 }
 
-/************************************************************************************
+/**************************************************************************************************
 Set the volume
-************************************************************************************/
+**************************************************************************************************/
 void CAPEWinampPlugin::SetVolume(int volume) 
 { 
     g_APEWinampPluginModule.outMod->SetVolume(volume); 
 }
 
-/************************************************************************************
+/**************************************************************************************************
 Pause
-************************************************************************************/
+**************************************************************************************************/
 void CAPEWinampPlugin::Pause() 
 { 
     m_nPaused = 1;
     g_APEWinampPluginModule.outMod->Pause(1); 
 }
 
-/************************************************************************************
+/**************************************************************************************************
 Unpause
-************************************************************************************/
+**************************************************************************************************/
 void CAPEWinampPlugin::Unpause() 
 { 
     m_nPaused = 0;
     g_APEWinampPluginModule.outMod->Pause(0); 
 }
 
-/************************************************************************************
+/**************************************************************************************************
 Checks to see if it is currently m_nPaused
-************************************************************************************/
+**************************************************************************************************/
 int CAPEWinampPlugin::IsPaused() 
 { 
     return m_nPaused; 
 }
 
-/************************************************************************************
+/**************************************************************************************************
 Set the pan
-************************************************************************************/
+**************************************************************************************************/
 void CAPEWinampPlugin::SetPan(int pan) 
 { 
     g_APEWinampPluginModule.outMod->SetPan(pan); 
 }
 
-/************************************************************************************
+/**************************************************************************************************
 Initialize the plugin (called once on the close of Winamp)
-************************************************************************************/
+**************************************************************************************************/
 void CAPEWinampPlugin::InitializePlugin() 
 {
 }
 
-/************************************************************************************
+/**************************************************************************************************
 Uninitialize the plugin (called once on the close of Winamp)
-************************************************************************************/
+**************************************************************************************************/
 void CAPEWinampPlugin::UninitializePlugin() 
 { 
 }
 
-/************************************************************************************
+/**************************************************************************************************
 Is our file (used for detecting URL streams)
-************************************************************************************/
+**************************************************************************************************/
 int CAPEWinampPlugin::IsOurFile(char * pFilename) { return 0; } 
 
-/************************************************************************************
+/**************************************************************************************************
 Get the settings
-************************************************************************************/
+**************************************************************************************************/
 CWinampSettingsDlg * CAPEWinampPlugin::GetSettings()
 {
     return g_Application.GetWinampSettingsDlg();
 }
 
-/************************************************************************************
+/**************************************************************************************************
 Exported functions
-************************************************************************************/
+**************************************************************************************************/
 extern "C" 
 {
     __declspec( dllexport ) In_Module * winampGetInModule2()
@@ -675,7 +675,7 @@ extern "C"
         }
 
         // get the tag value
-        CAPETag * pTag = spAPEDecompress ? (CAPETag *) spAPEDecompress->GetInfo(APE_INFO_TAG) : NULL;
+        CAPETag * pTag = spAPEDecompress ? (CAPETag *) spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_TAG) : NULL;
         if (pTag != NULL)
         {
             if (strcmp(Info.pMetaData, "artist") == 0)
@@ -708,7 +708,7 @@ extern "C"
             }
             else if (strcmp(Info.pMetaData, "length") == 0)
             {
-                int64 nLength = spAPEDecompress->GetInfo(APE_DECOMPRESS_LENGTH_MS);
+                int64 nLength = spAPEDecompress->GetInfo(IAPEDecompress::APE_DECOMPRESS_LENGTH_MS);
                 sprintf_s(Info.pReturn, Info.nReturnBytes, "%I64d", nLength);
             }
             else if (strcmp(Info.pMetaData, "track") == 0)

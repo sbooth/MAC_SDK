@@ -11,8 +11,8 @@ namespace APE
 struct RANGE_CODER_STRUCT_COMPRESS
 {
     unsigned int low;        // low end of interval
-    unsigned int range;        // length of interval
-    unsigned int help;        // bytes_to_follow resp. intermediate value
+    unsigned int range;      // length of interval
+    unsigned int help;       // bytes_to_follow resp. intermediate value
     unsigned char buffer;    // buffer for input / output
 };
 
@@ -25,7 +25,7 @@ class CBitArray
 {
 public:    
     // construction / destruction
-    CBitArray(APE::CIO *pIO);
+    CBitArray(APE::CIO * pIO);
     virtual ~CBitArray();
 
     // encoding

@@ -5,7 +5,6 @@ CAPEInfo:
 #include "All.h"
 #include "APEInfo.h"
 #include "IO.h"
-#include "APECompress.h"
 #include "APEHeader.h"
 #include "GlobalFunctions.h"
 
@@ -17,6 +16,7 @@ Construction
 **************************************************************************************************/
 CAPEInfo::CAPEInfo(int * pErrorCode, const wchar_t * pFilename, CAPETag * pTag, bool bAPL, bool bReadOnly, bool bAnalyzeTagNow, bool bReadWholeFile)
 {
+    memset(&m_APEFileInfo, 0, sizeof(m_APEFileInfo));
     *pErrorCode = ERROR_SUCCESS;
     CloseFile();
     
@@ -78,6 +78,7 @@ CAPEInfo::CAPEInfo(int * pErrorCode, const wchar_t * pFilename, CAPETag * pTag, 
 
 CAPEInfo::CAPEInfo(int * pErrorCode, CIO * pIO, CAPETag * pTag)
 {
+    memset(&m_APEFileInfo, 0, sizeof(m_APEFileInfo));
     m_bAPL = false;
     *pErrorCode = ERROR_SUCCESS;
     CloseFile();
@@ -118,7 +119,7 @@ int CAPEInfo::CloseFile()
     m_spIO.Delete();
     m_APEFileInfo.spWaveHeaderData.Delete();
     m_APEFileInfo.spSeekBitTable.Delete();
-    m_APEFileInfo.spSeekByteTable.Delete();
+    m_APEFileInfo.spSeekByteTable64.Delete();
     m_APEFileInfo.spAPEDescriptor.Delete();
     
     m_spAPETag.Delete();
@@ -195,19 +196,19 @@ int CAPEInfo::GetFileInformation(bool bGetTagInformation)
 /**************************************************************************************************
 Primary query function
 **************************************************************************************************/
-int64 CAPEInfo::GetInfo(APE_DECOMPRESS_FIELDS Field, int64 nParam1, int64 nParam2)
+int64 CAPEInfo::GetInfo(IAPEDecompress::APE_DECOMPRESS_FIELDS Field, int64 nParam1, int64 nParam2)
 {
     int64 nResult = -1;
 
     switch (Field)
     {
-    case APE_INFO_FILE_VERSION:
+    case IAPEDecompress::APE_INFO_FILE_VERSION:
         nResult = m_APEFileInfo.nVersion;
         break;
-    case APE_INFO_COMPRESSION_LEVEL:
+    case IAPEDecompress::APE_INFO_COMPRESSION_LEVEL:
         nResult = m_APEFileInfo.nCompressionLevel;
         break;
-    case APE_INFO_FORMAT_FLAGS:
+    case IAPEDecompress::APE_INFO_FORMAT_FLAGS:
         nResult = m_APEFileInfo.nFormatFlags;
         
         // add the big endian for AIFF since we didn't save that at first
@@ -215,62 +216,62 @@ int64 CAPEInfo::GetInfo(APE_DECOMPRESS_FIELDS Field, int64 nParam1, int64 nParam
             nResult |= MAC_FORMAT_FLAG_BIG_ENDIAN;
 
         break;
-    case APE_INFO_SAMPLE_RATE:
+    case IAPEDecompress::APE_INFO_SAMPLE_RATE:
         nResult = m_APEFileInfo.nSampleRate;
         break;
-    case APE_INFO_BITS_PER_SAMPLE:
+    case IAPEDecompress::APE_INFO_BITS_PER_SAMPLE:
         nResult = m_APEFileInfo.nBitsPerSample;
         break;
-    case APE_INFO_BYTES_PER_SAMPLE:
+    case IAPEDecompress::APE_INFO_BYTES_PER_SAMPLE:
         nResult = m_APEFileInfo.nBytesPerSample;
         break;
-    case APE_INFO_CHANNELS:
+    case IAPEDecompress::APE_INFO_CHANNELS:
         nResult = m_APEFileInfo.nChannels;
         break;
-    case APE_INFO_BLOCK_ALIGN:
+    case IAPEDecompress::APE_INFO_BLOCK_ALIGN:
         nResult = m_APEFileInfo.nBlockAlign;
         break;
-    case APE_INFO_BLOCKS_PER_FRAME:
+    case IAPEDecompress::APE_INFO_BLOCKS_PER_FRAME:
         nResult = m_APEFileInfo.nBlocksPerFrame;
         break;
-    case APE_INFO_FINAL_FRAME_BLOCKS:
+    case IAPEDecompress::APE_INFO_FINAL_FRAME_BLOCKS:
         nResult = m_APEFileInfo.nFinalFrameBlocks;
         break;
-    case APE_INFO_TOTAL_FRAMES:
+    case IAPEDecompress::APE_INFO_TOTAL_FRAMES:
         nResult = m_APEFileInfo.nTotalFrames;
         break;
-    case APE_INFO_WAV_HEADER_BYTES:
+    case IAPEDecompress::APE_INFO_WAV_HEADER_BYTES:
         nResult = m_APEFileInfo.nWAVHeaderBytes;
         break;
-    case APE_INFO_WAV_TERMINATING_BYTES:
+    case IAPEDecompress::APE_INFO_WAV_TERMINATING_BYTES:
         nResult = m_APEFileInfo.nWAVTerminatingBytes;
         break;
-    case APE_INFO_WAV_DATA_BYTES:
+    case IAPEDecompress::APE_INFO_WAV_DATA_BYTES:
         nResult = m_APEFileInfo.nWAVDataBytes;
         break;
-    case APE_INFO_WAV_TOTAL_BYTES:
+    case IAPEDecompress::APE_INFO_WAV_TOTAL_BYTES:
         nResult = m_APEFileInfo.nWAVTotalBytes;
         break;
-    case APE_INFO_APE_TOTAL_BYTES:
+    case IAPEDecompress::APE_INFO_APE_TOTAL_BYTES:
         nResult = m_APEFileInfo.nAPETotalBytes;
         break;
-    case APE_INFO_TOTAL_BLOCKS:
+    case IAPEDecompress::APE_INFO_TOTAL_BLOCKS:
         nResult = m_APEFileInfo.nTotalBlocks;
         break;
-    case APE_INFO_LENGTH_MS:
+    case IAPEDecompress::APE_INFO_LENGTH_MS:
         nResult = m_APEFileInfo.nLengthMS;
         break;
-    case APE_INFO_AVERAGE_BITRATE:
+    case IAPEDecompress::APE_INFO_AVERAGE_BITRATE:
         nResult = m_APEFileInfo.nAverageBitrate;
         break;
-    case APE_INFO_FRAME_BITRATE:
+    case IAPEDecompress::APE_INFO_FRAME_BITRATE:
     {
         int64 nFrame = nParam1;
         
         nResult = 0;
 
-        int64 nFrameBytes = GetInfo(APE_INFO_FRAME_BYTES, nFrame);
-        int64 nFrameBlocks = GetInfo(APE_INFO_FRAME_BLOCKS, nFrame);
+        int64 nFrameBytes = GetInfo(IAPEDecompress::APE_INFO_FRAME_BYTES, nFrame);
+        int64 nFrameBlocks = GetInfo(IAPEDecompress::APE_INFO_FRAME_BLOCKS, nFrame);
         if ((nFrameBytes > 0) && (nFrameBlocks > 0) && m_APEFileInfo.nSampleRate > 0)
         {
             int64 nFrameMS = (nFrameBlocks * 1000) / m_APEFileInfo.nSampleRate;
@@ -281,13 +282,13 @@ int64 CAPEInfo::GetInfo(APE_DECOMPRESS_FIELDS Field, int64 nParam1, int64 nParam
         }
         break;
     }
-    case APE_INFO_DECOMPRESSED_BITRATE:
+    case IAPEDecompress::APE_INFO_DECOMPRESSED_BITRATE:
         nResult = m_APEFileInfo.nDecompressedBitrate;
         break;
-    case APE_INFO_PEAK_LEVEL:
+    case IAPEDecompress::APE_INFO_PEAK_LEVEL:
         nResult = -1; // no longer supported
         break;
-    case APE_INFO_SEEK_BIT:
+    case IAPEDecompress::APE_INFO_SEEK_BIT:
     {
         int64 nFrame = nParam1;
         if (GET_FRAMES_START_ON_BYTES_BOUNDARIES(this)) 
@@ -303,33 +304,52 @@ int64 CAPEInfo::GetInfo(APE_DECOMPRESS_FIELDS Field, int64 nParam1, int64 nParam
         }
         break;
     }
-    case APE_INFO_SEEK_BYTE:
+    case IAPEDecompress::APE_INFO_SEEK_BYTE:
     {
         int64 nFrame = nParam1;
         if ((nFrame < 0) || (uint32(nFrame) >= m_APEFileInfo.nTotalFrames))
             nResult = 0;
-        else
-            nResult = m_APEFileInfo.spSeekByteTable[nFrame] + m_APEFileInfo.nJunkHeaderBytes;
+        else if (m_APEFileInfo.spSeekByteTable64 != NULL)
+            nResult = m_APEFileInfo.spSeekByteTable64[nFrame] + m_APEFileInfo.nJunkHeaderBytes;
         break;
     }
-    case APE_INFO_WAV_HEADER_DATA:
+    case IAPEDecompress::APE_INFO_WAV_HEADER_DATA:
     {
         char * pBuffer = (char *) nParam1;
         int64 nMaxBytes = nParam2;
         
         if (m_APEFileInfo.nFormatFlags & MAC_FORMAT_FLAG_CREATE_WAV_HEADER)
         {
-            if ((APE::intn) sizeof(WAVE_HEADER) > nMaxBytes)
+            if (m_APEFileInfo.nWAVDataBytes >= (4 * BYTES_IN_GIGABYTE))
             {
-                nResult = -1;
+                if ((APE::intn)sizeof(RF64_HEADER) > nMaxBytes)
+                {
+                    nResult = -1;
+                }
+                else
+                {
+                    WAVEFORMATEX wfeFormat; GetInfo(IAPEDecompress::APE_INFO_WAVEFORMATEX, (int64)&wfeFormat, 0);
+                    RF64_HEADER WAVHeader; FillRF64Header(&WAVHeader, m_APEFileInfo.nWAVDataBytes, &wfeFormat,
+                        m_APEFileInfo.nWAVTerminatingBytes);
+                    memcpy(pBuffer, &WAVHeader, sizeof(RF64_HEADER));
+                    nResult = 0;
+                }
+
             }
             else
             {
-                WAVEFORMATEX wfeFormat; GetInfo(APE_INFO_WAVEFORMATEX, (int64) &wfeFormat, 0);
-                WAVE_HEADER WAVHeader; FillWaveHeader(&WAVHeader, m_APEFileInfo.nWAVDataBytes, &wfeFormat,
-                    m_APEFileInfo.nWAVTerminatingBytes);
-                memcpy(pBuffer, &WAVHeader, sizeof(WAVE_HEADER));
-                nResult = 0;
+                if ((APE::intn)sizeof(WAVE_HEADER) > nMaxBytes)
+                {
+                    nResult = -1;
+                }
+                else
+                {
+                    WAVEFORMATEX wfeFormat; GetInfo(IAPEDecompress::APE_INFO_WAVEFORMATEX, (int64)&wfeFormat, 0);
+                    WAVE_HEADER WAVHeader; FillWaveHeader(&WAVHeader, m_APEFileInfo.nWAVDataBytes, &wfeFormat,
+                        m_APEFileInfo.nWAVTerminatingBytes);
+                    memcpy(pBuffer, &WAVHeader, sizeof(WAVE_HEADER));
+                    nResult = 0;
+                }
             }
         }
         else
@@ -346,7 +366,7 @@ int64 CAPEInfo::GetInfo(APE_DECOMPRESS_FIELDS Field, int64 nParam1, int64 nParam
         }
         break;
     }
-    case APE_INFO_WAV_TERMINATING_DATA:
+    case IAPEDecompress::APE_INFO_WAV_TERMINATING_DATA:
     {
         char * pBuffer = (char *) nParam1;
         int64 nMaxBytes = nParam2;
@@ -378,17 +398,17 @@ int64 CAPEInfo::GetInfo(APE_DECOMPRESS_FIELDS Field, int64 nParam1, int64 nParam
         }
         break;
     }
-    case APE_INFO_WAVEFORMATEX:
+    case IAPEDecompress::APE_INFO_WAVEFORMATEX:
     {
         WAVEFORMATEX * pWaveFormatEx = (WAVEFORMATEX *) nParam1;
         FillWaveFormatEx(pWaveFormatEx, m_APEFileInfo.nFormatFlags, m_APEFileInfo.nSampleRate, m_APEFileInfo.nBitsPerSample, m_APEFileInfo.nChannels);
         nResult = 0;
         break;
     }
-    case APE_INFO_IO_SOURCE:
+    case IAPEDecompress::APE_INFO_IO_SOURCE:
         nResult = (int64) m_spIO.GetPtr();
         break;
-    case APE_INFO_FRAME_BYTES:
+    case IAPEDecompress::APE_INFO_FRAME_BYTES:
     {
         int64 nFrame = nParam1;
         
@@ -400,13 +420,13 @@ int64 CAPEInfo::GetInfo(APE_DECOMPRESS_FIELDS Field, int64 nParam1, int64 nParam
         else
         {
             if (uint32(nFrame) != (m_APEFileInfo.nTotalFrames - 1)) 
-                nResult = GetInfo(APE_INFO_SEEK_BYTE, nFrame + 1) - GetInfo(APE_INFO_SEEK_BYTE, nFrame);
+                nResult = GetInfo(IAPEDecompress::APE_INFO_SEEK_BYTE, nFrame + 1) - GetInfo(IAPEDecompress::APE_INFO_SEEK_BYTE, nFrame);
             else 
-                nResult = int64(m_spIO->GetSize() - int64(m_spAPETag->GetTagBytes()) - int64(m_APEFileInfo.nWAVTerminatingBytes) - int64(GetInfo(APE_INFO_SEEK_BYTE, nFrame)));
+                nResult = int64(m_spIO->GetSize() - int64(m_spAPETag->GetTagBytes()) - int64(m_APEFileInfo.nWAVTerminatingBytes) - int64(GetInfo(IAPEDecompress::APE_INFO_SEEK_BYTE, nFrame)));
         }
         break;
     }
-    case APE_INFO_FRAME_BLOCKS:
+    case IAPEDecompress::APE_INFO_FRAME_BLOCKS:
     {
         int64 nFrame = nParam1;
 
@@ -424,13 +444,13 @@ int64 CAPEInfo::GetInfo(APE_DECOMPRESS_FIELDS Field, int64 nParam1, int64 nParam
         }
         break;
     }
-    case APE_INFO_TAG:
+    case IAPEDecompress::APE_INFO_TAG:
         nResult = (int64) m_spAPETag.GetPtr();
         break;
-    case APE_INFO_APL:
+    case IAPEDecompress::APE_INFO_APL:
         nResult = (int64) m_bAPL;
         break;
-    case APE_INTERNAL_INFO:
+    case IAPEDecompress::APE_INTERNAL_INFO:
         nResult = (int64) &m_APEFileInfo;
         break;
     default:
