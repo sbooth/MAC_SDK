@@ -19,13 +19,13 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v141_xp</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v141_xp</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -133,7 +133,7 @@
     <ClInclude Include="..\..\Shared\UnMAC.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Source\Projects\VS2019\MACLib\MACLib.vcxproj">
+    <ProjectReference Include="..\..\Source\Projects\VS2022\MACLib\MACLib.vcxproj">
       <Project>{21bf980f-c022-4dcc-9250-7c73528e422b}</Project>
     </ProjectReference>
   </ItemGroup>

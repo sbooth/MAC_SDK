@@ -1,7 +1,6 @@
 #ifdef IO_USE_WIN_FILE_IO
 
-#ifndef _winfileio_h_
-#define _winfileio_h_
+#pragma once
 
 #include "IO.h"
 
@@ -29,6 +28,8 @@ public:
     // other functions
     int SetEOF();
     int SetReadWholeFile();
+    void SetReadToBuffer();
+    unsigned char * GetBuffer(int * pnBufferBytes);
 
     // creation / destruction
     int Create(const wchar_t * pName);
@@ -45,12 +46,14 @@ private:
     wchar_t     m_cFileName[MAX_PATH];
     bool        m_bReadOnly;
     bool        m_bWholeFile;
-    unsigned char * m_pWholeFile;
+    CSmartPtr<unsigned char> m_spWholeFile;
     int64       m_nWholeFilePointer;
+    CSmartPtr<unsigned char> m_spBuffer;
+    int         m_nBufferBytes;
+    bool        m_bReadToBuffer;
+    int64       m_nWholeFileSize;
 };
 
 }
-
-#endif //_winfileio_h_
 
 #endif //IO_USE_WIN_FILE_IO

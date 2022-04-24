@@ -1,6 +1,6 @@
 /***************************************************************************************
 Decompress - Sample 2
-Copyright (C) 2000-2001 by Matthew T. Ashland   All Rights Reserved.
+Copyright (C) 2000-2022 by Matthew T. Ashland   All Rights Reserved.
 Feel free to use this code in any way that you like.
 
 This example illustrates using MACLib.lib to do decoding and seeking of an APE file.  
@@ -63,7 +63,7 @@ int wmain(int argc, TCHAR* argv[])
 	///////////////////////////////////////////////////////////////////////////////
 	// open the APE file
 	///////////////////////////////////////////////////////////////////////////////
-	IAPEDecompress * pAPEDecompress = CreateIAPEDecompress(pFilename, &nRetVal);
+	IAPEDecompress * pAPEDecompress = CreateIAPEDecompress(pFilename, &nRetVal, false, true, false);
 	if (pAPEDecompress == NULL)
 	{
 		printf("Error opening APE file (error code: %d)\r\n", nRetVal);
@@ -73,7 +73,7 @@ int wmain(int argc, TCHAR* argv[])
 	///////////////////////////////////////////////////////////////////////////////
 	// allocate space for the raw decompressed data
 	///////////////////////////////////////////////////////////////////////////////
-	char * pRawData = new char [size_t(1024 * pAPEDecompress->GetInfo(APE_INFO_BLOCK_ALIGN))];
+	char * pRawData = new char [size_t(1024 * pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_BLOCK_ALIGN))];
 	if (pRawData == NULL) { return -1; }
 
 	///////////////////////////////////////////////////////////////////////////////
@@ -82,7 +82,7 @@ int wmain(int argc, TCHAR* argv[])
 	for (int z = 0; z < 16; z++) 
 	{
 		// figure a random location in the file and seek to it
-		int nRandomBlock = rand() % (pAPEDecompress->GetInfo(APE_DECOMPRESS_TOTAL_BLOCKS) - 1024);
+		int nRandomBlock = rand() % (pAPEDecompress->GetInfo(IAPEDecompress::APE_DECOMPRESS_TOTAL_BLOCKS) - 1024);
 		if (pAPEDecompress->Seek(nRandomBlock) != 0) { return -1; }
 
 		// decompress 1024 blocks from that location
@@ -94,7 +94,7 @@ int wmain(int argc, TCHAR* argv[])
 		}
 		
 		// figure the sum of the decoded data
-		int64 nBytesRetrieved = nBlocksRetrieved * pAPEDecompress->GetInfo(APE_INFO_BLOCK_ALIGN);		
+		int64 nBytesRetrieved = nBlocksRetrieved * pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_BLOCK_ALIGN);		
 		int nSum = 0;
 		for (int x = 0; x < nBytesRetrieved; x++) 
 		{

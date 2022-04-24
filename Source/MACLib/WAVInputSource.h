@@ -5,9 +5,9 @@
 namespace APE
 {
 
-/*************************************************************************************
+/**************************************************************************************************
 CInputSource - base input format class (allows multiple format support)
-*************************************************************************************/
+**************************************************************************************************/
 class CInputSource
 {
 public:
@@ -22,11 +22,17 @@ public:
     // get header / terminating data
     virtual int GetHeaderData(unsigned char * pBuffer) = 0;
     virtual int GetTerminatingData(unsigned char * pBuffer) = 0;
+    virtual bool GetUnknownLengthPipe() { return false; }
+
+protected:
+    // get header / terminating data
+    int GetHeaderDataHelper(bool bIsValid, unsigned char * pBuffer, uint32 nHeaderBytes, CIO * pIO);
+    int GetTerminatingDataHelper(bool bIsValid, unsigned char * pBuffer, uint32 nTerminatingBytes, CIO * pIO);
 };
 
-/*************************************************************************************
+/**************************************************************************************************
 CWAVInputSource - wraps working with WAV files
-*************************************************************************************/
+**************************************************************************************************/
 class CWAVInputSource : public CInputSource
 {
 public:
@@ -40,22 +46,25 @@ public:
     // get header / terminating data
     int GetHeaderData(unsigned char * pBuffer);
     int GetTerminatingData(unsigned char * pBuffer);
+    bool GetUnknownLengthPipe() { return m_bUnknownLengthPipe; }
 
 private:
     int AnalyzeSource();
 
     CSmartPtr<CIO> m_spIO;    
     WAVEFORMATEX m_wfeSource;
-    int64 m_nHeaderBytes;
+    uint32 m_nHeaderBytes;
     int64 m_nDataBytes;
-    int64 m_nTerminatingBytes;
+    uint32 m_nTerminatingBytes;
     int64 m_nFileBytes;
     bool m_bIsValid;
+    CSmartPtr<char> m_spFullHeader;
+    bool m_bUnknownLengthPipe;
 };
 
-/*************************************************************************************
+/**************************************************************************************************
 CAIFFInputSource - wraps working with AIFF files
-*************************************************************************************/
+**************************************************************************************************/
 class CAIFFInputSource : public CInputSource
 {
 public:
@@ -72,23 +81,21 @@ public:
 
 private:
     int AnalyzeSource();
-    void FlipShort(void * pv);
-    void FlipLong(void * pv);
     unsigned long FetchLong(unsigned long * ptr);
     uint32 IEEE754ExtendedFloatToUINT32(unsigned char* buffer);
 
     CSmartPtr<CIO> m_spIO;
     WAVEFORMATEX m_wfeSource;
-    int64 m_nHeaderBytes;
+    uint32 m_nHeaderBytes;
     int64 m_nDataBytes;
-    int64 m_nTerminatingBytes;
+    uint32 m_nTerminatingBytes;
     int64 m_nFileBytes;
     bool m_bIsValid;
 };
 
-/*************************************************************************************
+/**************************************************************************************************
 CW64InputSource - wraps working with W64 files
-*************************************************************************************/
+**************************************************************************************************/
 struct W64ChunkHeader
 {
     GUID guidIdentifier; // the identifier of the chunk
@@ -130,16 +137,16 @@ private:
 
     CSmartPtr<CIO> m_spIO;
     WAVEFORMATEX m_wfeSource;
-    int64 m_nHeaderBytes;
+    uint32 m_nHeaderBytes;
     int64 m_nDataBytes;
-    int64 m_nTerminatingBytes;
+    uint32 m_nTerminatingBytes;
     int64 m_nFileBytes;
     bool m_bIsValid;
 };
 
-/*************************************************************************************
+/**************************************************************************************************
 CSNDInputSource - wraps working with SND files
-*************************************************************************************/
+**************************************************************************************************/
 class CSNDInputSource : public CInputSource
 {
 public:
@@ -168,17 +175,46 @@ private:
     
     CSmartPtr<CIO> m_spIO;
     WAVEFORMATEX m_wfeSource;
-    int64 m_nHeaderBytes;
+    uint32 m_nHeaderBytes;
     int64 m_nDataBytes;
-    int64 m_nTerminatingBytes;
+    uint32 m_nTerminatingBytes;
     int64 m_nFileBytes;
     bool m_bIsValid;
     bool m_bBigEndian;
 };
 
-/*************************************************************************************
+/**************************************************************************************************
+CCAFInputSource - wraps working with CAF files
+**************************************************************************************************/
+class CCAFInputSource : public CInputSource
+{
+public:
+    // construction / destruction
+    CCAFInputSource(const wchar_t * pSourceName, WAVEFORMATEX * pwfeSource, int64 * pTotalBlocks, int64 * pHeaderBytes, int64 * pTerminatingBytes, int * pErrorCode = NULL);
+    ~CCAFInputSource();
+
+    // get data
+    int GetData(unsigned char * pBuffer, int nBlocks, int * pBlocksRetrieved);
+
+    // get header / terminating data
+    int GetHeaderData(unsigned char * pBuffer);
+    int GetTerminatingData(unsigned char * pBuffer);
+
+private:
+    int AnalyzeSource();
+
+    CSmartPtr<CIO> m_spIO;
+    WAVEFORMATEX m_wfeSource;
+    uint32 m_nHeaderBytes;
+    int64 m_nDataBytes;
+    uint32 m_nTerminatingBytes;
+    int64 m_nFileBytes;
+    bool m_bIsValid;
+};
+
+/**************************************************************************************************
 Input souce creation
-*************************************************************************************/
+**************************************************************************************************/
 CInputSource * CreateInputSource(const wchar_t * pSourceName, WAVEFORMATEX * pwfeSource, int64 * pTotalBlocks, int64 * pHeaderBytes, int64 * pTerminatingBytes, int32 * pFlags, int * pErrorCode = NULL);
 
 }

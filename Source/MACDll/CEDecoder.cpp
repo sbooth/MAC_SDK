@@ -14,9 +14,9 @@ __declspec(dllexport) int FAR PASCAL FilterGetFileSize(HANDLE hInput)
     IAPEDecompress* pAPEDecompress = (IAPEDecompress*) hInput;
     if (hInput == NULL) return 0;
     
-    int64 nBytesPerSample = pAPEDecompress->GetInfo(APE_INFO_BYTES_PER_SAMPLE);
+    int64 nBytesPerSample = pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_BYTES_PER_SAMPLE);
     if (nBytesPerSample == 3) nBytesPerSample = 4;
-    return int(pAPEDecompress->GetInfo(APE_INFO_TOTAL_BLOCKS) * pAPEDecompress->GetInfo(APE_INFO_CHANNELS) * nBytesPerSample);
+    return int(pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_TOTAL_BLOCKS) * pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_CHANNELS) * nBytesPerSample);
 }
 
 __declspec(dllexport) HANDLE FAR PASCAL OpenFilterInput( LPSTR lpstrFilename, int far *lSamprate, WORD far *wBitsPerSample, WORD far *wChannels, HWND hWnd, int far *lChunkSize)
@@ -29,9 +29,9 @@ __declspec(dllexport) HANDLE FAR PASCAL OpenFilterInput( LPSTR lpstrFilename, in
     if (pAPEDecompress == NULL)
         return NULL;
     
-    *lSamprate= (int) pAPEDecompress->GetInfo(APE_INFO_SAMPLE_RATE);
-    *wChannels = (WORD) pAPEDecompress->GetInfo(APE_INFO_CHANNELS);
-    *wBitsPerSample = (WORD) pAPEDecompress->GetInfo(APE_INFO_BITS_PER_SAMPLE);
+    *lSamprate= (int) pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_SAMPLE_RATE);
+    *wChannels = (WORD) pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_CHANNELS);
+    *wBitsPerSample = (WORD) pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_BITS_PER_SAMPLE);
     
     if (*wBitsPerSample == 24) *wBitsPerSample = 32;
     
@@ -50,9 +50,9 @@ __declspec(dllexport) DWORD FAR PASCAL ReadFilterInput(HANDLE hInput, unsigned c
     if (hInput == NULL) return 0;
 
     int64 nBlocksDecoded = 0;
-    int64 nBlocksToDecode = lBytes / pAPEDecompress->GetInfo(APE_INFO_BLOCK_ALIGN);
+    int64 nBlocksToDecode = lBytes / pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_BLOCK_ALIGN);
 
-    if (pAPEDecompress->GetInfo(APE_INFO_BYTES_PER_SAMPLE) == 3)
+    if (pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_BYTES_PER_SAMPLE) == 3)
     {
         ///////////////////////////////////////////////////////////////////////////////
         // 24 bit decode (convert to 32 bit)
@@ -63,8 +63,8 @@ __declspec(dllexport) DWORD FAR PASCAL ReadFilterInput(HANDLE hInput, unsigned c
             return 0;
 
         // expand to 32 bit
-        unsigned char * p24Bit = (unsigned char*) &buf[(nBlocksDecoded * pAPEDecompress->GetInfo(APE_INFO_BLOCK_ALIGN)) - 3];
-        float * p32Bit = (float*) &buf[(nBlocksDecoded * pAPEDecompress->GetInfo(APE_INFO_CHANNELS) * 4) - 4];
+        unsigned char * p24Bit = (unsigned char*) &buf[(nBlocksDecoded * pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_BLOCK_ALIGN)) - 3];
+        float * p32Bit = (float*) &buf[(nBlocksDecoded * pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_CHANNELS) * 4) - 4];
 
         while (p32Bit >= (float*) &buf[0])
         {
@@ -85,9 +85,9 @@ __declspec(dllexport) DWORD FAR PASCAL ReadFilterInput(HANDLE hInput, unsigned c
             return 0;
     }
 
-    int64 BytesPerSample = pAPEDecompress->GetInfo(APE_INFO_BYTES_PER_SAMPLE);
+    int64 BytesPerSample = pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_BYTES_PER_SAMPLE);
     if (BytesPerSample == 3) BytesPerSample = 4;
-    return DWORD(nBlocksDecoded * pAPEDecompress->GetInfo(APE_INFO_CHANNELS) * BytesPerSample);
+    return DWORD(nBlocksDecoded * pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_CHANNELS) * BytesPerSample);
 }
 
 
@@ -114,7 +114,7 @@ __declspec(dllexport) DWORD FAR PASCAL FilterOptions(HANDLE hInput)
     IAPEDecompress* pAPEDecompress = (IAPEDecompress*) hInput;
     if (pAPEDecompress != NULL) 
     {
-        switch (pAPEDecompress->GetInfo(APE_INFO_COMPRESSION_LEVEL))
+        switch (pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_COMPRESSION_LEVEL))
         {
         case MAC_COMPRESSION_LEVEL_FAST: nCompressionLevel = 1; break;
         case MAC_COMPRESSION_LEVEL_NORMAL: nCompressionLevel = 2; break;
@@ -143,7 +143,7 @@ __declspec(dllexport) DWORD FAR PASCAL FilterOptionsString(HANDLE hInput, LPSTR 
     {
         char Title[256]; strcpy_s(Title, 256, "Compression Level: ");
         
-        switch (pAPEDecompress->GetInfo(APE_INFO_COMPRESSION_LEVEL))
+        switch (pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_COMPRESSION_LEVEL))
         {
         case MAC_COMPRESSION_LEVEL_FAST: strcat_s(Title, 256, "Fast"); break;
         case MAC_COMPRESSION_LEVEL_NORMAL: strcat_s(Title, 256, "Normal"); break;

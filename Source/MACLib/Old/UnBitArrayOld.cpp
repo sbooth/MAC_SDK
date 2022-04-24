@@ -3,7 +3,6 @@
 
 #include "../APEInfo.h"
 #include "UnBitArrayOld.h"
-#include "../BitArray.h"
 
 namespace APE
 {
@@ -18,18 +17,23 @@ const uint32 Powers_of_Two_Minus_One_Reversed[33] = {4294967295U,2147483647,1073
 const uint32 K_SUM_MIN_BOUNDARY[32] = {0,32,64,128,256,512,1024,2048,4096,8192,16384,32768,65536,131072,262144,524288,1048576,2097152,4194304,8388608,16777216,33554432,67108864,134217728,268435456,536870912,1073741824,2147483648U,0,0,0,0};
 const uint32 K_SUM_MAX_BOUNDARY[32] = {32,64,128,256,512,1024,2048,4096,8192,16384,32768,65536,131072,262144,524288,1048576,2097152,4194304,8388608,16777216,33554432,67108864,134217728,268435456,536870912,1073741824,2147483648U,0,0,0,0,0};
 
-/***********************************************************************************
+/**************************************************************************************************
 Construction
-***********************************************************************************/
+**************************************************************************************************/
 CUnBitArrayOld::CUnBitArrayOld(IAPEDecompress * pAPEDecompress, intn nVersion, int64 nFurthestReadByte) :
     CUnBitArrayBase(nFurthestReadByte)
 {
+    // initialize (to avoid warnings)
+    m_K_Sum = 0;
+    m_k = 0;
+
+    // bit array size
     intn nBitArrayBytes = 262144;
 
     // calculate the bytes
     if (nVersion <= 3880)
     {
-        intn nMaxFrameBytes = (intn(pAPEDecompress->GetInfo(APE_INFO_BLOCKS_PER_FRAME)) * 50) / 8;
+        intn nMaxFrameBytes = (intn(pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_BLOCKS_PER_FRAME)) * 50) / 8;
         nBitArrayBytes = 65536;
         while (nBitArrayBytes < nMaxFrameBytes)
         {
@@ -106,8 +110,8 @@ uint32 CUnBitArrayOld::Get_K(uint32 x)
         return 0;
 
     uint32 k = 0;
-    while (x >= Powers_of_Two[++k]) {}
-    return k;    
+    while (x >= Powers_of_Two[++k]) { }
+    return k;
 }
 
 uint32 CUnBitArrayOld::DecodeValue(DECODE_VALUE_METHOD DecodeMethod, int nParam1, int nParam2)
@@ -243,9 +247,9 @@ void CUnBitArrayOld::GenerateArrayOld(int * Output_Array, uint32 Number_of_Eleme
         if ((K_Sum < kmin) || (K_Sum >= kmax)) 
         {
             if (K_Sum < kmin) 
-                while (K_Sum < K_SUM_MIN_BOUNDARY_OLD[--k]) {}
+                while (K_Sum < K_SUM_MIN_BOUNDARY_OLD[--k]) { }
             else
-                while (K_SUM_MAX_BOUNDARY_OLD[k + 1] && K_Sum >= K_SUM_MAX_BOUNDARY_OLD[++k]) {}
+                while (K_SUM_MAX_BOUNDARY_OLD[k + 1] && K_Sum >= K_SUM_MAX_BOUNDARY_OLD[++k]) { }
 
             kmax = K_SUM_MAX_BOUNDARY_OLD[k];
             kmin = K_SUM_MIN_BOUNDARY_OLD[k];

@@ -1,29 +1,14 @@
 // Microsoft Visual C++ generated resource script.
 //
 #include "resource.h"
-#include <windows.h>
-
-/////////////////////////////////////////////////////////////////////////////
-// Slovak resources
-
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_SKY)
-#ifdef _WIN32
-LANGUAGE LANG_SLOVAK, SUBLANG_DEFAULT
-#pragma code_page(1250)
-#endif //_WIN32
-
-#endif    // Slovak resources
-/////////////////////////////////////////////////////////////////////////////
-
+#include "../Shared/All.h"
 
 /////////////////////////////////////////////////////////////////////////////
 // Neutral resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NEU)
-#ifdef _WIN32
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 #pragma code_page(1252)
-#endif //_WIN32
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -31,8 +16,8 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,0,0
- PRODUCTVERSION 1,0,0,0
+ FILEVERSION MAC_VERSION_MAJOR,MAC_VERSION_REVISION
+ PRODUCTVERSION MAC_VERSION_MAJOR,MAC_VERSION_REVISION,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -49,12 +34,12 @@ BEGIN
         BEGIN
             VALUE "Comments", "APE DirectShow Filter"
             VALUE "CompanyName", "Matthew T. Ashland (adopted from RadLight plugin)"
-            VALUE "FileVersion", "1, 0, 0, 0"
-            VALUE "LegalCopyright", "Copyright (c) 2000-2021 Matthew T. Ashland"
+            VALUE "FileVersion", MAC_RESOURCE_VERSION_STRING
+            VALUE "LegalCopyright", MAC_RESOURCE_COPYRIGHT
             VALUE "LegalTrademarks", " "
             VALUE "OriginalFilename", "APE.ax"
             VALUE "ProductName", "APE DirectShow Filter"
-            VALUE "ProductVersion", "1, 0, 0, 0"
+            VALUE "ProductVersion", MAC_RESOURCE_VERSION_STRING
         END
     END
     BLOCK "VarFileInfo"
@@ -64,6 +49,41 @@ BEGIN
 END
 
 #endif    // Neutral resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (United States) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+#endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
 
 

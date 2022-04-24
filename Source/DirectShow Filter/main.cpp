@@ -369,12 +369,12 @@ HRESULT CAPEStream::OpenAPEFile(LPWSTR pFileName)
     if (m_pDecoder == NULL) return E_FAIL;
     
 
-    m_dDuration = (double) m_pDecoder->GetInfo(APE::APE_DECOMPRESS_LENGTH_MS);
+    m_dDuration = (double) m_pDecoder->GetInfo(APE::IAPEDecompress::APE_DECOMPRESS_LENGTH_MS);
 
 
     m_rtDuration = (__int64) ( (double)m_dDuration * (double)10000 );
-    m_iBlockSize = (unsigned int) (m_pDecoder->GetInfo(APE::APE_INFO_CHANNELS) * (m_pDecoder->GetInfo(APE::APE_INFO_BITS_PER_SAMPLE) >> 3));
-    m_iTotalBlocks = (unsigned int) m_pDecoder->GetInfo(APE::APE_DECOMPRESS_TOTAL_BLOCKS);
+    m_iBlockSize = (unsigned int) (m_pDecoder->GetInfo(APE::IAPEDecompress::APE_INFO_CHANNELS) * (m_pDecoder->GetInfo(APE::IAPEDecompress::APE_INFO_BITS_PER_SAMPLE) >> 3));
+    m_iTotalBlocks = (unsigned int) m_pDecoder->GetInfo(APE::IAPEDecompress::APE_DECOMPRESS_TOTAL_BLOCKS);
 
 
     // Display Information message
@@ -402,10 +402,10 @@ HRESULT CAPEStream::OpenAPEFile(LPWSTR pFileName)
     // nastavime wave format
     ZeroMemory(pwf, sizeof(WAVEFORMATEX));
 
-    pwf->nChannels        = (WORD) m_pDecoder->GetInfo(APE::APE_INFO_CHANNELS);
-    pwf->wBitsPerSample = (WORD) m_pDecoder->GetInfo(APE::APE_INFO_BITS_PER_SAMPLE);
-    pwf->nSamplesPerSec    = m_lSampleRate = (long) m_pDecoder->GetInfo(APE::APE_INFO_SAMPLE_RATE);
-    pwf->nBlockAlign    = (WORD) m_pDecoder->GetInfo(APE::APE_INFO_BLOCK_ALIGN);
+    pwf->nChannels        = (WORD) m_pDecoder->GetInfo(APE::IAPEDecompress::APE_INFO_CHANNELS);
+    pwf->wBitsPerSample = (WORD) m_pDecoder->GetInfo(APE::IAPEDecompress::APE_INFO_BITS_PER_SAMPLE);
+    pwf->nSamplesPerSec    = m_lSampleRate = (long) m_pDecoder->GetInfo(APE::IAPEDecompress::APE_INFO_SAMPLE_RATE);
+    pwf->nBlockAlign    = (WORD) m_pDecoder->GetInfo(APE::IAPEDecompress::APE_INFO_BLOCK_ALIGN);
     pwf->wFormatTag        = WAVE_FORMAT_PCM;
     pwf->nAvgBytesPerSec= pwf->nChannels * (pwf->wBitsPerSample>>3) * pwf->nSamplesPerSec;
 

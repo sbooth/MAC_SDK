@@ -245,7 +245,7 @@ int64 CStdLibFileIO::GetSize()
 int CStdLibFileIO::GetName(wchar_t * pBuffer)
 {
     wcscpy(pBuffer, m_cFileName);
-    return 0;
+    return ERROR_SUCCESS;
 }
 
 int CStdLibFileIO::Create(const wchar_t * pName)

@@ -1,6 +1,6 @@
 /**************************************************************************************************
 Monkey's Audio MACLib.h (include for using MACLib.lib in your projects)
-Copyright (C) 2000-2021 by Matthew T. Ashland   All Rights Reserved.
+Copyright (C) 2000-2022 by Matthew T. Ashland   All Rights Reserved.
 
 Overview:
 
@@ -77,19 +77,20 @@ Defines
 #define MAC_COMPRESSION_LEVEL_EXTRA_HIGH    4000
 #define MAC_COMPRESSION_LEVEL_INSANE        5000
 
-#define MAC_FORMAT_FLAG_8_BIT                 1    // is 8-bit [OBSOLETE]
-#define MAC_FORMAT_FLAG_CRC                   2    // uses the new CRC32 error detection [OBSOLETE]
-#define MAC_FORMAT_FLAG_HAS_PEAK_LEVEL        4    // uint32 nPeakLevel after the header [OBSOLETE]
-#define MAC_FORMAT_FLAG_24_BIT                8    // is 24-bit [OBSOLETE]
-#define MAC_FORMAT_FLAG_HAS_SEEK_ELEMENTS    16    // has the number of seek elements after the peak level
-#define MAC_FORMAT_FLAG_CREATE_WAV_HEADER    32    // create the wave header on decompression (not stored)
-#define MAC_FORMAT_FLAG_AIFF                 64    // the file is an AIFF that was compressed (instead of WAV)
-#define MAC_FORMAT_FLAG_W64                 128    // the file is a W64 (instead of WAV)
-#define MAC_FORMAT_FLAG_SND                 256    // the file is a SND (instead of WAV)
-#define MAC_FORMAT_FLAG_BIG_ENDIAN          512    // flags that the file uses big endian encoding
+#define MAC_FORMAT_FLAG_8_BIT               (1 << 0)    // is 8-bit [OBSOLETE]
+#define MAC_FORMAT_FLAG_CRC                 (1 << 1)    // uses the new CRC32 error detection [OBSOLETE]
+#define MAC_FORMAT_FLAG_HAS_PEAK_LEVEL      (1 << 2)    // uint32 nPeakLevel after the header [OBSOLETE]
+#define MAC_FORMAT_FLAG_24_BIT              (1 << 3)    // is 24-bit [OBSOLETE]
+#define MAC_FORMAT_FLAG_HAS_SEEK_ELEMENTS   (1 << 4)    // has the number of seek elements after the peak level
+#define MAC_FORMAT_FLAG_CREATE_WAV_HEADER   (1 << 5)    // create the wave header on decompression (not stored)
+#define MAC_FORMAT_FLAG_AIFF                (1 << 6)    // the file is an AIFF that was compressed (instead of WAV)
+#define MAC_FORMAT_FLAG_W64                 (1 << 7)    // the file is a W64 (instead of WAV)
+#define MAC_FORMAT_FLAG_SND                 (1 << 8)    // the file is a SND (instead of WAV)
+#define MAC_FORMAT_FLAG_BIG_ENDIAN          (1 << 9)    // flags that the file uses big endian encoding
+#define MAC_FORMAT_FLAG_CAF                 (1 << 10)   // the file is a CAF (instead of WAV)
 
 #define CREATE_WAV_HEADER_ON_DECOMPRESSION    -1
-#define MAX_AUDIO_BYTES_UNKNOWN 0xFFFFFFFF
+#define MAX_AUDIO_BYTES_UNKNOWN -1
 
 /**************************************************************************************************
 Progress callbacks
@@ -109,8 +110,7 @@ public:
 /**************************************************************************************************
 All structures are designed for 4-byte alignment
 **************************************************************************************************/
-#pragma pack(push)
-#pragma pack(4)
+#pragma pack(push, 4)
 
 /**************************************************************************************************
 WAV header structure
@@ -141,6 +141,40 @@ struct WAVE_HEADER
 };
 
 /**************************************************************************************************
+RF64 header structure
+**************************************************************************************************/
+struct RF64_HEADER
+{
+    // RIFF header
+    char cRIFFHeader[4]; // RF64
+    unsigned int nRIFFBytes;
+
+    // DS64 
+    char cDataTypeID[4]; // WAVE
+    char cDS64[4]; // ds64
+    int32 nDSHeaderSize;
+    int64 nRIFFSize;
+    int64 nDataSize;
+    int64 nSampleCount;
+    int32 nTableLength;
+
+    // wave format
+    char cFormatHeader[4];
+    unsigned int nFormatBytes;
+
+    unsigned short nFormatTag;
+    unsigned short nChannels;
+    unsigned int nSamplesPerSec;
+    unsigned int nAvgBytesPerSec;
+    unsigned short nBlockAlign;
+    unsigned short nBitsPerSample;
+
+    // data chunk header
+    char cDataHeader[4];
+    unsigned int nDataBytes;
+};
+
+/**************************************************************************************************
 APE_DESCRIPTOR structure (file header that describes lengths, offsets, etc.)
 **************************************************************************************************/
 struct APE_DESCRIPTOR
@@ -165,16 +199,16 @@ APE_HEADER structure (describes the format, duration, etc. of the APE file)
 **************************************************************************************************/
 struct APE_HEADER
 {
-    uint16 nCompressionLevel;                 // the compression level (see defines I.E. COMPRESSION_LEVEL_FAST)
-    uint16 nFormatFlags;                      // any format flags (for future use)
+    uint16 nCompressionLevel;                  // the compression level (see defines I.E. COMPRESSION_LEVEL_FAST)
+    uint16 nFormatFlags;                       // any format flags (for future use)
 
-    uint32 nBlocksPerFrame;                   // the number of audio blocks in one frame
-    uint32 nFinalFrameBlocks;                 // the number of audio blocks in the final frame
-    uint32 nTotalFrames;                      // the total number of frames
+    uint32 nBlocksPerFrame;                    // the number of audio blocks in one frame
+    uint32 nFinalFrameBlocks;                  // the number of audio blocks in the final frame
+    uint32 nTotalFrames;                       // the total number of frames
 
-    uint16 nBitsPerSample;                    // the bits per sample (typically 16)
-    uint16 nChannels;                         // the number of channels (1 or 2)
-    uint32 nSampleRate;                       // the sample rate (typically 44100)
+    uint16 nBitsPerSample;                     // the bits per sample (typically 16)
+    uint16 nChannels;                          // the number of channels (1 or 2)
+    uint32 nSampleRate;                        // the sample rate (typically 44100)
 };
 
 /**************************************************************************************************
@@ -190,69 +224,70 @@ class CInputSource;
 class CAPEInfo;
 
 /**************************************************************************************************
-IAPEDecompress fields - used when querying for information
-
-Note(s):
--the distinction between APE_INFO_XXXX and APE_DECOMPRESS_XXXX is that the first is querying the APE
-information engine, and the other is querying the decompressor, and since the decompressor can be
-a range of an APE file (for APL), differences will arise.  Typically, use the APE_DECOMPRESS_XXXX
-fields when querying for info about the length, etc. so APL will work properly. 
-(i.e. (APE_INFO_TOTAL_BLOCKS != APE_DECOMPRESS_TOTAL_BLOCKS) for APL files)
-**************************************************************************************************/
-enum APE_DECOMPRESS_FIELDS
-{
-    APE_INFO_FILE_VERSION = 1000,               // version of the APE file * 1000 (3.93 = 3930) [ignored, ignored]
-    APE_INFO_COMPRESSION_LEVEL = 1001,          // compression level of the APE file [ignored, ignored]
-    APE_INFO_FORMAT_FLAGS = 1002,               // format flags of the APE file [ignored, ignored]
-    APE_INFO_SAMPLE_RATE = 1003,                // sample rate (Hz) [ignored, ignored]
-    APE_INFO_BITS_PER_SAMPLE = 1004,            // bits per sample [ignored, ignored]
-    APE_INFO_BYTES_PER_SAMPLE = 1005,           // number of bytes per sample [ignored, ignored]
-    APE_INFO_CHANNELS = 1006,                   // channels [ignored, ignored]
-    APE_INFO_BLOCK_ALIGN = 1007,                // block alignment [ignored, ignored]
-    APE_INFO_BLOCKS_PER_FRAME = 1008,           // number of blocks in a frame (frames are used internally)  [ignored, ignored]
-    APE_INFO_FINAL_FRAME_BLOCKS = 1009,         // blocks in the final frame (frames are used internally) [ignored, ignored]
-    APE_INFO_TOTAL_FRAMES = 1010,               // total number frames (frames are used internally) [ignored, ignored]
-    APE_INFO_WAV_HEADER_BYTES = 1011,           // header bytes of the decompressed WAV [ignored, ignored]
-    APE_INFO_WAV_TERMINATING_BYTES = 1012,      // terminating bytes of the decompressed WAV [ignored, ignored]
-    APE_INFO_WAV_DATA_BYTES = 1013,             // data bytes of the decompressed WAV [ignored, ignored]
-    APE_INFO_WAV_TOTAL_BYTES = 1014,            // total bytes of the decompressed WAV [ignored, ignored]
-    APE_INFO_APE_TOTAL_BYTES = 1015,            // total bytes of the APE file [ignored, ignored]
-    APE_INFO_TOTAL_BLOCKS = 1016,               // total blocks of audio data [ignored, ignored]
-    APE_INFO_LENGTH_MS = 1017,                  // length in ms (1 sec = 1000 ms) [ignored, ignored]
-    APE_INFO_AVERAGE_BITRATE = 1018,            // average bitrate of the APE [ignored, ignored]
-    APE_INFO_FRAME_BITRATE = 1019,              // bitrate of specified APE frame [frame index, ignored]
-    APE_INFO_DECOMPRESSED_BITRATE = 1020,       // bitrate of the decompressed WAV [ignored, ignored]
-    APE_INFO_PEAK_LEVEL = 1021,                 // peak audio level (obsolete) (-1 is unknown) [ignored, ignored]
-    APE_INFO_SEEK_BIT = 1022,                   // bit offset [frame index, ignored]
-    APE_INFO_SEEK_BYTE = 1023,                  // byte offset [frame index, ignored]
-    APE_INFO_WAV_HEADER_DATA = 1024,            // error code [buffer *, max bytes]
-    APE_INFO_WAV_TERMINATING_DATA = 1025,       // error code [buffer *, max bytes]
-    APE_INFO_WAVEFORMATEX = 1026,               // error code [waveformatex *, ignored]
-    APE_INFO_IO_SOURCE = 1027,                  // I/O source (CIO *) [ignored, ignored]
-    APE_INFO_FRAME_BYTES = 1028,                // bytes (compressed) of the frame [frame index, ignored]
-    APE_INFO_FRAME_BLOCKS = 1029,               // blocks in a given frame [frame index, ignored]
-    APE_INFO_TAG = 1030,                        // point to tag (CAPETag *) [ignored, ignored]
-    APE_INFO_APL = 1031,                        // whether it's an APL file
-    
-    APE_DECOMPRESS_CURRENT_BLOCK = 2000,        // current block location [ignored, ignored]
-    APE_DECOMPRESS_CURRENT_MS = 2001,           // current millisecond location [ignored, ignored]
-    APE_DECOMPRESS_TOTAL_BLOCKS = 2002,         // total blocks in the decompressors range [ignored, ignored]
-    APE_DECOMPRESS_LENGTH_MS = 2003,            // length of the decompressors range in milliseconds [ignored, ignored]
-    APE_DECOMPRESS_CURRENT_BITRATE = 2004,      // current bitrate [ignored, ignored]
-    APE_DECOMPRESS_AVERAGE_BITRATE = 2005,      // average bitrate (works with ranges) [ignored, ignored]
-    APE_DECOMPRESS_CURRENT_FRAME = 2006,        // current frame
-
-    APE_INTERNAL_INFO = 3000,                   // for internal use -- don't use (returns APE_FILE_INFO *) [ignored, ignored]
-};
-
-/**************************************************************************************************
 IAPEDecompress - interface for working with existing APE files (decoding, seeking, analyzing, etc.)
 **************************************************************************************************/
 class IAPEDecompress
 {
 public:
+
+    /**************************************************************************************************
+    APE_DECOMPRESS_FIELDS - used when querying for information
+
+    Note(s):
+    -the distinction between APE_INFO_XXXX and APE_DECOMPRESS_XXXX is that the first is querying the APE
+    information engine, and the other is querying the decompressor, and since the decompressor can be
+    a range of an APE file (for APL), differences will arise.  Typically, use the APE_DECOMPRESS_XXXX
+    fields when querying for info about the length, etc. so APL will work properly.
+    (i.e. (APE_INFO_TOTAL_BLOCKS != APE_DECOMPRESS_TOTAL_BLOCKS) for APL files)
+    **************************************************************************************************/
+    enum APE_DECOMPRESS_FIELDS
+    {
+        APE_INFO_FILE_VERSION = 1000,               // version of the APE file * 1000 (3.93 = 3930) [ignored, ignored]
+        APE_INFO_COMPRESSION_LEVEL = 1001,          // compression level of the APE file [ignored, ignored]
+        APE_INFO_FORMAT_FLAGS = 1002,               // format flags of the APE file [ignored, ignored]
+        APE_INFO_SAMPLE_RATE = 1003,                // sample rate (Hz) [ignored, ignored]
+        APE_INFO_BITS_PER_SAMPLE = 1004,            // bits per sample [ignored, ignored]
+        APE_INFO_BYTES_PER_SAMPLE = 1005,           // number of bytes per sample [ignored, ignored]
+        APE_INFO_CHANNELS = 1006,                   // channels [ignored, ignored]
+        APE_INFO_BLOCK_ALIGN = 1007,                // block alignment [ignored, ignored]
+        APE_INFO_BLOCKS_PER_FRAME = 1008,           // number of blocks in a frame (frames are used internally)  [ignored, ignored]
+        APE_INFO_FINAL_FRAME_BLOCKS = 1009,         // blocks in the final frame (frames are used internally) [ignored, ignored]
+        APE_INFO_TOTAL_FRAMES = 1010,               // total number frames (frames are used internally) [ignored, ignored]
+        APE_INFO_WAV_HEADER_BYTES = 1011,           // header bytes of the decompressed WAV [ignored, ignored]
+        APE_INFO_WAV_TERMINATING_BYTES = 1012,      // terminating bytes of the decompressed WAV [ignored, ignored]
+        APE_INFO_WAV_DATA_BYTES = 1013,             // data bytes of the decompressed WAV [ignored, ignored]
+        APE_INFO_WAV_TOTAL_BYTES = 1014,            // total bytes of the decompressed WAV [ignored, ignored]
+        APE_INFO_APE_TOTAL_BYTES = 1015,            // total bytes of the APE file [ignored, ignored]
+        APE_INFO_TOTAL_BLOCKS = 1016,               // total blocks of audio data [ignored, ignored]
+        APE_INFO_LENGTH_MS = 1017,                  // length in ms (1 sec = 1000 ms) [ignored, ignored]
+        APE_INFO_AVERAGE_BITRATE = 1018,            // average bitrate of the APE [ignored, ignored]
+        APE_INFO_FRAME_BITRATE = 1019,              // bitrate of specified APE frame [frame index, ignored]
+        APE_INFO_DECOMPRESSED_BITRATE = 1020,       // bitrate of the decompressed WAV [ignored, ignored]
+        APE_INFO_PEAK_LEVEL = 1021,                 // peak audio level (obsolete) (-1 is unknown) [ignored, ignored]
+        APE_INFO_SEEK_BIT = 1022,                   // bit offset [frame index, ignored]
+        APE_INFO_SEEK_BYTE = 1023,                  // byte offset [frame index, ignored]
+        APE_INFO_WAV_HEADER_DATA = 1024,            // error code [buffer *, max bytes]
+        APE_INFO_WAV_TERMINATING_DATA = 1025,       // error code [buffer *, max bytes]
+        APE_INFO_WAVEFORMATEX = 1026,               // error code [waveformatex *, ignored]
+        APE_INFO_IO_SOURCE = 1027,                  // I/O source (CIO *) [ignored, ignored]
+        APE_INFO_FRAME_BYTES = 1028,                // bytes (compressed) of the frame [frame index, ignored]
+        APE_INFO_FRAME_BLOCKS = 1029,               // blocks in a given frame [frame index, ignored]
+        APE_INFO_TAG = 1030,                        // point to tag (CAPETag *) [ignored, ignored]
+        APE_INFO_APL = 1031,                        // whether it's an APL file
+
+        APE_DECOMPRESS_CURRENT_BLOCK = 2000,        // current block location [ignored, ignored]
+        APE_DECOMPRESS_CURRENT_MS = 2001,           // current millisecond location [ignored, ignored]
+        APE_DECOMPRESS_TOTAL_BLOCKS = 2002,         // total blocks in the decompressors range [ignored, ignored]
+        APE_DECOMPRESS_LENGTH_MS = 2003,            // length of the decompressors range in milliseconds [ignored, ignored]
+        APE_DECOMPRESS_CURRENT_BITRATE = 2004,      // current bitrate [ignored, ignored]
+        APE_DECOMPRESS_AVERAGE_BITRATE = 2005,      // average bitrate (works with ranges) [ignored, ignored]
+        APE_DECOMPRESS_CURRENT_FRAME = 2006,        // current frame
+
+        APE_INTERNAL_INFO = 3000,                   // for internal use -- don't use (returns APE_FILE_INFO *) [ignored, ignored]
+    };
+
     // destructor (needed so implementation's destructor will be called)
-    virtual ~IAPEDecompress() {}
+    virtual ~IAPEDecompress() { }
     
     /**************************************************************************************************
     * Decompress / Seek
@@ -309,7 +344,7 @@ class IAPECompress
 {
 public:
     // destructor (needed so implementation's destructor will be called)
-    virtual ~IAPECompress() {}
+    virtual ~IAPECompress() { }
     
     /**************************************************************************************************
     * Start
@@ -495,4 +530,5 @@ extern "C"
     // helper functions
     DLLEXPORT int __stdcall FillWaveFormatEx(APE::WAVEFORMATEX * pWaveFormatEx, int nFormatTag, int nSampleRate, int nBitsPerSample, int nChannels);
     DLLEXPORT int __stdcall FillWaveHeader(APE::WAVE_HEADER * pWAVHeader, APE::int64 nAudioBytes, APE::WAVEFORMATEX * pWaveFormatEx, APE::intn nTerminatingBytes = 0);
+    DLLEXPORT int __stdcall FillRF64Header(APE::RF64_HEADER * pWAVHeader, APE::int64 nAudioBytes, APE::WAVEFORMATEX * pWaveFormatEx, APE::intn nTerminatingBytes = 0);
 }

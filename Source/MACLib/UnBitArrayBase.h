@@ -12,16 +12,18 @@ struct UNBIT_ARRAY_STATE
     uint32 nKSum;
 };
 
-enum DECODE_VALUE_METHOD
-{
-    DECODE_VALUE_METHOD_UNSIGNED_INT,
-    DECODE_VALUE_METHOD_UNSIGNED_RICE,
-    DECODE_VALUE_METHOD_X_BITS
-};
-
 class CUnBitArrayBase
 {
 public:
+
+    // enumeration
+    enum DECODE_VALUE_METHOD
+    {
+        DECODE_VALUE_METHOD_UNSIGNED_INT,
+        DECODE_VALUE_METHOD_UNSIGNED_RICE,
+        DECODE_VALUE_METHOD_X_BITS
+    };
+
     // construction / destruction
     CUnBitArrayBase(int64 nFurthestReadByte);
     virtual ~CUnBitArrayBase();
@@ -30,7 +32,7 @@ public:
     virtual int FillBitArray();
     virtual int FillAndResetBitArray(int64 nFileLocation = -1, int64 nNewBitIndex = 0);
         
-    virtual void GenerateArray(int * pOutputArray, int nElements, intn nBytesRequired) {}
+    virtual void GenerateArray(int * pOutputArray, int nElements, intn nBytesRequired) { }
     virtual uint32 DecodeValue(DECODE_VALUE_METHOD DecodeMethod, int nParam1 = 0, int nParam2 = 0) { return 0; }
     
     virtual void AdvanceToByteBoundary();

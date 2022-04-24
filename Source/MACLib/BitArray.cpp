@@ -1,6 +1,6 @@
-/************************************************************************************
+/**************************************************************************************************
 Includes
-************************************************************************************/
+**************************************************************************************************/
 #include "All.h"
 #include "BitArray.h"
 #include "MD5.h"
@@ -8,15 +8,15 @@ Includes
 namespace APE
 {
 
-/************************************************************************************
+/**************************************************************************************************
 Declares
-************************************************************************************/
-#define BIT_ARRAY_ELEMENTS            (4096)                        // the number of elements in the bit array (4 MB)
-#define BIT_ARRAY_BYTES                (BIT_ARRAY_ELEMENTS * 4)    // the number of bytes in the bit array
+**************************************************************************************************/
+#define BIT_ARRAY_ELEMENTS            (4096)                      // the number of elements in the bit array (4 MB)
+#define BIT_ARRAY_BYTES               (BIT_ARRAY_ELEMENTS * 4)    // the number of bytes in the bit array
 #define BIT_ARRAY_BITS                (BIT_ARRAY_BYTES    * 8)    // the number of bits in the bit array
 
-#define MAX_ELEMENT_BITS            128
-#define REFILL_BIT_THRESHOLD        (BIT_ARRAY_BITS - MAX_ELEMENT_BITS)
+#define MAX_ELEMENT_BITS              128
+#define REFILL_BIT_THRESHOLD          (BIT_ARRAY_BITS - MAX_ELEMENT_BITS)
 
 #define CODE_BITS 32
 #define TOP_VALUE ((unsigned int) 1 << (CODE_BITS - 1))
@@ -24,13 +24,13 @@ Declares
 #define EXTRA_BITS ((CODE_BITS - 2) % 8 + 1)
 #define BOTTOM_VALUE (TOP_VALUE >> 8)
 
-/************************************************************************************
+/**************************************************************************************************
 Lookup tables
-************************************************************************************/
+**************************************************************************************************/
 const uint32 K_SUM_MIN_BOUNDARY[32] = {0,32,64,128,256,512,1024,2048,4096,8192,16384,32768,65536,131072,262144,524288,1048576,2097152,4194304,8388608,16777216,33554432,67108864,134217728,268435456,536870912,1073741824,2147483648U,0,0,0,0};
 
-#define MODEL_ELEMENTS                    64
-#define RANGE_OVERFLOW_TOTAL_WIDTH        65536
+#define MODEL_ELEMENTS                  64
+#define RANGE_OVERFLOW_TOTAL_WIDTH      65536
 #define RANGE_OVERFLOW_SHIFT            16
 
 const uint32 RANGE_TOTAL[64] = {0,19578,36160,48417,56323,60899,63265,64435,64971,65232,65351,65416,65447,65466,65476,65482,65485,65488,65490,65491,65492,65493,65494,65495,65496,65497,65498,65499,65500,65501,65502,65503,65504,65505,65506,65507,65508,65509,65510,65511,65512,65513,65514,65515,65516,65517,65518,65519,65520,65521,65522,65523,65524,65525,65526,65527,65528,65529,65530,65531,65532,65533,65534,65535,};
@@ -41,10 +41,10 @@ const uint32 RANGE_WIDTH[64] = {19578,16582,12257,7906,4576,2366,1170,536,261,11
     int g_nTotalOverflow = 0;
 #endif
 
-/************************************************************************************
+/**************************************************************************************************
 Constructor
-************************************************************************************/
-CBitArray::CBitArray(CIO *pIO)
+**************************************************************************************************/
+CBitArray::CBitArray(CIO * pIO)
 {
     // allocate memory for the bit array
     m_pBitArray = new uint32 [BIT_ARRAY_ELEMENTS];
@@ -55,9 +55,9 @@ CBitArray::CBitArray(CIO *pIO)
     m_pIO = pIO;
 }
 
-/************************************************************************************
+/**************************************************************************************************
 Destructor
-************************************************************************************/
+**************************************************************************************************/
 CBitArray::~CBitArray()
 {
     // free the bit array
@@ -67,9 +67,9 @@ CBitArray::~CBitArray()
 #endif
 }
 
-/************************************************************************************
+/**************************************************************************************************
 Output the bit array via the CIO (typically saves to disk)
-************************************************************************************/
+**************************************************************************************************/
 int CBitArray::OutputBitArray(bool bFinalize)
 {
     // write the entire file to disk
@@ -107,51 +107,51 @@ int CBitArray::OutputBitArray(bool bFinalize)
     return ERROR_SUCCESS;
 }
 
-/************************************************************************************
+/**************************************************************************************************
 Range coding macros -- ugly, but outperform inline's (every cycle counts here)
-************************************************************************************/
+**************************************************************************************************/
 #define PUTC(VALUE) m_pBitArray[m_nCurrentBitIndex >> 5] |= ((VALUE) & 0xFF) << (24 - (m_nCurrentBitIndex & 31)); m_nCurrentBitIndex += 8;
 #define PUTC_NOCAP(VALUE) m_pBitArray[m_nCurrentBitIndex >> 5] |= (VALUE) << (24 - (m_nCurrentBitIndex & 31)); m_nCurrentBitIndex += 8;
 
 #define NORMALIZE_RANGE_CODER                                                                    \
-    while (m_RangeCoderInfo.range <= BOTTOM_VALUE)                                                \
+    while (m_RangeCoderInfo.range <= BOTTOM_VALUE)                                               \
     {                                                                                            \
-        if (m_RangeCoderInfo.low < (0xFF << SHIFT_BITS))                                        \
+        if (m_RangeCoderInfo.low < (0xFF << SHIFT_BITS))                                         \
         {                                                                                        \
-            PUTC(m_RangeCoderInfo.buffer);                                                        \
+            PUTC(m_RangeCoderInfo.buffer);                                                       \
             for ( ; m_RangeCoderInfo.help; m_RangeCoderInfo.help--) { PUTC_NOCAP(0xFF); }        \
             m_RangeCoderInfo.buffer = (unsigned char) (m_RangeCoderInfo.low >> (unsigned int)(SHIFT_BITS)); \
         }                                                                                        \
-        else if (m_RangeCoderInfo.low & TOP_VALUE)                                                \
+        else if (m_RangeCoderInfo.low & TOP_VALUE)                                               \
         {                                                                                        \
-            PUTC(m_RangeCoderInfo.buffer + 1);                                                    \
-            m_nCurrentBitIndex += (m_RangeCoderInfo.help * 8);                                    \
-            m_RangeCoderInfo.help = 0;                                                            \
+            PUTC(m_RangeCoderInfo.buffer + 1);                                                   \
+            m_nCurrentBitIndex += (m_RangeCoderInfo.help * 8);                                   \
+            m_RangeCoderInfo.help = 0;                                                           \
             m_RangeCoderInfo.buffer = (unsigned char) (m_RangeCoderInfo.low >> (unsigned int)(SHIFT_BITS)); \
         }                                                                                        \
-        else                                                                                    \
+        else                                                                                     \
         {                                                                                        \
-            m_RangeCoderInfo.help++;                                                            \
+            m_RangeCoderInfo.help++;                                                             \
         }                                                                                        \
-                                                                                                \
+                                                                                                 \
         m_RangeCoderInfo.low = (m_RangeCoderInfo.low << 8) & (TOP_VALUE - 1);                    \
         m_RangeCoderInfo.range <<= 8;                                                            \
     }            
 
-#define ENCODE_FAST(RANGE_WIDTH, RANGE_TOTAL, SHIFT)                                            \
+#define ENCODE_FAST(RANGE_WIDTH, RANGE_TOTAL, SHIFT)                                             \
     NORMALIZE_RANGE_CODER                                                                        \
-    const int nTemp = m_RangeCoderInfo.range >> (SHIFT);                                        \
-    m_RangeCoderInfo.range = nTemp * (RANGE_WIDTH);                                                \
-    m_RangeCoderInfo.low += nTemp * (RANGE_TOTAL);    
+    const int nTemp = m_RangeCoderInfo.range >> (SHIFT);                                         \
+    m_RangeCoderInfo.range = nTemp * (RANGE_WIDTH);                                              \
+    m_RangeCoderInfo.low += nTemp * (RANGE_TOTAL);
 
-#define ENCODE_DIRECT(VALUE, SHIFT)                                                                \
+#define ENCODE_DIRECT(VALUE, SHIFT)                                                              \
     NORMALIZE_RANGE_CODER                                                                        \
-    m_RangeCoderInfo.range = m_RangeCoderInfo.range >> (SHIFT);                                    \
+    m_RangeCoderInfo.range = m_RangeCoderInfo.range >> (SHIFT);                                  \
     m_RangeCoderInfo.low += m_RangeCoderInfo.range * (VALUE);
 
-/************************************************************************************
+/**************************************************************************************************
 Directly encode bits to the bitstream
-************************************************************************************/
+**************************************************************************************************/
 int CBitArray::EncodeBits(unsigned int nValue, int nBits)
 {
     // make sure there is room for the data
@@ -165,9 +165,9 @@ int CBitArray::EncodeBits(unsigned int nValue, int nBits)
     return ERROR_SUCCESS;
 }
 
-/************************************************************************************
+/**************************************************************************************************
 Encodes an unsigned int to the bit array (no rice coding)
-************************************************************************************/
+**************************************************************************************************/
 int CBitArray::EncodeUnsignedLong(unsigned int n) 
 {
     // make sure there are at least 8 bytes in the buffer
@@ -195,18 +195,18 @@ int CBitArray::EncodeUnsignedLong(unsigned int n)
     return ERROR_SUCCESS;
 }
 
-/************************************************************************************
+/**************************************************************************************************
 Advance to a byte boundary (for frame alignment)
-************************************************************************************/
+**************************************************************************************************/
 void CBitArray::AdvanceToByteBoundary() 
 {
     while (m_nCurrentBitIndex % 8)
         m_nCurrentBitIndex++;
 }
 
-/************************************************************************************
+/**************************************************************************************************
 Encode a value
-************************************************************************************/
+**************************************************************************************************/
 int CBitArray::EncodeValue(int64 nEncode, BIT_ARRAY_STATE & BitArrayState)
 {
     // make sure there is room for the data
@@ -299,9 +299,9 @@ int CBitArray::EncodeValue(int64 nEncode, BIT_ARRAY_STATE & BitArrayState)
     return ERROR_SUCCESS;
 }
 
-/************************************************************************************
+/**************************************************************************************************
 Flush
-************************************************************************************/
+**************************************************************************************************/
 void CBitArray::FlushBitArray()
 {
     // advance to a byte boundary (for alignment)
@@ -320,9 +320,9 @@ void CBitArray::FlushState(BIT_ARRAY_STATE & BitArrayState)
     BitArrayState.nKSum = (1 << 10) * 16;
 }
 
-/************************************************************************************
+/**************************************************************************************************
 Finalize
-************************************************************************************/
+**************************************************************************************************/
 void CBitArray::Finalize()
 {
     NORMALIZE_RANGE_CODER
@@ -353,9 +353,9 @@ void CBitArray::Finalize()
     PUTC(0);
 }
 
-/************************************************************************************
+/**************************************************************************************************
 Build a range table (for development / debugging)
-************************************************************************************/
+**************************************************************************************************/
 #ifdef BUILD_RANGE_TABLE
 void CBitArray::OutputRangeTable()
 {

@@ -18,7 +18,7 @@ int CPrepare::Prepare(const unsigned char * pRawData, int nBytes, const WAVEFORM
     // variables
     uint32 CRC = 0xFFFFFFFF;
     const int nTotalBlocks = nBytes / pWaveFormatEx->nBlockAlign;
-    int R,L;
+    int R, L;
 
     // calculate CRC
     CRC = CRC_update(CRC, pRawData, nTotalBlocks * pWaveFormatEx->nChannels * (pWaveFormatEx->wBitsPerSample / 8));
@@ -903,7 +903,7 @@ void CPrepare::Unprepare(int * paryValues, const WAVEFORMATEX * pWaveFormatEx, u
             if (RV < 0)
                 nTemp = ((uint32) (RV + 0x800000)) | 0x800000;
             else
-                nTemp = (uint32) RV;    
+                nTemp = (uint32) RV;
             
             *pOutput++ = (unsigned char) ((nTemp >> 0) & 0xFF);
             *pOutput++ = (unsigned char) ((nTemp >> 8) & 0xFF);
@@ -913,7 +913,7 @@ void CPrepare::Unprepare(int * paryValues, const WAVEFORMATEX * pWaveFormatEx, u
             if (LV < 0)
                 nTemp = ((uint32) (LV + 0x800000)) | 0x800000;
             else
-                nTemp = (uint32) LV;    
+                nTemp = (uint32) LV;
             
             *pOutput++ = (unsigned char) ((nTemp >> 0) & 0xFF);
             *pOutput++ = (unsigned char) ((nTemp >> 8) & 0xFF);
@@ -941,7 +941,7 @@ void CPrepare::Unprepare(int * paryValues, const WAVEFORMATEX * pWaveFormatEx, u
             if (RV < 0)
                 nTemp = ((uint32) (RV + 0x800000)) | 0x800000;
             else
-                nTemp = (uint32) RV;    
+                nTemp = (uint32) RV;
             
             *pOutput++ = (unsigned char) ((nTemp >> 0) & 0xFF);
             *pOutput++ = (unsigned char) ((nTemp >> 8) & 0xFF);
@@ -1009,7 +1009,7 @@ int CPrepare::UnprepareOld(int * pInputX, int * pInputY, int nBlocks, const WAVE
                 if (RV < 0)
                     nTemp = ((uint32) (RV + 0x800000)) | 0x800000;
                 else
-                    nTemp = (uint32) RV;    
+                    nTemp = (uint32) RV;
 
                 *Buffer++ = (unsigned char) ((nTemp >> 0) & 0xFF);
                 *Buffer++ = (unsigned char) ((nTemp >> 8) & 0xFF);
@@ -1019,7 +1019,7 @@ int CPrepare::UnprepareOld(int * pInputX, int * pInputY, int nBlocks, const WAVE
                 if (LV < 0)
                     nTemp = ((uint32) (LV + 0x800000)) | 0x800000;
                 else
-                    nTemp = (uint32) LV;    
+                    nTemp = (uint32) LV;
 
                 *Buffer++ = (unsigned char) ((nTemp >> 0) & 0xFF);
                 *Buffer++ = (unsigned char) ((nTemp >> 8) & 0xFF);
@@ -1057,7 +1057,7 @@ int CPrepare::UnprepareOld(int * pInputX, int * pInputY, int nBlocks, const WAVE
                 if (RV < 0)
                     nTemp = ((uint32) (RV + 0x800000)) | 0x800000;
                 else
-                    nTemp = (uint32) RV;    
+                    nTemp = (uint32) RV;
 
                 *Buffer++ = (unsigned char) ((nTemp >> 0) & 0xFF);
                 *Buffer++ = (unsigned char) ((nTemp >> 8) & 0xFF);

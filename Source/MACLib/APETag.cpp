@@ -142,7 +142,7 @@ CAPETag::CAPETag(CIO * pIO, bool bAnalyze)
 CAPETag::~CAPETag()
 {
     ClearFields();
-    SAFE_ARRAY_DELETE(m_aryFields);
+    SAFE_ARRAY_DELETE(m_aryFields)
 }
 
 int CAPETag::GetTagBytes()
@@ -294,7 +294,8 @@ int CAPETag::Analyze()
         if (m_spIO->PerformSeek() == ERROR_SUCCESS)
         {
             unsigned int nBytesRead = 0;
-            int nReadRetVal = m_spIO->Read((unsigned char *) &APETagFooter, APE_TAG_FOOTER_BYTES, &nBytesRead);
+            APETagFooter.Empty();
+            int nReadRetVal = m_spIO->Read(&APETagFooter, APE_TAG_FOOTER_BYTES, &nBytesRead);
             if ((nBytesRead == APE_TAG_FOOTER_BYTES) && (nReadRetVal == 0))
             {
                 if (APETagFooter.GetIsValid(false))
@@ -379,13 +380,13 @@ CAPETagField * CAPETag::GetTagField(const str_utfn * pFieldName)
 int CAPETag::GetFieldString(const str_utfn * pFieldName, str_ansi * pBuffer, int * pBufferCharacters, bool bUTF8Encode)
 {
     int nOriginalCharacters = *pBufferCharacters;
-    str_utfn * pUTF16 = new str_utfn [*pBufferCharacters + 1];
-    pUTF16[0] = 0;
+    CSmartPtr<str_utfn> spUTF16(new str_utfn[*pBufferCharacters + 1], true);
+    spUTF16[0] = 0;
 
-    int nResult = GetFieldString(pFieldName, pUTF16, pBufferCharacters);
+    int nResult = GetFieldString(pFieldName, spUTF16, pBufferCharacters);
     if (nResult == ERROR_SUCCESS)
     {
-        CSmartPtr<str_ansi> spANSI(bUTF8Encode ? (str_ansi *) CAPECharacterHelper::GetUTF8FromUTF16(pUTF16) : CAPECharacterHelper::GetANSIFromUTF16(pUTF16), true);
+        CSmartPtr<str_ansi> spANSI(bUTF8Encode ? (str_ansi *) CAPECharacterHelper::GetUTF8FromUTF16(spUTF16) : CAPECharacterHelper::GetANSIFromUTF16(spUTF16), true);
         if (int(strlen(spANSI)) > nOriginalCharacters)
         {
             memset(pBuffer, 0, nOriginalCharacters * sizeof(str_ansi));
@@ -399,7 +400,7 @@ int CAPETag::GetFieldString(const str_utfn * pFieldName, str_ansi * pBuffer, int
         }
     }
     
-    delete [] pUTF16;
+    spUTF16.Delete();
 
     return nResult;
 }
@@ -730,7 +731,7 @@ int CAPETag::SetFieldBinary(const str_utfn * pFieldName, const void * pFieldValu
         CAPETagField ** paryFields = new CAPETagField * [m_nAllocatedFields];
         if (nOriginalAllocatedFields > 0)
             memcpy(paryFields, m_aryFields, sizeof(CAPETagField *) * nOriginalAllocatedFields);
-        SAFE_ARRAY_DELETE(m_aryFields);
+        SAFE_ARRAY_DELETE(m_aryFields)
         m_aryFields = paryFields;
     }
 
@@ -808,12 +809,12 @@ int CAPETag::Remove(bool bUpdate)
         // ID3 tag
         if (m_spIO->GetSize() > ID3_TAG_BYTES)
         {
-            char cTagHeader[3];
+            char cTagHeader[3] = { 0 };
             m_spIO->SetSeekPosition(-ID3_TAG_BYTES);
             m_spIO->SetSeekMethod(APE_FILE_END);
             m_spIO->PerformSeek();
             nResult = m_spIO->Read(cTagHeader, 3, &nBytesRead);
-            if ((nResult == 0) && (nBytesRead == 3))
+            if ((nResult == ERROR_SUCCESS) && (nBytesRead == 3))
             {
                 if (strncmp(cTagHeader, "TAG", 3) == 0)
                 {
@@ -828,7 +829,6 @@ int CAPETag::Remove(bool bUpdate)
             }
         }
 
-
         // APE Tag
         if (m_spIO->GetSize() > APE_TAG_FOOTER_BYTES && !bFailedToRemove)
         {
@@ -836,8 +836,9 @@ int CAPETag::Remove(bool bUpdate)
             m_spIO->SetSeekMethod(APE_FILE_END);
             m_spIO->SetSeekPosition(-int(APE_TAG_FOOTER_BYTES));
             m_spIO->PerformSeek();
-            nResult = m_spIO->Read(&APETagFooter, APE_TAG_FOOTER_BYTES, &nBytesRead);
-            if ((nResult == 0) && (nBytesRead == APE_TAG_FOOTER_BYTES))
+            APETagFooter.Empty();
+            nResult = m_spIO->Read(&APETagFooter, APE_TAG_FOOTER_BYTES, & nBytesRead);
+            if ((nResult == ERROR_SUCCESS) && (nBytesRead == APE_TAG_FOOTER_BYTES))
             {
                 if (APETagFooter.GetIsValid(true))
                 {
@@ -852,7 +853,6 @@ int CAPETag::Remove(bool bUpdate)
                 }
             }
         }
-
     }
 
     m_spIO->SetSeekMethod(APE_FILE_BEGIN);

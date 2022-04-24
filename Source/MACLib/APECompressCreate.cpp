@@ -12,6 +12,13 @@ CAPECompressCreate::CAPECompressCreate()
 {
     m_nMaxFrames = 0;
     m_bTooMuchData = false;
+
+    // initialize to avoid warnings
+    m_nCompressionLevel = 0;
+    m_nBlocksPerFrame = 0;
+    m_nFrameIndex = 0;
+    m_nLastFrameBlocks = 0;
+    memset(&m_wfeInput, 0, sizeof(m_wfeInput));
 }
 
 CAPECompressCreate::~CAPECompressCreate()
@@ -61,7 +68,7 @@ int CAPECompressCreate::Start(CIO * pioOutput, const WAVEFORMATEX * pwfeInput, i
     m_nLastFrameBlocks = m_nBlocksPerFrame;
     
     // initialize the file
-    uint32 nMaxAudioBlocks = uint32(nMaxAudioBytes / pwfeInput->nBlockAlign);
+    uint32 nMaxAudioBlocks = (nMaxAudioBytes == MAX_AUDIO_BYTES_UNKNOWN) ? 0xFFFFFFFF : uint32(nMaxAudioBytes / pwfeInput->nBlockAlign);
     intn nMaxFrames = nMaxAudioBlocks / m_nBlocksPerFrame;
     if ((nMaxAudioBlocks % m_nBlocksPerFrame) != 0) nMaxFrames++;
         
@@ -73,7 +80,7 @@ int CAPECompressCreate::Start(CIO * pioOutput, const WAVEFORMATEX * pwfeInput, i
 
 intn CAPECompressCreate::GetFullFrameBytes()
 {
-    return m_nBlocksPerFrame * m_wfeInput.nBlockAlign;
+    return intn(m_nBlocksPerFrame * m_wfeInput.nBlockAlign);
 }
 
 int CAPECompressCreate::EncodeFrame(const void * pInputData, int nInputBytes)
@@ -87,7 +94,7 @@ int CAPECompressCreate::EncodeFrame(const void * pInputData, int nInputBytes)
 
     // update the seek table
     m_spAPECompressCore->GetBitArray()->AdvanceToByteBoundary();
-    int nResult = SetSeekByte(m_nFrameIndex, (int) m_spIO->GetPosition() + (m_spAPECompressCore->GetBitArray()->GetCurrentBitIndex() / 8));
+    int nResult = SetSeekByte(m_nFrameIndex, m_spIO->GetPosition() + int64(m_spAPECompressCore->GetBitArray()->GetCurrentBitIndex() / 8));
     if (nResult != ERROR_SUCCESS)
         return nResult;
     
@@ -113,14 +120,15 @@ int CAPECompressCreate::Finish(const void * pTerminatingData, int nTerminatingBy
     return ERROR_SUCCESS;
 }
 
-int CAPECompressCreate::SetSeekByte(int nFrame, uint32 nByteOffset)
+int CAPECompressCreate::SetSeekByte(int nFrame, int64 nByteOffset)
 {
     if (nFrame >= m_nMaxFrames)
     {
         m_bTooMuchData = true;
         return ERROR_APE_COMPRESS_TOO_MUCH_DATA;
     }
-    m_spSeekTable[nFrame] = nByteOffset;
+    uint32 nSeekEntry = uint32(nByteOffset); // we let this overflow then correct the overflows when we parse the table
+    m_spSeekTable[nFrame] = nSeekEntry;
     return ERROR_SUCCESS;
 }
 
@@ -216,7 +224,7 @@ int CAPECompressCreate::FinalizeFile(CIO * pIO, int nNumberOfFrames, int nFinalF
     APEHeader.nTotalFrames = nNumberOfFrames;
     
     // update the descriptor
-    int64 nFrameDataBytes = nTailPosition - (APEDescriptor.nDescriptorBytes + APEDescriptor.nHeaderBytes + APEDescriptor.nSeekTableBytes + APEDescriptor.nHeaderDataBytes);
+    int64 nFrameDataBytes = nTailPosition - int64(APEDescriptor.nDescriptorBytes + APEDescriptor.nHeaderBytes + APEDescriptor.nSeekTableBytes + APEDescriptor.nHeaderDataBytes);
     APEDescriptor.nAPEFrameDataBytes = (uint32) (nFrameDataBytes & 0xFFFFFFFF);
     APEDescriptor.nAPEFrameDataBytesHigh = (uint32) (nFrameDataBytes >> 32);
     APEDescriptor.nTerminatingDataBytes = (uint32) nWAVTerminatingBytes;

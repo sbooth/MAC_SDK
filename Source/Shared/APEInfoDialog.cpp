@@ -6,9 +6,9 @@ using namespace APE;
 #include "APECompress.h"
 #include "CharacterHelper.h"
 
-/***************************************************************************************
+/**************************************************************************************************
 The dialog component ID's
-***************************************************************************************/
+**************************************************************************************************/
 #define FILE_NAME_EDIT                  1000
 
 #define ENCODER_VERSION_STATIC          2000
@@ -38,16 +38,17 @@ The dialog component ID's
 #define REMOVE_TAG_BUTTON               6001
 #define CANCEL_BUTTON                   6002
 
-/***************************************************************************************
+/**************************************************************************************************
 Global pointer to this instance
-***************************************************************************************/
+**************************************************************************************************/
 CAPEInfoDialog * g_pAPEDecompressDialog = NULL;
 
-/***************************************************************************************
+/**************************************************************************************************
 Construction / destruction
-***************************************************************************************/
+**************************************************************************************************/
 CAPEInfoDialog::CAPEInfoDialog()
 {
+    m_pAPEDecompress = NULL;
     g_pAPEDecompressDialog = NULL;
 }
 
@@ -55,9 +56,9 @@ CAPEInfoDialog::~CAPEInfoDialog()
 {
 }
 
-/***************************************************************************************
+/**************************************************************************************************
 Display the file info dialog
-***************************************************************************************/
+**************************************************************************************************/
 int CAPEInfoDialog::ShowAPEInfoDialog(const str_utfn * pFilename, HINSTANCE hInstance, const str_utfn * lpszTemplateName, HWND hWndParent)
 {
     // only allow one instance at a time
@@ -80,9 +81,9 @@ int CAPEInfoDialog::ShowAPEInfoDialog(const str_utfn * pFilename, HINSTANCE hIns
     return ERROR_SUCCESS;
 }
 
-/***************************************************************************************
+/**************************************************************************************************
 Fill the genre combobox
-***************************************************************************************/
+**************************************************************************************************/
 intn CAPEInfoDialog::FillGenreComboBox(HWND hDlg, int nComboBoxID, char *pSelectedGenre)
 {
     // declare the variables    
@@ -114,9 +115,9 @@ intn CAPEInfoDialog::FillGenreComboBox(HWND hDlg, int nComboBoxID, char *pSelect
     return ERROR_SUCCESS;
 }
 
-/***************************************************************************************
+/**************************************************************************************************
 The dialog procedure
-***************************************************************************************/
+**************************************************************************************************/
 LRESULT CALLBACK CAPEInfoDialog::DialogProc(HWND hDlg, UINT message, intn wParam, intn lParam)
 {
     // get the class
@@ -137,7 +138,7 @@ LRESULT CALLBACK CAPEInfoDialog::DialogProc(HWND hDlg, UINT message, intn wParam
 
             SetDlgItemText(hDlg, FILE_NAME_EDIT, cFilename);
             
-            switch (pAPEDecompress->GetInfo(APE_INFO_COMPRESSION_LEVEL))
+            switch (pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_COMPRESSION_LEVEL))
             {
                 case MAC_COMPRESSION_LEVEL_FAST: _stprintf_s(cTemp, 1024, _T("Mode: Fast")); break;
                 case MAC_COMPRESSION_LEVEL_NORMAL: _stprintf_s(cTemp, 1024, _T("Mode: Normal")); break;
@@ -148,36 +149,36 @@ LRESULT CALLBACK CAPEInfoDialog::DialogProc(HWND hDlg, UINT message, intn wParam
             }
             SetDlgItemText(hDlg, COMPRESSION_LEVEL_STATIC, cTemp);
             
-            _stprintf_s(cTemp, 1024, _T("Version: %.2f"), double(pAPEDecompress->GetInfo(APE_INFO_FILE_VERSION)) / double(1000));
+            _stprintf_s(cTemp, 1024, _T("Version: %.2f"), double(pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_FILE_VERSION)) / double(1000));
             SetDlgItemText(hDlg, ENCODER_VERSION_STATIC, cTemp);
 
-            _stprintf_s(cTemp, 1024, _T("Format Flags: %d"), (int) pAPEDecompress->GetInfo(APE_INFO_FORMAT_FLAGS));
+            _stprintf_s(cTemp, 1024, _T("Format Flags: %d"), (int) pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_FORMAT_FLAGS));
             SetDlgItemText(hDlg, FORMAT_FLAGS_STATIC, cTemp);
             
-            _stprintf_s(cTemp, 1024, _T("Sample Rate: %d"), (int) pAPEDecompress->GetInfo(APE_INFO_SAMPLE_RATE));
+            _stprintf_s(cTemp, 1024, _T("Sample Rate: %d"), (int) pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_SAMPLE_RATE));
             SetDlgItemText(hDlg, SAMPLE_RATE_STATIC, cTemp);
             
-            _stprintf_s(cTemp, 1024, _T("Channels: %d"), (int) pAPEDecompress->GetInfo(APE_INFO_CHANNELS));
+            _stprintf_s(cTemp, 1024, _T("Channels: %d"), (int) pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_CHANNELS));
             SetDlgItemText(hDlg, CHANNELS_STATIC, cTemp);
 
-            _stprintf_s(cTemp, 1024, _T("Bits Per Sample: %d"), (int) pAPEDecompress->GetInfo(APE_INFO_BITS_PER_SAMPLE));
+            _stprintf_s(cTemp, 1024, _T("Bits Per Sample: %d"), (int) pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_BITS_PER_SAMPLE));
             SetDlgItemText(hDlg, BITS_PER_SAMPLE_STATIC, cTemp);
 
-            int nSeconds = int(pAPEDecompress->GetInfo(APE_INFO_LENGTH_MS) / 1000); int nMinutes = nSeconds / 60; nSeconds = nSeconds % 60; int nHours = nMinutes / 60; nMinutes = nMinutes % 60;
+            int nSeconds = int(pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_LENGTH_MS) / 1000); int nMinutes = nSeconds / 60; nSeconds = nSeconds % 60; int nHours = nMinutes / 60; nMinutes = nMinutes % 60;
             if (nHours > 0)    _stprintf_s(cTemp, 1024, _T("Length: %d:%02d:%02d"), nHours, nMinutes, nSeconds);
             else if (nMinutes > 0) _stprintf_s(cTemp, 1024, _T("Length: %d:%02d"), nMinutes, nSeconds);
             else _stprintf_s(cTemp, 1024, _T("Length: 0:%02d"), nSeconds);
             SetDlgItemText(hDlg, TRACK_LENGTH_STATIC, cTemp);
 
             // the file size
-            _stprintf_s(cTemp, 1024, _T("APE: %.2f MB"), double(pAPEDecompress->GetInfo(APE_INFO_APE_TOTAL_BYTES)) / double(1048576));
+            _stprintf_s(cTemp, 1024, _T("APE: %.2f MB"), double(pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_APE_TOTAL_BYTES)) / double(1048576));
             SetDlgItemText(hDlg, APE_SIZE_STATIC, cTemp);
             
-            _stprintf_s(cTemp, 1024, _T("WAV: %.2f MB"), double(pAPEDecompress->GetInfo(APE_INFO_WAV_TOTAL_BYTES)) / double(1048576));
+            _stprintf_s(cTemp, 1024, _T("WAV: %.2f MB"), double(pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_WAV_TOTAL_BYTES)) / double(1048576));
             SetDlgItemText(hDlg, WAV_SIZE_STATIC, cTemp);
             
             // the compression ratio
-            _stprintf_s(cTemp, 1024, _T("Compression: %.2f%%"), double(pAPEDecompress->GetInfo(APE_INFO_AVERAGE_BITRATE) * 100) / double(pAPEDecompress->GetInfo(APE_INFO_DECOMPRESSED_BITRATE)));
+            _stprintf_s(cTemp, 1024, _T("Compression: %.2f%%"), double(pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_AVERAGE_BITRATE) * 100) / double(pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_DECOMPRESSED_BITRATE)));
             SetDlgItemText(hDlg, COMPRESSION_RATIO_STATIC, cTemp);
 
             // the has tag
@@ -267,11 +268,11 @@ LRESULT CALLBACK CAPEInfoDialog::DialogProc(HWND hDlg, UINT message, intn wParam
                 case SAVE_TAG_BUTTON:
                     
                     // make the id3 tag
-                    TCHAR cBuffer[256]; int z;
+                    TCHAR cBuffer[256] = { 0 }; int z = 0;
 
-                    #define SAVE_FIELD(ID, Field)                            \
-                        for (z = 0; z < 256; z++) { cBuffer[z] = 0; }        \
-                        GetDlgItemText(hDlg, ID, cBuffer, 256);                \
+                    #define SAVE_FIELD(ID, Field)                               \
+                        for (z = 0; z < 256; z++) { cBuffer[z] = 0; }           \
+                        GetDlgItemText(hDlg, ID, cBuffer, 256);                 \
                         GET_TAG(pAPEDecompress)->SetFieldString(Field, cBuffer);
 
                     SAVE_FIELD(TITLE_EDIT, APE_TAG_FIELD_TITLE)

@@ -108,7 +108,7 @@ int __stdcall TagFileSimple(const str_ansi * pFilename, const char * pArtist, co
     CAPETag APETag(spFileIO, true);
 
     if (bClearFirst)
-        APETag.ClearFields();    
+        APETag.ClearFields();
     
     APETag.SetFieldString(APE_TAG_FIELD_ARTIST, pArtist, TRUE);
     APETag.SetFieldString(APE_TAG_FIELD_ALBUM, pAlbum, TRUE);
@@ -198,7 +198,7 @@ int __stdcall c_APEDecompress_Seek(APE_DECOMPRESS_HANDLE hAPEDecompress, int64 n
     return ((IAPEDecompress *) hAPEDecompress)->Seek(nBlockOffset);
 }
 
-int64 __stdcall c_APEDecompress_GetInfo(APE_DECOMPRESS_HANDLE hAPEDecompress, APE_DECOMPRESS_FIELDS Field, int64 nParam1, int64 nParam2)
+int64 __stdcall c_APEDecompress_GetInfo(APE_DECOMPRESS_HANDLE hAPEDecompress, IAPEDecompress::APE_DECOMPRESS_FIELDS Field, int64 nParam1, int64 nParam2)
 {
     return ((IAPEDecompress *) hAPEDecompress)->GetInfo(Field, nParam1, nParam2);
 }

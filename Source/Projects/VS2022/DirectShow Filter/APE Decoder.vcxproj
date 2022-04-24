@@ -100,7 +100,7 @@
     <IntDir>x64\$(Configuration)\</IntDir>
     <IgnoreImportLibrary>true</IgnoreImportLibrary>
     <LinkIncremental>false</LinkIncremental>
-    <TargetName>APE</TargetName>
+    <TargetName>APE64</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Midl>
@@ -108,7 +108,6 @@
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>Win32</TargetEnvironment>
-      <TypeLibraryName>.\Release/APE Decoder.tlb</TypeLibraryName>
       <HeaderFileName />
     </Midl>
     <ClCompile>
@@ -119,7 +118,7 @@
       <OmitFramePointers>true</OmitFramePointers>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>..\..\..\MACLib;..\..\..\Shared;..\..\..\Third Party\DirectX SDK\BaseClasses;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\MACLib;..\..\..\Shared;..\..\..\DirectShow Filter\DirectX SDK\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>PLATFORM_WINDOWS;UNICODE;_UNICODE;WIN32;NDEBUG;_WINDOWS;_USRDLL;APEDECODER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -128,10 +127,10 @@
       <DisableLanguageExtensions>false</DisableLanguageExtensions>
       <TreatWChar_tAsBuiltInType>false</TreatWChar_tAsBuiltInType>
       <PrecompiledHeader />
-      <PrecompiledHeaderOutputFile>.\Release/APE Decoder.pch</PrecompiledHeaderOutputFile>
-      <AssemblerListingLocation>.\Release/</AssemblerListingLocation>
-      <ObjectFileName>.\Release/</ObjectFileName>
-      <ProgramDataBaseFileName>.\Release/</ProgramDataBaseFileName>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <BrowseInformation>true</BrowseInformation>
       <WarningLevel>Level4</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -139,7 +138,7 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <Culture>0x041b</Culture>
+      <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
       <RegisterOutput>true</RegisterOutput>
@@ -165,21 +164,20 @@
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>Win32</TargetEnvironment>
-      <TypeLibraryName>.\Debug/APE Decoder.tlb</TypeLibraryName>
       <HeaderFileName />
     </Midl>
     <ClCompile>
       <AdditionalOptions>/Oid  %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\..\MACLib;..\..\..\Shared;..\..\..\Third Party\DirectX SDK\BaseClasses;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\MACLib;..\..\..\Shared;..\..\..\DirectShow Filter\DirectX SDK\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>PLATFORM_WINDOWS;WIN32;DEBUG;_WINDOWS;APEDECODER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <TreatWChar_tAsBuiltInType>false</TreatWChar_tAsBuiltInType>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
-      <PrecompiledHeaderOutputFile>.\Debug/APE Decoder.pch</PrecompiledHeaderOutputFile>
-      <AssemblerListingLocation>.\Debug/</AssemblerListingLocation>
-      <ObjectFileName>.\Debug/</ObjectFileName>
-      <ProgramDataBaseFileName>.\Debug/</ProgramDataBaseFileName>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <BrowseInformation>true</BrowseInformation>
       <WarningLevel>Level4</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -188,7 +186,7 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <Culture>0x041b</Culture>
+      <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
       <RegisterOutput>true</RegisterOutput>
@@ -213,7 +211,6 @@
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>X64</TargetEnvironment>
-      <TypeLibraryName>.\Release/APE Decoder.tlb</TypeLibraryName>
       <HeaderFileName />
     </Midl>
     <ClCompile>
@@ -224,7 +221,7 @@
       <OmitFramePointers>true</OmitFramePointers>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>..\..\..\MACLib;..\..\..\Shared;..\..\..\Third Party\DirectX SDK\BaseClasses;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\MACLib;..\..\..\Shared;..\..\..\DirectShow Filter\DirectX SDK\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>PLATFORM_WINDOWS;UNICODE;_UNICODE;WIN32;NDEBUG;_WINDOWS;_USRDLL;APEDECODER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -233,18 +230,18 @@
       <DisableLanguageExtensions>false</DisableLanguageExtensions>
       <TreatWChar_tAsBuiltInType>false</TreatWChar_tAsBuiltInType>
       <PrecompiledHeader />
-      <PrecompiledHeaderOutputFile>.\Release/APE Decoder.pch</PrecompiledHeaderOutputFile>
-      <AssemblerListingLocation>.\Release/</AssemblerListingLocation>
-      <ObjectFileName>.\Release/</ObjectFileName>
-      <ProgramDataBaseFileName>.\Release/</ProgramDataBaseFileName>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <BrowseInformation>true</BrowseInformation>
       <WarningLevel>Level4</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <Culture>0x041b</Culture>
+      <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
       <RegisterOutput>true</RegisterOutput>
@@ -269,21 +266,20 @@
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>X64</TargetEnvironment>
-      <TypeLibraryName>.\Debug/APE Decoder.tlb</TypeLibraryName>
       <HeaderFileName />
     </Midl>
     <ClCompile>
       <AdditionalOptions>/Oid  %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\..\MACLib;..\..\..\Shared;..\..\..\Third Party\DirectX SDK\BaseClasses;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\MACLib;..\..\..\Shared;..\..\..\DirectShow Filter\DirectX SDK\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>PLATFORM_WINDOWS;UNICODE;_UNICODE;WIN32;DEBUG;_WINDOWS;APEDECODER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <TreatWChar_tAsBuiltInType>false</TreatWChar_tAsBuiltInType>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
-      <PrecompiledHeaderOutputFile>.\Debug/APE Decoder.pch</PrecompiledHeaderOutputFile>
-      <AssemblerListingLocation>.\Debug/</AssemblerListingLocation>
-      <ObjectFileName>.\Debug/</ObjectFileName>
-      <ProgramDataBaseFileName>.\Debug/</ProgramDataBaseFileName>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <BrowseInformation>true</BrowseInformation>
       <WarningLevel>Level4</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -292,7 +288,7 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <Culture>0x041b</Culture>
+      <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
       <RegisterOutput>true</RegisterOutput>
@@ -312,9 +308,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Third Party\DirectX SDK\BaseClasses\baseclasses.vcxproj">
-      <Project>{e8a3f6fa-ae1c-4c8e-a0b6-9c8480324eaa}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\MACLib\MACLib.vcxproj">
       <Project>{21bf980f-c022-4dcc-9250-7c73528e422b}</Project>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
@@ -325,6 +318,37 @@
     <None Include="..\..\..\DirectShow Filter\APE Decoder.def" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\DirectShow Filter\DirectX SDK\amextra.cpp" />
+    <ClCompile Include="..\..\..\DirectShow Filter\DirectX SDK\amfilter.cpp" />
+    <ClCompile Include="..\..\..\DirectShow Filter\DirectX SDK\amvideo.cpp" />
+    <ClCompile Include="..\..\..\DirectShow Filter\DirectX SDK\arithutil.cpp" />
+    <ClCompile Include="..\..\..\DirectShow Filter\DirectX SDK\combase.cpp" />
+    <ClCompile Include="..\..\..\DirectShow Filter\DirectX SDK\cprop.cpp" />
+    <ClCompile Include="..\..\..\DirectShow Filter\DirectX SDK\ctlutil.cpp" />
+    <ClCompile Include="..\..\..\DirectShow Filter\DirectX SDK\ddmm.cpp" />
+    <ClCompile Include="..\..\..\DirectShow Filter\DirectX SDK\dllentry.cpp" />
+    <ClCompile Include="..\..\..\DirectShow Filter\DirectX SDK\dllsetup.cpp" />
+    <ClCompile Include="..\..\..\DirectShow Filter\DirectX SDK\mtype.cpp" />
+    <ClCompile Include="..\..\..\DirectShow Filter\DirectX SDK\outputq.cpp" />
+    <ClCompile Include="..\..\..\DirectShow Filter\DirectX SDK\perflog.cpp" />
+    <ClCompile Include="..\..\..\DirectShow Filter\DirectX SDK\pstream.cpp" />
+    <ClCompile Include="..\..\..\DirectShow Filter\DirectX SDK\pullpin.cpp" />
+    <ClCompile Include="..\..\..\DirectShow Filter\DirectX SDK\refclock.cpp" />
+    <ClCompile Include="..\..\..\DirectShow Filter\DirectX SDK\renbase.cpp" />
+    <ClCompile Include="..\..\..\DirectShow Filter\DirectX SDK\schedule.cpp" />
+    <ClCompile Include="..\..\..\DirectShow Filter\DirectX SDK\seekpt.cpp" />
+    <ClCompile Include="..\..\..\DirectShow Filter\DirectX SDK\source.cpp" />
+    <ClCompile Include="..\..\..\DirectShow Filter\DirectX SDK\strmctl.cpp" />
+    <ClCompile Include="..\..\..\DirectShow Filter\DirectX SDK\sysclock.cpp" />
+    <ClCompile Include="..\..\..\DirectShow Filter\DirectX SDK\transfrm.cpp" />
+    <ClCompile Include="..\..\..\DirectShow Filter\DirectX SDK\transip.cpp" />
+    <ClCompile Include="..\..\..\DirectShow Filter\DirectX SDK\videoctl.cpp" />
+    <ClCompile Include="..\..\..\DirectShow Filter\DirectX SDK\vtrans.cpp" />
+    <ClCompile Include="..\..\..\DirectShow Filter\DirectX SDK\winctrl.cpp" />
+    <ClCompile Include="..\..\..\DirectShow Filter\DirectX SDK\winutil.cpp" />
+    <ClCompile Include="..\..\..\DirectShow Filter\DirectX SDK\wxdebug.cpp" />
+    <ClCompile Include="..\..\..\DirectShow Filter\DirectX SDK\wxlist.cpp" />
+    <ClCompile Include="..\..\..\DirectShow Filter\DirectX SDK\wxutil.cpp" />
     <ClCompile Include="..\..\..\DirectShow Filter\main.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Disabled</Optimization>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">INC_OLE2;STRICT;WIN32;_MT;_DLL;_X86_=1;WINVER=0x0400;DBG=1;DEBUG;try=__try;except=__except;leave=__leave;finally=__finally</PreprocessorDefinitions>
@@ -342,11 +366,49 @@
     <ClCompile Include="..\..\..\DirectShow Filter\RegistryUtils.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\..\..\DirectShow Filter\Script1.rc" />
+    <ResourceCompile Include="..\..\..\DirectShow Filter\DirectShow Filter.rc" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\DirectShow Filter\DirectX SDK\amextra.h" />
+    <ClInclude Include="..\..\..\DirectShow Filter\DirectX SDK\amfilter.h" />
+    <ClInclude Include="..\..\..\DirectShow Filter\DirectX SDK\cache.h" />
+    <ClInclude Include="..\..\..\DirectShow Filter\DirectX SDK\checkbmi.h" />
+    <ClInclude Include="..\..\..\DirectShow Filter\DirectX SDK\combase.h" />
+    <ClInclude Include="..\..\..\DirectShow Filter\DirectX SDK\cprop.h" />
+    <ClInclude Include="..\..\..\DirectShow Filter\DirectX SDK\ctlutil.h" />
+    <ClInclude Include="..\..\..\DirectShow Filter\DirectX SDK\ddmm.h" />
+    <ClInclude Include="..\..\..\DirectShow Filter\DirectX SDK\dllsetup.h" />
+    <ClInclude Include="..\..\..\DirectShow Filter\DirectX SDK\dxmperf.h" />
+    <ClInclude Include="..\..\..\DirectShow Filter\DirectX SDK\fourcc.h" />
+    <ClInclude Include="..\..\..\DirectShow Filter\DirectX SDK\measure.h" />
+    <ClInclude Include="..\..\..\DirectShow Filter\DirectX SDK\msgthrd.h" />
+    <ClInclude Include="..\..\..\DirectShow Filter\DirectX SDK\mtype.h" />
+    <ClInclude Include="..\..\..\DirectShow Filter\DirectX SDK\outputq.h" />
+    <ClInclude Include="..\..\..\DirectShow Filter\DirectX SDK\perflog.h" />
+    <ClInclude Include="..\..\..\DirectShow Filter\DirectX SDK\perfstruct.h" />
+    <ClInclude Include="..\..\..\DirectShow Filter\DirectX SDK\pstream.h" />
+    <ClInclude Include="..\..\..\DirectShow Filter\DirectX SDK\pullpin.h" />
+    <ClInclude Include="..\..\..\DirectShow Filter\DirectX SDK\refclock.h" />
+    <ClInclude Include="..\..\..\DirectShow Filter\DirectX SDK\reftime.h" />
+    <ClInclude Include="..\..\..\DirectShow Filter\DirectX SDK\renbase.h" />
+    <ClInclude Include="..\..\..\DirectShow Filter\DirectX SDK\schedule.h" />
+    <ClInclude Include="..\..\..\DirectShow Filter\DirectX SDK\seekpt.h" />
+    <ClInclude Include="..\..\..\DirectShow Filter\DirectX SDK\source.h" />
+    <ClInclude Include="..\..\..\DirectShow Filter\DirectX SDK\streams.h" />
+    <ClInclude Include="..\..\..\DirectShow Filter\DirectX SDK\strmctl.h" />
+    <ClInclude Include="..\..\..\DirectShow Filter\DirectX SDK\sysclock.h" />
+    <ClInclude Include="..\..\..\DirectShow Filter\DirectX SDK\transfrm.h" />
+    <ClInclude Include="..\..\..\DirectShow Filter\DirectX SDK\transip.h" />
+    <ClInclude Include="..\..\..\DirectShow Filter\DirectX SDK\videoctl.h" />
+    <ClInclude Include="..\..\..\DirectShow Filter\DirectX SDK\vtrans.h" />
+    <ClInclude Include="..\..\..\DirectShow Filter\DirectX SDK\winctrl.h" />
+    <ClInclude Include="..\..\..\DirectShow Filter\DirectX SDK\winutil.h" />
+    <ClInclude Include="..\..\..\DirectShow Filter\DirectX SDK\wxdebug.h" />
+    <ClInclude Include="..\..\..\DirectShow Filter\DirectX SDK\wxlist.h" />
+    <ClInclude Include="..\..\..\DirectShow Filter\DirectX SDK\wxutil.h" />
     <ClInclude Include="..\..\..\DirectShow Filter\main.h" />
     <ClInclude Include="..\..\..\DirectShow Filter\RegistryUtils.h" />
+    <ClInclude Include="..\..\..\DirectShow Filter\resource.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

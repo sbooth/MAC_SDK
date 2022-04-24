@@ -46,7 +46,7 @@ private:
     int64 m_nBufferHead;
     int64 m_nBufferTail;
     int64 m_nBufferSize;
-    unsigned char * m_pBuffer;
+    CSmartPtr<unsigned char> m_spBuffer;
     bool m_bBufferLocked;
 
     CIO * m_pioOutput;

@@ -24,6 +24,7 @@ public:
 private:
     int m_nOrder;
     int m_nShift;
+    int m_nOneShiftedByShift;
     int m_nVersion;
     INTTYPE m_nRunningAverage;
     APE::CRollBuffer<short> m_rbInput16;

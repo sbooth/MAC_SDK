@@ -1,6 +1,6 @@
 /***************************************************************************************
 Compress - Sample 1
-Copyright (C) 2000-2001 by Matthew T. Ashland   All Rights Reserved.
+Copyright (C) 2000-2022 by Matthew T. Ashland   All Rights Reserved.
 Feel free to use this code in any way that you like.
 
 This example illustrates using MACLib.lib to create an APE file by encoding some
@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
 	///////////////////////////////////////////////////////////////////////////////
 	
 	// set the input WAV format
-	APE::WAVEFORMATEX wfeAudioFormat; FillWaveFormatEx(&wfeAudioFormat, 44100, 16, 2);
+	APE::WAVEFORMATEX wfeAudioFormat; FillWaveFormatEx(&wfeAudioFormat, WAVE_FORMAT_PCM, 44100, 16, 2);
 	
 	// create the encoder interface
 	IAPECompress * pAPECompress = CreateIAPECompress();

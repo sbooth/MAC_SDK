@@ -28,6 +28,8 @@ public:
     // other functions
     int SetEOF();
     int SetReadWholeFile() { return ERROR_SUCCESS; }
+    void SetReadToBuffer() { }
+    unsigned char * GetBuffer(int * pnBufferBytes) { return NULL; }
 
     // creation / destruction
     int Create(const wchar_t * pName);
