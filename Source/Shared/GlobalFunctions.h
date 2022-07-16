@@ -29,7 +29,6 @@ void FreeAligned(void * pMemory);
 /**************************************************************************************************
 Test for CPU features
 **************************************************************************************************/
-bool GetMMXAvailable();
 bool GetSSEAvailable(bool bTestForSSE41 = false);
 bool GetAVX2Available();
 

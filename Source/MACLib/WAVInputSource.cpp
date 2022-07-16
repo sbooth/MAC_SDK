@@ -110,9 +110,12 @@ int CInputSource::GetHeaderDataHelper(bool bIsValid, unsigned char * pBuffer, ui
     {
         int64 nOriginalFileLocation = pIO->GetPosition();
 
-        pIO->SetSeekMethod(APE_FILE_BEGIN);
-        pIO->SetSeekPosition(0);
-        pIO->PerformSeek();
+        if (nOriginalFileLocation != 0)
+        {
+            pIO->SetSeekMethod(APE_FILE_BEGIN);
+            pIO->SetSeekPosition(0);
+            pIO->PerformSeek();
+        }
 
         unsigned int nBytesRead = 0;
         int nReadRetVal = pIO->Read(pBuffer, nHeaderBytes, &nBytesRead);
@@ -164,7 +167,6 @@ int CInputSource::GetTerminatingDataHelper(bool bIsValid, unsigned char * pBuffe
 CWAVInputSource - wraps working with WAV files
 **************************************************************************************************/
 CWAVInputSource::CWAVInputSource(const wchar_t * pSourceName, WAVEFORMATEX * pwfeSource, int64 * pTotalBlocks, int64 * pHeaderBytes, int64 * pTerminatingBytes, int * pErrorCode)
-    : CInputSource(pSourceName, pwfeSource, pTotalBlocks, pHeaderBytes, pTerminatingBytes, pErrorCode)
 {
     m_bIsValid = false;
     m_nDataBytes = 0;
@@ -213,11 +215,6 @@ CWAVInputSource::~CWAVInputSource()
 
 int CWAVInputSource::AnalyzeSource()
 {
-    // seek to the beginning (just in case)
-    m_spIO->SetSeekMethod(APE_FILE_BEGIN);
-    m_spIO->SetSeekPosition(0);
-    m_spIO->PerformSeek();
-
     // see if we're a pipe
     bool bPipe = false;
     TCHAR cName[1024] = { 0 };
@@ -284,6 +281,11 @@ int CWAVInputSource::AnalyzeSource()
     if ((WAVFormatHeader.nFormatTag != WAVE_FORMAT_PCM) && (WAVFormatHeader.nFormatTag != WAVE_FORMAT_EXTENSIBLE))
         return ERROR_INVALID_INPUT_FILE;
 
+    // if the format is an odd bits per sample, just update to a known number -- decoding stores the header so will still be correct (and the block align is that size anyway)
+    int nSampleBits = 8 * WAVFormatHeader.nBlockAlign / ape_max(1, WAVFormatHeader.nChannels);
+    if (nSampleBits > 0)
+        WAVFormatHeader.nBitsPerSample = (uint16) (((WAVFormatHeader.nBitsPerSample + (nSampleBits - 1)) / nSampleBits) * nSampleBits);
+
     // copy the format information to the WAVEFORMATEX passed in
     FillWaveFormatEx(&m_wfeSource, WAVFormatHeader.nFormatTag, WAVFormatHeader.nSamplesPerSecond, WAVFormatHeader.nBitsPerSample, WAVFormatHeader.nChannels);
 
@@ -292,11 +294,37 @@ int CWAVInputSource::AnalyzeSource()
     {
         int nWAVFormatHeaderExtra = RIFFChunkHeader.nChunkBytes - sizeof(WAVFormatHeader);
         if (nWAVFormatHeaderExtra < 0)
-            return ERROR_INVALID_INPUT_FILE;
-        else
         {
+            return ERROR_INVALID_INPUT_FILE;
+        }
+        else if (nWAVFormatHeaderExtra > 0)
+        {
+            // read the extra
             CSmartPtr<unsigned char> spWAVFormatHeaderExtra(new unsigned char [nWAVFormatHeaderExtra], true);
             RETURN_ON_ERROR(ReadSafe(m_spIO, spWAVFormatHeaderExtra, nWAVFormatHeaderExtra));
+
+            // the extra specifies the format and it might not be PCM, so check
+            #pragma pack(push, 1)
+            struct CWAVFormatExtra
+            {
+                uint16 cbSize;
+                uint16 nValieBitsPerSample;
+                uint32 nChannelMask;
+                BYTE guidSubFormat[16];
+            };
+            #pragma pack(pop)
+
+            if (nWAVFormatHeaderExtra >= sizeof(CWAVFormatExtra))
+            {
+                CWAVFormatExtra * pExtra = (CWAVFormatExtra *) spWAVFormatHeaderExtra.GetPtr();
+                
+                const BYTE guidPCM[16] = { 1, 0, 0, 0, 0, 0, 16, 0, 128, 0, 0, 170, 0, 56, 155, 113 }; // KSDATAFORMAT_SUBTYPE_PCM but that isn't cross-platform
+                if (memcmp(&pExtra->guidSubFormat, &guidPCM, 16) != 0)
+                {
+                    // we're not PCM, so error
+                    return ERROR_INVALID_INPUT_FILE;
+                }
+            }
         }
     }
     
@@ -319,9 +347,14 @@ int CWAVInputSource::AnalyzeSource()
     if (m_nDataBytes == -1)
     {
         if (m_nFileBytes == -1)
+        {
             m_nDataBytes = -1;
+        }
         else
+        {
             m_nDataBytes = m_nFileBytes - m_nHeaderBytes;
+            m_nDataBytes = (m_nDataBytes / m_wfeSource.nBlockAlign) * m_wfeSource.nBlockAlign; // block align
+        }
     }
     else if (m_nDataBytes > (m_nFileBytes - m_nHeaderBytes))
     {
@@ -394,7 +427,6 @@ int CWAVInputSource::GetTerminatingData(unsigned char * pBuffer)
 CAIFFInputSource - wraps working with AIFF files
 **************************************************************************************************/
 CAIFFInputSource::CAIFFInputSource(const wchar_t * pSourceName, WAVEFORMATEX * pwfeSource, int64 * pTotalBlocks, int64 * pHeaderBytes, int64 * pTerminatingBytes, int * pErrorCode)
-    : CInputSource(pSourceName, pwfeSource, pTotalBlocks, pHeaderBytes, pTerminatingBytes, pErrorCode)
 {
     m_bIsValid = false;
     m_nDataBytes = 0;
@@ -456,11 +488,6 @@ int CAIFFInputSource::AnalyzeSource()
     //            Offset                - 4                normally set to 0
     //            Audio data follows
 
-    // seek to the beginning (just in case)
-    m_spIO->SetSeekMethod(APE_FILE_BEGIN);
-    m_spIO->SetSeekPosition(0);
-    m_spIO->PerformSeek();
-
     // get the file size
     m_nFileBytes = m_spIO->GetSize();
 
@@ -507,8 +534,8 @@ int CAIFFInputSource::AnalyzeSource()
         return ERROR_INVALID_INPUT_FILE;
     }
 
-    // only support 16-bit and 24-bit
-    if ((AIFFHeader.nSampleSize != 16) && (AIFFHeader.nSampleSize != 24))
+    // only support 8-bit, 16-bit, and 24-bit
+    if ((AIFFHeader.nSampleSize != 8) && (AIFFHeader.nSampleSize != 16) && (AIFFHeader.nSampleSize != 24))
         return ERROR_INVALID_INPUT_FILE;
 
     m_nDataBytes = -1;
@@ -631,7 +658,6 @@ uint32 CAIFFInputSource::IEEE754ExtendedFloatToUINT32(unsigned char * buffer)
 CW64InputSource - wraps working with W64 files
 **************************************************************************************************/
 CW64InputSource::CW64InputSource(const wchar_t * pSourceName, WAVEFORMATEX * pwfeSource, int64 * pTotalBlocks, int64 * pHeaderBytes, int64 * pTerminatingBytes, int * pErrorCode)
-    : CInputSource(pSourceName, pwfeSource, pTotalBlocks, pHeaderBytes, pTerminatingBytes, pErrorCode)
 {
     m_bIsValid = false;
     m_nDataBytes = 0;
@@ -823,7 +849,6 @@ int CW64InputSource::GetTerminatingData(unsigned char * pBuffer)
 CSNDInputSource - wraps working with SND files
 **************************************************************************************************/
 CSNDInputSource::CSNDInputSource(const wchar_t * pSourceName, WAVEFORMATEX * pwfeSource, int64 * pTotalBlocks, int64 * pHeaderBytes, int64 * pTerminatingBytes, int * pErrorCode, int32 * pFlags)
-    : CInputSource(pSourceName, pwfeSource, pTotalBlocks, pHeaderBytes, pTerminatingBytes, pErrorCode)
 {
     m_bIsValid = false;
     m_nDataBytes = 0;
@@ -870,11 +895,6 @@ int CSNDInputSource::AnalyzeSource(int32 * pFlags)
 {
     bool bIsValid = false;
     bool bSupportedFormat = false;
-
-    // store the original pointer and move to the beginning of the file
-    m_spIO->SetSeekMethod(APE_FILE_BEGIN);
-    m_spIO->SetSeekPosition(0);
-    m_spIO->PerformSeek();
 
     // get the file size (may want to error check this for files over 2 GB)
     m_nFileBytes = m_spIO->GetSize();
@@ -1055,7 +1075,6 @@ int CSNDInputSource::GetTerminatingData(unsigned char * pBuffer)
 CCAFInputSource - wraps working with CAF files
 **************************************************************************************************/
 CCAFInputSource::CCAFInputSource(const wchar_t * pSourceName, WAVEFORMATEX * pwfeSource, int64 * pTotalBlocks, int64 * pHeaderBytes, int64 * pTerminatingBytes, int * pErrorCode)
-    : CInputSource(pSourceName, pwfeSource, pTotalBlocks, pHeaderBytes, pTerminatingBytes, pErrorCode)
 {
     m_bIsValid = false;
     m_nDataBytes = 0;
@@ -1099,11 +1118,6 @@ CCAFInputSource::~CCAFInputSource()
 
 int CCAFInputSource::AnalyzeSource()
 {
-    // seek to the beginning (just in case)
-    m_spIO->SetSeekMethod(APE_FILE_BEGIN);
-    m_spIO->SetSeekPosition(0);
-    m_spIO->PerformSeek();
-
     // get the file size
     m_nFileBytes = m_spIO->GetSize();
 
@@ -1181,8 +1195,8 @@ int CCAFInputSource::AnalyzeSource()
                 AudioFormat.mBitsPerChannel = Swap4Bytes(AudioFormat.mBitsPerChannel);
                 AudioFormat.mChannelsPerFrame = Swap4Bytes(AudioFormat.mChannelsPerFrame);
 
-                // only support 16-bit and 24-bit
-                if ((AudioFormat.mBitsPerChannel != 16) && (AudioFormat.mBitsPerChannel != 24))
+                // only support 8-bit, 16-bit, and 24-bit
+                if ((AudioFormat.mBitsPerChannel != 8) && (AudioFormat.mBitsPerChannel != 16) && (AudioFormat.mBitsPerChannel != 24))
                     return ERROR_INVALID_INPUT_FILE;
 
                 FillWaveFormatEx(&m_wfeSource, WAVE_FORMAT_PCM, int(dSampleRate), AudioFormat.mBitsPerChannel, AudioFormat.mChannelsPerFrame);

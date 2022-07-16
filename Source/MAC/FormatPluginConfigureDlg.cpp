@@ -1,12 +1,14 @@
 #include "stdafx.h"
 #include "MAC.h"
 #include "FormatPluginConfigureDlg.h"
+#include "MACDlg.h"
 
-CFormatPluginConfigureDlg::CFormatPluginConfigureDlg(CString strConfigureDescription1,
+CFormatPluginConfigureDlg::CFormatPluginConfigureDlg(CMACDlg * pMACDlg, CString strConfigureDescription1,
     CString strConfigureValue1, CString strConfigureDescription2, CString strConfigureValue2,
     CString strConfigureDescription3, CString strConfigureValue3, CWnd * pParent)
     : CDialog(CFormatPluginConfigureDlg::IDD, pParent)
 {
+    m_pMACDlg = pMACDlg;
     m_strConfigureEdit1 = strConfigureValue1;
     m_strConfigureEdit2 = strConfigureValue2;
     m_strConfigureEdit3 = strConfigureValue3;
@@ -35,7 +37,11 @@ END_MESSAGE_MAP()
 BOOL CFormatPluginConfigureDlg::OnInitDialog() 
 {
     CDialog::OnInitDialog();
-    
+
+    // set the font to all the controls
+    SetFont(&m_pMACDlg->GetFont());
+    SendMessageToDescendants(WM_SETFONT, (WPARAM)m_pMACDlg->GetFont().GetSafeHandle(), MAKELPARAM(FALSE, 0), TRUE);
+   
     if (m_strConfigureStatic1.IsEmpty())
     {
         GetDlgItem(IDC_CONFIGURE_EDIT_1)->EnableWindow(FALSE);

@@ -21,6 +21,9 @@ Defines
 // scaled bits
 #define SCALED_BITS        16
 
+// size of GetFileInformation(...) calls
+#define GETFILEINFO_TITLE_LENGTH 2048
+
 // extended info structure
 struct extendedFileInfoStruct
 { 
@@ -549,10 +552,7 @@ void CAPEWinampPlugin::GetFileInformation(char * pFilename, char * pTitle, int *
             BuildDescriptionString(strDisplay, GET_TAG(spAPEDecompress), strFilename);
 
             CSmartPtr<char> spDisplayANSI(CAPECharacterHelper::GetANSIFromUTF16(strDisplay), TRUE);
-            #pragma warning(push)
-            #pragma warning(disable: 4996)
-            strcpy(pTitle, spDisplayANSI);
-            #pragma warning(pop)
+            strncpy_s(pTitle, GETFILEINFO_TITLE_LENGTH, spDisplayANSI, _TRUNCATE);
         }                    
     }
 }
@@ -632,7 +632,7 @@ void CAPEWinampPlugin::UninitializePlugin()
 /**************************************************************************************************
 Is our file (used for detecting URL streams)
 **************************************************************************************************/
-int CAPEWinampPlugin::IsOurFile(char * pFilename) { return 0; } 
+int CAPEWinampPlugin::IsOurFile(char *) { return 0; }
 
 /**************************************************************************************************
 Get the settings

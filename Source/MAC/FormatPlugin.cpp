@@ -5,10 +5,12 @@
 #include "MACFile.h"
 #include "FormatPluginConfigureDlg.h"
 #include "FormatPluginInfoDlg.h"
+#include "MACDlg.h"
 
-CFormatPlugin::CFormatPlugin(int nIndex, const CString & strAPXFilename)
+CFormatPlugin::CFormatPlugin(CMACDlg * pMACDlg, int nIndex, const CString & strAPXFilename)
 {
     // initialize
+    m_pMACDlg = pMACDlg;
     m_nIndex = nIndex;
     m_bIsValid = FALSE;
     
@@ -71,7 +73,7 @@ BOOL CFormatPlugin::Load(const CString & strAPXFilename)
                         m_strConfigureDescription[z] = XML.GetChildData(_T("Description"));
                         
                         CString strSetting;
-                        strSetting.Format(_T("Format Plugin - %s - Configure %d"), GetName(), z + 1);
+                        strSetting.Format(_T("Format Plugin - %s - Configure %d"), (LPCTSTR) GetName(), z + 1);
                         m_strConfigureValue[z] = theApp.GetSettings()->LoadSetting(strSetting, XML.GetChildData(_T("DefaultValue")));
 
                         XML.OutOfElem();
@@ -155,7 +157,7 @@ BOOL CFormatPlugin::ProcessMenuCommand(int nCommand)
 {
     if (nCommand == 0)
     {
-        CFormatPluginConfigureDlg dlgConfigure(m_strConfigureDescription[0], m_strConfigureValue[0],
+        CFormatPluginConfigureDlg dlgConfigure(m_pMACDlg, m_strConfigureDescription[0], m_strConfigureValue[0],
             m_strConfigureDescription[1], m_strConfigureValue[1], m_strConfigureDescription[2], m_strConfigureValue[2]);
 
         if (dlgConfigure.DoModal() == IDOK)
@@ -163,21 +165,21 @@ BOOL CFormatPlugin::ProcessMenuCommand(int nCommand)
             CString strSetting; 
             
             m_strConfigureValue[0] = dlgConfigure.m_strConfigureEdit1;
-            strSetting.Format(_T("Format Plugin - %s - Configure 1"), GetName());
+            strSetting.Format(_T("Format Plugin - %s - Configure 1"), (LPCTSTR) GetName());
             theApp.GetSettings()->SaveSetting(strSetting, m_strConfigureValue[0]);
 
             m_strConfigureValue[1] = dlgConfigure.m_strConfigureEdit2;
-            strSetting.Format(_T("Format Plugin - %s - Configure 2"), GetName());
+            strSetting.Format(_T("Format Plugin - %s - Configure 2"), (LPCTSTR) GetName());
             theApp.GetSettings()->SaveSetting(strSetting, m_strConfigureValue[1]);
 
             m_strConfigureValue[2] = dlgConfigure.m_strConfigureEdit3;
-            strSetting.Format(_T("Format Plugin - %s - Configure 3"), GetName());
+            strSetting.Format(_T("Format Plugin - %s - Configure 3"), (LPCTSTR) GetName());
             theApp.GetSettings()->SaveSetting(strSetting, m_strConfigureValue[2]);
         }
     }
     else if (nCommand == 1)
     {
-        CFormatPluginInfoDlg dlgPluginInfo(m_strName, m_strVersion, m_strAuthor, m_strDescription, m_strURL);
+        CFormatPluginInfoDlg dlgPluginInfo(m_pMACDlg, m_strName, m_strVersion, m_strAuthor, m_strDescription, m_strURL);
         dlgPluginInfo.DoModal();
     }
     else if ((nCommand >= 10) && (nCommand < 100))

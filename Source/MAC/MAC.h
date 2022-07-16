@@ -3,6 +3,7 @@
 #include "resource.h"
 class CFormatArray;
 class CMACSettings;
+class CMACDlg;
 
 class CMACApp : public CWinApp
 {
@@ -23,9 +24,12 @@ public:
         Image_OptionsList,
         Image_OptionsPages
     };
+    void DeleteImageLists();
     CImageList * GetImageList(EImageList Image);
     CSize GetSize(int x, int y, double dAdditional = 1.0);
     int GetSizeReverse(int nSize);
+    double GetScale() { return m_dScale; }
+    bool SetScale(double dScale);
 
     // message map
     DECLARE_MESSAGE_MAP()
@@ -40,6 +44,7 @@ private:
     double m_dScale;
     HANDLE m_hSingleInstance;
     bool m_bAnotherInstanceRunning;
+    CMACDlg * m_pMACDlg;
 };
 
 extern CMACApp theApp;

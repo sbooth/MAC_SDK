@@ -952,7 +952,7 @@ void CPrepare::Unprepare(int * paryValues, const WAVEFORMATEX * pWaveFormatEx, u
 
 #ifdef APE_BACKWARDS_COMPATIBILITY
 
-int CPrepare::UnprepareOld(int * pInputX, int * pInputY, int nBlocks, const WAVEFORMATEX * pWaveFormatEx, unsigned char * pRawData, unsigned int * pCRC, int * pSpecialCodes, int nFileVersion)
+int CPrepare::UnprepareOld(int * pInputX, int * pInputY, int nBlocks, const WAVEFORMATEX * pWaveFormatEx, unsigned char * pRawData, unsigned int * pCRC, int nFileVersion)
 {
     // decompress and convert from (x,y) -> (l,r)
     if (pWaveFormatEx->nChannels == 2) 

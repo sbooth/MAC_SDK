@@ -108,7 +108,7 @@ IAPEDecompress * __stdcall CreateIAPEDecompress(const str_utfn * pFilename, int 
     return pAPEDecompress;
 }
 
-IAPEDecompress * __stdcall CreateIAPEDecompressEx(CIO * pIO, int * pErrorCode, bool bReadOnly)
+IAPEDecompress * __stdcall CreateIAPEDecompressEx(CIO * pIO, int * pErrorCode)
 {
     // create info 
     int nErrorCode = ERROR_UNDEFINED;
@@ -122,11 +122,12 @@ IAPEDecompress * __stdcall CreateIAPEDecompressEx(CIO * pIO, int * pErrorCode, b
     return pAPEDecompress;
 }
 
-IAPEDecompress * __stdcall CreateIAPEDecompressEx2(CAPEInfo * pAPEInfo, int nStartBlock, int nFinishBlock, int * pErrorCode, bool bReadOnly)
+IAPEDecompress * __stdcall CreateIAPEDecompressEx2(CAPEInfo * pAPEInfo, int nStartBlock, int nFinishBlock, int * pErrorCode)
 {
     int nErrorCode = ERROR_SUCCESS;
     IAPEDecompress * pAPEDecompress = CreateIAPEDecompressCore(pAPEInfo, nStartBlock, nFinishBlock, &nErrorCode);
     if (pErrorCode) *pErrorCode = nErrorCode;
+
     return pAPEDecompress;
 }
 
@@ -146,7 +147,7 @@ int __stdcall FillWaveFormatEx(APE::WAVEFORMATEX * pWaveFormatEx, int nFormatTag
     pWaveFormatEx->nSamplesPerSec = nSampleRate;
     pWaveFormatEx->wBitsPerSample = WORD(nBitsPerSample);
     pWaveFormatEx->nChannels = WORD(nChannels);
-    pWaveFormatEx->wFormatTag = 1;
+    pWaveFormatEx->wFormatTag = (WORD) nFormatTag;
 
     pWaveFormatEx->nBlockAlign = (pWaveFormatEx->wBitsPerSample / 8) * pWaveFormatEx->nChannels;
     pWaveFormatEx->nAvgBytesPerSec = pWaveFormatEx->nBlockAlign * pWaveFormatEx->nSamplesPerSec;
@@ -182,7 +183,7 @@ int __stdcall FillWaveHeader(WAVE_HEADER * pWAVHeader, APE::int64 nAudioBytes, A
     catch(...) { return ERROR_UNDEFINED; }
 }
 
-int __stdcall FillRF64Header(RF64_HEADER * pWAVHeader, APE::int64 nAudioBytes, APE::WAVEFORMATEX * pWaveFormatEx, APE::intn nTerminatingBytes)
+int __stdcall FillRF64Header(RF64_HEADER * pWAVHeader, APE::int64 nAudioBytes, APE::WAVEFORMATEX * pWaveFormatEx)
 {
     try
     {

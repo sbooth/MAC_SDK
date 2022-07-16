@@ -1,22 +1,17 @@
 #pragma once
 
-#ifdef WINAMP_VERSION
-!define VERSION "7.62"
-!define ALT_VER "7_62"
-#endif
-
 /* build batch file */
 /*
 #ifdef APE_BATCH_FILE_VERSION
-Set _MA=762
-Set _MAV=7.62
+Set _MA=820
+Set _MAV=8.20
 #endif
 */
 
 /* major version number */
-#define MAC_VERSION_MAJOR 7
+#define MAC_VERSION_MAJOR 8
 
 /* build version number */
-#define MAC_VERSION_REVISION 62
+#define MAC_VERSION_REVISION 20
 
 /* leave this so the end of file doesn't get truncated */

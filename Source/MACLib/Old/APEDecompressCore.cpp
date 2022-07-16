@@ -11,7 +11,7 @@
 namespace APE
 {
 
-CAPEDecompressCore::CAPEDecompressCore(CIO * pIO, IAPEDecompress * pAPEDecompress)
+CAPEDecompressCore::CAPEDecompressCore(IAPEDecompress * pAPEDecompress)
 {
     m_pAPEDecompress = pAPEDecompress;
 
@@ -31,16 +31,13 @@ CAPEDecompressCore::CAPEDecompressCore(CIO * pIO, IAPEDecompress * pAPEDecompres
     m_nBlocksProcessed = 0;
     m_BitArrayStateX = { 0 };
     m_BitArrayStateY = { 0 };
-    
-    // check to see if MMX is available
-    m_bMMXAvailable = GetMMXAvailable();
 }
 
 CAPEDecompressCore::~CAPEDecompressCore()
 {
 }
 
-void CAPEDecompressCore::GenerateDecodedArrays(intn nBlocks, intn nSpecialCodes, intn nFrameIndex, intn nCPULoadBalancingFactor)
+void CAPEDecompressCore::GenerateDecodedArrays(intn nBlocks, intn nSpecialCodes, intn nFrameIndex)
 {
     if (m_pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_CHANNELS) == 2)
     {
@@ -51,13 +48,13 @@ void CAPEDecompressCore::GenerateDecodedArrays(intn nBlocks, intn nSpecialCodes,
         }
         else if (nSpecialCodes & SPECIAL_FRAME_PSEUDO_STEREO) 
         {
-            GenerateDecodedArray(m_spDataX, (uint32) nBlocks, nFrameIndex, m_spAntiPredictorX, nCPULoadBalancingFactor);
+            GenerateDecodedArray(m_spDataX, (uint32) nBlocks, nFrameIndex, m_spAntiPredictorX);
             memset(m_spDataY, 0, nBlocks * 4);
         }
         else 
         {
-            GenerateDecodedArray(m_spDataX, (uint32) nBlocks, nFrameIndex, m_spAntiPredictorX, nCPULoadBalancingFactor);
-            GenerateDecodedArray(m_spDataY, (uint32) nBlocks, nFrameIndex, m_spAntiPredictorY, nCPULoadBalancingFactor);
+            GenerateDecodedArray(m_spDataX, (uint32) nBlocks, nFrameIndex, m_spAntiPredictorX);
+            GenerateDecodedArray(m_spDataY, (uint32) nBlocks, nFrameIndex, m_spAntiPredictorY);
         }
     }
     else
@@ -68,13 +65,13 @@ void CAPEDecompressCore::GenerateDecodedArrays(intn nBlocks, intn nSpecialCodes,
         }
         else
         {
-            GenerateDecodedArray(m_spDataX, (uint32) nBlocks, nFrameIndex, m_spAntiPredictorX, nCPULoadBalancingFactor);
+            GenerateDecodedArray(m_spDataX, (uint32) nBlocks, nFrameIndex, m_spAntiPredictorX);
         }
     }
 }
 
 
-void CAPEDecompressCore::GenerateDecodedArray(int * Input_Array, uint32 Number_of_Elements, intn Frame_Index, CAntiPredictor *pAntiPredictor, intn CPULoadBalancingFactor)
+void CAPEDecompressCore::GenerateDecodedArray(int * Input_Array, uint32 Number_of_Elements, intn Frame_Index, CAntiPredictor * pAntiPredictor)
 {
     const intn nFrameBytes = (intn) m_pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_FRAME_BYTES, Frame_Index);
     if (nFrameBytes <= 0)
@@ -161,7 +158,7 @@ void CAPEDecompressCore::GenerateDecodedArray(int * Input_Array, uint32 Number_o
             else
             {
                 m_spUnBitArray->GenerateArray(m_spTempData, Number_of_Elements, nFrameBytes);
-                ((CAntiPredictorExtraHigh3800ToCurrent *) pAntiPredictor)->AntiPredict(m_spTempData, Input_Array, Number_of_Elements, m_bMMXAvailable, CPULoadBalancingFactor, (intn) m_pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_FILE_VERSION));
+                ((CAntiPredictorExtraHigh3800ToCurrent *) pAntiPredictor)->AntiPredict(m_spTempData, Input_Array, Number_of_Elements, (intn) m_pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_FILE_VERSION));
             }
             
             break;

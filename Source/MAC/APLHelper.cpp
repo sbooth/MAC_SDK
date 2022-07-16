@@ -188,7 +188,7 @@ BOOL CAPLHelper::GenerateLinkFiles(const CString & strImage, const CString & str
                 _T("Image File=%s\r\n")
                 _T("Start Block=%s\r\n")
                 _T("Finish Block=%s\r\n"),
-                strImageFile, strStartBlock, strFinishBlock);
+                (LPCTSTR) strImageFile, (LPCTSTR) strStartBlock, (LPCTSTR) strFinishBlock);
                         
             CSmartPtr<char> spHeader(CAPECharacterHelper::GetANSIFromUTF16(strHeader), TRUE);
             unsigned int nBytesWritten = 0;

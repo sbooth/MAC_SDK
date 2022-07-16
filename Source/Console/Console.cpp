@@ -20,6 +20,7 @@ using namespace APE;
 #define VERIFY_MODE            2
 #define CONVERT_MODE           3
 #define TAG_MODE               4
+#define VERIFY_FULL_MODE       5
 #define UNDEFINED_MODE        -1
 
 // global variables
@@ -78,6 +79,7 @@ static void DisplayProperUsage(FILE * pFile)
     _ftprintf(pFile, _T("    Compress (insane): '-c5000'\n"));
     _ftprintf(pFile, _T("    Decompress: '-d'\n"));
     _ftprintf(pFile, _T("    Verify: '-v'\n"));
+    _ftprintf(pFile, _T("    Full Verify: '-V'\n"));
     _ftprintf(pFile, _T("    Convert: '-nXXXX'\n"));
     _ftprintf(pFile, _T("    Tag: '-t'\n\n"));
 
@@ -87,6 +89,7 @@ static void DisplayProperUsage(FILE * pFile)
     _ftprintf(pFile, _T("    Decompress: mac.exe \"Metallica - One.ape\" \"Metallica - One.wav\" -d\n"));
     _ftprintf(pFile, _T("    Decompress: mac.exe \"Metallica - One.ape\" auto -d\n"));
     _ftprintf(pFile, _T("    Verify: mac.exe \"Metallica - One.ape\" -v\n"));
+    _ftprintf(pFile, _T("    Full Verify: mac.exe \"Metallica - One.ape\" -V\n"));
     _ftprintf(pFile, _T("    Tag: mac.exe \"Metallica - One.ape\" -t \"Artist=Metallica|Album=Black|Name=One|Comment=\\\"This is in quotes\\\"\"\n"));
     _ftprintf(pFile, _T("    (note: int filenames must be put inside of quotations)\n"));
 }
@@ -287,6 +290,7 @@ int _tmain(int argc, TCHAR * argv[])
     cMode[1] = (spMode[0] == 0) ? 0 : spMode[1];
 
     if ((_tcsicmp(cMode, _T("-v")) != 0) &&
+        (_tcsicmp(cMode, _T("-q")) != 0) &&
         (_tcsicmp(cMode, _T("-t")) != 0))
     {
         // verify is the only mode that doesn't use at least the third argument
@@ -313,7 +317,9 @@ int _tmain(int argc, TCHAR * argv[])
         nMode = COMPRESS_MODE;
     else if (_tcsicmp(cMode, _T("-d")) == 0)
         nMode = DECOMPRESS_MODE;
-    else if (_tcsicmp(cMode, _T("-v")) == 0)
+    else if (_tcscmp(cMode, _T("-V")) == 0)
+        nMode = VERIFY_FULL_MODE;
+    else if (_tcscmp(cMode, _T("-v")) == 0)
         nMode = VERIFY_MODE;
     else if (_tcsicmp(cMode, _T("-n")) == 0)
         nMode = CONVERT_MODE;
@@ -417,9 +423,14 @@ int _tmain(int argc, TCHAR * argv[])
     else if (nMode == VERIFY_MODE) 
     {
         _ftprintf(stderr, _T("Verifying...\n"));
-        nRetVal = VerifyFileW(spInputFilename, &nPercentageDone, ProgressCallback, &nKillFlag);
+        nRetVal = VerifyFileW(spInputFilename, &nPercentageDone, ProgressCallback, &nKillFlag, true);
     }    
-    else if (nMode == CONVERT_MODE) 
+    else if (nMode == VERIFY_FULL_MODE)
+    {
+        _ftprintf(stderr, _T("Full verifying...\n"));
+        nRetVal = VerifyFileW(spInputFilename, &nPercentageDone, ProgressCallback, &nKillFlag, false);
+    }
+    else if (nMode == CONVERT_MODE)
     {
         _ftprintf(stderr, _T("Converting...\n"));
         nRetVal = ConvertFileW(spInputFilename, spOutputFilename, nCompressionLevel, &nPercentageDone, ProgressCallback, &nKillFlag);

@@ -16,7 +16,7 @@ public:
     CAntiPredictor();
     virtual ~CAntiPredictor();
 
-    virtual void AntiPredict(int * pInputArray, int * pOutputArray, int NumberOfElements) { }
+    virtual void AntiPredict(int *, int *, int) { }
 };
 
 /**************************************************************************************************
@@ -138,10 +138,6 @@ class CAntiPredictorExtraHighHelper
 {
 public:
     int ConventionalDotProduct(short * bip, short * bbm, short * pIPAdaptFactor, int op, int nNumberOfIterations);
-
-#ifdef ENABLE_MMX_ASSEMBLY
-    int MMXDotProduct(short *bip, short *bbm, short *pIPAdaptFactor, int op, int nNumberOfIterations);
-#endif // #ifdef ENABLE_MMX_ASSEMBLY
 };
 
 /**************************************************************************************************
@@ -198,7 +194,7 @@ Extra high anti-predictor
 class CAntiPredictorExtraHigh3800ToCurrent : public CAntiPredictor 
 {
 public:
-    void AntiPredict(int * pInputArray, int * pOutputArray, int NumberOfElements, bool bMMXAvailable, intn CPULoadBalancingFactor, intn nVersion);
+    void AntiPredict(int * pInputArray, int * pOutputArray, int NumberOfElements, intn nVersion);
 };
 
 #endif // #ifdef ENABLE_COMPRESSION_MODE_EXTRA_HIGH

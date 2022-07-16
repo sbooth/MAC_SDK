@@ -80,13 +80,13 @@ int __stdcall ShowFileInfoDialog(const str_ansi * pFilename, HWND hwndWindow)
         (_tcsicmp(&spFilename[_tcslen(spFilename) - 4], _T(".apl")) == 0)) 
     {
         CAPEInfoDialog APEInfoDialog;
-        APEInfoDialog.ShowAPEInfoDialog(spFilename, GetModuleHandle(_T("MACDll.dll")), (LPCTSTR) IDD_APE_INFO, hwndWindow);
+        APEInfoDialog.ShowAPEInfoDialog(spFilename, AfxGetInstanceHandle(), MAKEINTRESOURCEW(IDD_APE_INFO), hwndWindow);
         return ERROR_SUCCESS;
     }
     else if (_tcsicmp(&spFilename[_tcslen(spFilename) - 4], _T(".wav")) == 0) 
     {
         CWAVInfoDialog WAVInfoDialog;
-        WAVInfoDialog.ShowWAVInfoDialog(spFilename, GetModuleHandle(_T("MACDll.dll")), (LPCTSTR) IDD_WAV_INFO, hwndWindow);
+        WAVInfoDialog.ShowWAVInfoDialog(spFilename, AfxGetInstanceHandle(), MAKEINTRESOURCEW(IDD_WAV_INFO), hwndWindow);
         return ERROR_SUCCESS;
     }
     else 

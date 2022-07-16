@@ -12,8 +12,6 @@ class CInputSource
 {
 public:
     // construction / destruction
-    CInputSource(CIO * pIO, WAVEFORMATEX * pwfeSource, int64 * pTotalBlocks, int64 * pHeaderBytes, int64 * pTerminatingBytes, int * pErrorCode = NULL) { }
-    CInputSource(const wchar_t * pSourceName, WAVEFORMATEX * pwfeSource, int64 * pTotalBlocks, int64 * pHeaderBytes, int64 * pTerminatingBytes, int * pErrorCode = NULL) { }
     virtual ~CInputSource() { }
     
     // get data

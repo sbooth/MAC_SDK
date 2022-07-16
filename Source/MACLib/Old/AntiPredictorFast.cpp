@@ -11,7 +11,8 @@ namespace APE
 void CAntiPredictorFast0000To3320::AntiPredict(int * pInputArray, int * pOutputArray, int NumberOfElements) {
 
     //short frame handling
-    if (NumberOfElements < 32) {
+    if (NumberOfElements < 32) 
+    {
         memcpy(pOutputArray, pInputArray, NumberOfElements * 4);
         return;
     }
@@ -35,11 +36,11 @@ void CAntiPredictorFast0000To3320::AntiPredict(int * pInputArray, int * pOutputA
     p = (*op1 * 2) - pOutputArray[6];
     pw = (p * m) >> 12;
         
-    for (op = &pOutputArray[8], ip = &pInputArray[8]; ip < &pInputArray[NumberOfElements]; ip++, op++, op1++) {
+    for (op = &pOutputArray[8], ip = &pInputArray[8]; ip < &pInputArray[NumberOfElements]; ip++, op++, op1++) 
+    {
         *op = *ip + pw;
-                
-
-        //adjust m
+    
+        // adjust m
         if (*ip > 0)
             m += (p > 0) ? 4 : -4;
         else if (*ip < 0)
@@ -47,19 +48,21 @@ void CAntiPredictorFast0000To3320::AntiPredict(int * pInputArray, int * pOutputA
 
         p = (*op * 2) - *op1;
         pw = (p * m) >> 12;
-        
     }
 }
 
 ///////note: no output - overwrites input/////////////////
-void CAntiPredictorFast3320ToCurrent::AntiPredict(int * pInputArray, int * pOutputArray, int NumberOfElements) {
-
-    //short frame handling
-    if (NumberOfElements < 3) {
+void CAntiPredictorFast3320ToCurrent::AntiPredict(int * pInputArray, int * pOutputArray, int NumberOfElements) 
+{
+    (void) pOutputArray;
+    
+    // short frame handling
+    if (NumberOfElements < 3) 
+    {
         return;
     }
 
-    //variable declares
+    // variable declares
     int p;
     int m = 375;
     int * ip;
@@ -67,20 +70,20 @@ void CAntiPredictorFast3320ToCurrent::AntiPredict(int * pInputArray, int * pOutp
     int IP3 = pInputArray[0];
     int OP1 = pInputArray[1];
 
-    //the decompression loop (order 2 followed by order 1)
+    // the decompression loop (order 2 followed by order 1)
     for (ip = &pInputArray[2]; ip < &pInputArray[NumberOfElements]; ip++) {
         
-        //make a prediction for order 2
+        // make a prediction for order 2
         p = IP2 + IP2 - IP3;
         
-        //rollback the values
+        // rollback the values
         IP3 = IP2;
         IP2 = *ip + ((p * m) >> 9);
         
-        //adjust m for the order 2
+        // adjust m for the order 2
         (*ip ^ p) > 0 ? m++ : m--;
 
-        //set the output value
+        // set the output value
         *ip = IP2 + OP1;
         OP1 = *ip;
     }

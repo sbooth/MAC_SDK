@@ -106,7 +106,7 @@ int CAPEDecompressOld::GetData(char * pBuffer, int64 nBlocks, int64 * pBlocksRet
         // decode more
         if (nBytesLeft > 0)
         {
-            nBlocksDecoded = m_UnMAC.DecompressFrame((unsigned char *) &m_spBuffer[m_nBufferTail], (int32) m_nCurrentFrame++, 0);
+            nBlocksDecoded = m_UnMAC.DecompressFrame((unsigned char *) &m_spBuffer[m_nBufferTail], (int32) m_nCurrentFrame++);
             if (nBlocksDecoded == -1)
             {
                 return ERROR_UNDEFINED;
@@ -154,7 +154,7 @@ int CAPEDecompressOld::Seek(int64 nBlockOffset)
     
     m_nCurrentFrame = nBaseFrame;
 
-    intn nBlocksDecoded = m_UnMAC.DecompressFrame((unsigned char *)spTempBuffer.GetPtr(), (int32) m_nCurrentFrame++, 0);
+    intn nBlocksDecoded = m_UnMAC.DecompressFrame((unsigned char *)spTempBuffer.GetPtr(), (int32) m_nCurrentFrame++);
     
     if (nBlocksDecoded == -1)
     {

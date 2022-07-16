@@ -43,6 +43,7 @@ const MAC_ERROR_EXPLANATION g_MACErrorExplanations[] = {
 
 CMACListCtrl::CMACListCtrl()
 {
+    m_pParent = NULL;
     m_paryFiles = NULL;
 }
 
@@ -86,27 +87,11 @@ BOOL CMACListCtrl::Initialize(CMACDlg * pParent, MAC_FILE_ARRAY * paryFiles)
     SetTextBkColor(CLR_NONE);
     SetTextColor(RGB(0, 0, 0));
 
-    // load the list
-    for (int z = 0; z < COLUMN_COUNT; z++)
-    {
-        CString strValueName; strValueName.Format(_T("List Column %d Width"), z);
-        int nSize = theApp.GetSettings()->LoadSetting(strValueName, 100);
-        if (nSize <= 20)
-            nSize = 200;
-        SetColumnWidth(z, theApp.GetSize(nSize, 0).cx);
-    }
-
-    CSmartPtr<int> spOrderArray(new int [COLUMN_COUNT], TRUE);
-    if (theApp.GetSettings()->LoadSetting(_T("List Column Order"), spOrderArray, (sizeof(int) * COLUMN_COUNT)))
-        SetColumnOrderArray(COLUMN_COUNT, spOrderArray);
-
+    // load settings
     m_nSortColumn = theApp.GetSettings()->LoadSetting(_T("List Sort Column"), 0);
     m_bSortAscending = theApp.GetSettings()->LoadSetting(_T("List Sort Ascending"), TRUE);
     m_bSortEnabled = theApp.GetSettings()->LoadSetting(_T("List Sort Enabled"), TRUE);
     
-    // file list
-    LoadFileList(GetUserDataPath() + _T("File Lists\\Current.m3u"));
-
     return TRUE;
 }
 
@@ -199,9 +184,26 @@ BOOL CMACListCtrl::FinishFileInsertion()
 BOOL CMACListCtrl::Update()
 {
     SetItemCount((int) m_paryFiles->GetSize());
-    m_pParent->m_ctrlStatusBar.UpdateFiles(m_paryFiles);
+    if (m_pParent->m_ctrlStatusBar.m_hWnd != NULL)
+        m_pParent->m_ctrlStatusBar.UpdateFiles(m_paryFiles);
 
     return TRUE;
+}
+
+void CMACListCtrl::LoadColumns()
+{
+    for (int z = 0; z < COLUMN_COUNT; z++)
+    {
+        CString strValueName; strValueName.Format(_T("List Column %d Width"), z);
+        int nSize = theApp.GetSettings()->LoadSetting(strValueName, 100);
+        if (nSize <= 20)
+            nSize = 200;
+        SetColumnWidth(z, theApp.GetSize(nSize, 0).cx);
+    }
+
+    CSmartPtr<int> spOrderArray(new int[COLUMN_COUNT], TRUE);
+    if (theApp.GetSettings()->LoadSetting(_T("List Column Order"), spOrderArray, (sizeof(int) * COLUMN_COUNT)))
+        SetColumnOrderArray(COLUMN_COUNT, spOrderArray);
 }
 
 BOOL CMACListCtrl::AddFile(const CString & strFilename)
@@ -522,7 +524,7 @@ void CMACListCtrl::OnDropFiles(HDROP hDropInfo)
     CListCtrl::OnDropFiles(hDropInfo);
 }
 
-void CMACListCtrl::OnBegindrag(NMHDR * pNMHDR, LRESULT * pResult) 
+void CMACListCtrl::OnBegindrag(NMHDR *, LRESULT *) 
 {
     // get the list of files
     CStringList slDraggedFiles; int nBufferSize = 0;
@@ -562,7 +564,7 @@ void CMACListCtrl::OnBegindrag(NMHDR * pNMHDR, LRESULT * pResult)
                     LPCTSTR pFilename = (LPCTSTR) slDraggedFiles.GetNext(InternalPos);
                     _tcscpy_s(pszBuff, nBufferSizeLeft / sizeof(TCHAR), pFilename);
                     pszBuff += 1 + _tcslen(pFilename);
-                    nBufferSizeLeft -= sizeof(TCHAR) * (1 + _tcslen(pFilename));
+                    nBufferSizeLeft -= (int) (sizeof(TCHAR) * (1 + _tcslen(pFilename)));
                 }
                 GlobalUnlock(hgDrop);
 
@@ -584,7 +586,7 @@ void CMACListCtrl::OnBegindrag(NMHDR * pNMHDR, LRESULT * pResult)
     }
 }
 
-void CMACListCtrl::OnRclick(NMHDR* pNMHDR, LRESULT* pResult) 
+void CMACListCtrl::OnRclick(NMHDR *, LRESULT * pResult) 
 {
     CMenu menuPopup; menuPopup.CreatePopupMenu();
 
@@ -720,7 +722,7 @@ void CMACListCtrl::OnLvnColumnclickList(NMHDR *pNMHDR, LRESULT *pResult)
 
 BOOL CMACListCtrl::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT * pResult)
 {
-    if (wParam == 0 && ((NMHDR*)lParam)->code == NM_RCLICK)
+    if (wParam == 0 && ((NMHDR *) lParam)->code == NM_RCLICK)
     {
         // get mouse point
         POINT MousePoint;
@@ -792,6 +794,9 @@ BOOL CMACListCtrl::OnNotify(WPARAM wParam, LPARAM lParam, LRESULT * pResult)
 
 BOOL CMACListCtrl::OnEraseBkgnd(CDC * pDC)
 {
+    if ((m_pParent == NULL) || (m_pParent->GetInitialized() == FALSE))
+        return TRUE;
+
     // load bitmap
     if (m_spBitmap == NULL)
     {
@@ -801,18 +806,21 @@ BOOL CMACListCtrl::OnEraseBkgnd(CDC * pDC)
             strImage = GetInstallPath() + _T("Monkey.png");
         m_spBitmap.Assign(Gdiplus::Bitmap::FromFile(strImage));
         
-        // lock bits and scale alpha
-        Gdiplus::BitmapData bitmapData;
-        Gdiplus::Rect rectLock(0, 0, m_spBitmap->GetWidth(), m_spBitmap->GetHeight());
-        m_spBitmap->LockBits(&rectLock, Gdiplus::ImageLockModeWrite, PixelFormat32bppARGB, &bitmapData);
-        uint32 * pPixel = (uint32 *) bitmapData.Scan0;
-        for (int nPixel = 0; nPixel < int(bitmapData.Width * bitmapData.Height); nPixel++)
+        if (m_spBitmap != NULL)
         {
-            int nAlpha = pPixel[nPixel] >> 24;
-            nAlpha /= 8; // scale alpha down so the image is faded
-            pPixel[nPixel] = (nAlpha << 24) | (pPixel[nPixel] & 0x00FFFFFF);
+            // lock bits and scale alpha
+            Gdiplus::BitmapData bitmapData;
+            Gdiplus::Rect rectLock(0, 0, m_spBitmap->GetWidth(), m_spBitmap->GetHeight());
+            m_spBitmap->LockBits(&rectLock, Gdiplus::ImageLockModeWrite, PixelFormat32bppARGB, &bitmapData);
+            uint32 * pPixel = (uint32 *) bitmapData.Scan0;
+            for (int nPixel = 0; nPixel < int(bitmapData.Width * bitmapData.Height); nPixel++)
+            {
+                int nAlpha = pPixel[nPixel] >> 24;
+                nAlpha /= 8; // scale alpha down so the image is faded
+                pPixel[nPixel] = (nAlpha << 24) | (pPixel[nPixel] & 0x00FFFFFF);
+            }
+            m_spBitmap->UnlockBits(&bitmapData);
         }
-        m_spBitmap->UnlockBits(&bitmapData);
     }
 
     // get rectangle
@@ -820,7 +828,7 @@ BOOL CMACListCtrl::OnEraseBkgnd(CDC * pDC)
     GetClientRect(&rectClient);
 
     // create a memory buffer
-    CMemDC Buffer(pDC, &rectClient);
+    CMemoryDC Buffer(pDC, &rectClient);
 
     // flush
     Buffer.FillSolidRect(rectClient, RGB(255, 255, 255));

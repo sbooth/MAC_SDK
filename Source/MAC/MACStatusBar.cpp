@@ -3,9 +3,10 @@
 #include "resource.h"
 #include "MACStatusBar.h"
 #include "MACFileArray.h"
+#include "MACDlg.h"
 
-#define ID_INDICATOR_STATUS                0
-#define ID_INDICATOR_FILES                1
+#define ID_INDICATOR_STATUS              0
+#define ID_INDICATOR_FILES               1
 #define ID_INDICATOR_PROGRESS            2
 #define ID_INDICATOR_PROGRESS_BAR        3
 
@@ -17,14 +18,16 @@ static UINT indicators[] =
     ID_INDICATOR_PROGRESS_BAR,
 };
 
-CMACStatusBar::CMACStatusBar()
+CMACStatusBar::CMACStatusBar(CMACDlg * pMACDlg)
 {
+    m_pMACDlg = pMACDlg;
     m_hwndParent = NULL;
     m_pTaskBarlist = NULL;
     m_bShowProgress = false;
     m_nProcessTotalMS = 0;
     m_strFreeSpaceDrive = _T("C");
     m_bDisableSleep = false;
+    m_bProcessing = false;
 }
 
 CMACStatusBar::~CMACStatusBar()
@@ -50,8 +53,8 @@ int CMACStatusBar::OnCreate(LPCREATESTRUCT lpCreateStruct)
     SetIndicators(indicators, sizeof(indicators) / sizeof(UINT));
     
     // set the panes up
-    SetPaneInfo(ID_INDICATOR_STATUS, (UINT) -1, SBPS_NORMAL, theApp.GetSize(65, 0).cx);
-    SetPaneInfo(ID_INDICATOR_FILES, (UINT) -1, SBPS_NORMAL, theApp.GetSize(245, 0).cx);
+    SetPaneInfo(ID_INDICATOR_STATUS, (UINT) -1, SBPS_NORMAL, theApp.GetSize(75, 0).cx);
+    SetPaneInfo(ID_INDICATOR_FILES, (UINT) -1, SBPS_NORMAL, theApp.GetSize(300, 0).cx);
     SetPaneInfo(ID_INDICATOR_PROGRESS, (UINT) -1, SBPS_NORMAL, theApp.GetSize(185, 0).cx);
     SetPaneInfo(ID_INDICATOR_PROGRESS_BAR, (UINT) -1, SBPS_STRETCH, theApp.GetSize(0, 0).cx);
 
@@ -79,10 +82,12 @@ void CMACStatusBar::OnSize(UINT nType, int cx, int cy)
 
 BOOL CMACStatusBar::UpdateFiles(MAC_FILE_ARRAY * paryFiles)
 {
+    // analyze
     int nFiles = int(paryFiles->GetSize());
     double dInputBytes = paryFiles->GetTotalInputBytes();
     double dOutputBytes = paryFiles->GetTotalOutputBytes();
 
+    // build text
     CString strFiles;
     if (dOutputBytes == 0)
     {
@@ -109,19 +114,24 @@ BOOL CMACStatusBar::UpdateFiles(MAC_FILE_ARRAY * paryFiles)
             (dInputBytes > 0) ? (100 * double(dOutputBytes / dInputBytes)) : double(0.0));
     }
 
+    // set text
     SetPaneText(ID_INDICATOR_FILES, strFiles);
+
+    // size
+    SizeStatusbar();
 
     return TRUE;
 }
 
 BOOL CMACStatusBar::UpdateProgress(double dProgress, double dSecondsLeft)
 {
+    bool bProcessing = false;
     if ((dProgress == 0) && (dSecondsLeft == 0))
     {
         SetPaneText(ID_INDICATOR_STATUS, _T("\tReady"));
         
         CString strProgress;
-        strProgress.Format(_T("\tTotal Time: %s"), FormatDuration(double(m_nProcessTotalMS) / 1000, TRUE));
+        strProgress.Format(_T("\tTotal Time: %s"), (LPCTSTR) FormatDuration(double(m_nProcessTotalMS) / 1000, TRUE));
         SetPaneText(ID_INDICATOR_PROGRESS, strProgress);
         m_bShowProgress = false;
 
@@ -129,9 +139,9 @@ BOOL CMACStatusBar::UpdateProgress(double dProgress, double dSecondsLeft)
         double dFreeMB = GetDriveFreeMB(m_strFreeSpaceDrive);
         double dFreeGB = dFreeMB / double(1024);
         if (dFreeGB > 1000)
-            strDriveFreeSpace.Format(_T("\t%s:\\ %.2f TB free"), m_strFreeSpaceDrive, dFreeGB / double(1024));
+            strDriveFreeSpace.Format(_T("\t%s:\\ %.2f TB free"), (LPCTSTR) m_strFreeSpaceDrive, dFreeGB / double(1024));
         else
-            strDriveFreeSpace.Format(_T("\t%s:\\ %.2f GB free"), m_strFreeSpaceDrive, dFreeGB);
+            strDriveFreeSpace.Format(_T("\t%s:\\ %.2f GB free"), (LPCTSTR) m_strFreeSpaceDrive, dFreeGB);
         SetPaneText(ID_INDICATOR_PROGRESS_BAR, strDriveFreeSpace);
 
         if (IsWindow(m_ctrlProgress.GetSafeHwnd()))
@@ -146,10 +156,11 @@ BOOL CMACStatusBar::UpdateProgress(double dProgress, double dSecondsLeft)
     }
     else
     {
+        bProcessing = true;
         SetPaneText(ID_INDICATOR_STATUS, _T("\tProcessing..."));
 
         CString strStatus; 
-        strStatus.Format(_T("\t%.2f%% done (%s left)"), double(dProgress * 100), FormatDuration(dSecondsLeft));
+        strStatus.Format(_T("\t%.2f%% done (%s left)"), double(dProgress * 100), (LPCTSTR) FormatDuration(dSecondsLeft));
         SetPaneText(ID_INDICATOR_PROGRESS, strStatus);
 
         SetPaneText(ID_INDICATOR_PROGRESS_BAR, _T("")); // empty the text since we're setting a progress
@@ -172,6 +183,10 @@ BOOL CMACStatusBar::UpdateProgress(double dProgress, double dSecondsLeft)
         m_pTaskBarlist->SetProgressValue(m_hwndParent, m_ctrlProgress.GetPos(), 100);
     }
 
+    if (bProcessing != m_bProcessing)
+        SizeStatusbar();
+    m_bProcessing = bProcessing;
+
     return TRUE;
 }
 
@@ -184,14 +199,15 @@ BOOL CMACStatusBar::SetLastProcessTotalMS(int nMilliseconds)
 
 void CMACStatusBar::StartProcessing()
 {
+    HRESULT hr = S_OK;
     if (m_pTaskBarlist == NULL)
     {
-        CoCreateInstance(
+        hr = CoCreateInstance(
             CLSID_TaskbarList, NULL, CLSCTX_ALL,
-            IID_ITaskbarList3, (void**)&m_pTaskBarlist);
+            IID_ITaskbarList3, (void **) &m_pTaskBarlist);
     }
-
-    if (m_pTaskBarlist != NULL)
+    
+    if (SUCCEEDED(hr) && (m_pTaskBarlist != NULL))
     {
         m_pTaskBarlist->SetProgressState(m_hwndParent, TBPF_NORMAL);
     }
@@ -201,7 +217,12 @@ void CMACStatusBar::EndProcessing()
 {
     if (m_pTaskBarlist != NULL)
     {
+        // show no progress
         m_pTaskBarlist->SetProgressState(m_hwndParent, TBPF_NOPROGRESS);
+
+        // release so the bar goes away
+        m_pTaskBarlist->Release();
+        m_pTaskBarlist = NULL;
     }
 }
 
@@ -229,20 +250,19 @@ void CMACStatusBar::OnRButtonUp(UINT nFlags, CPoint pt)
     CStatusBar::OnRButtonUp(nFlags, pt);
 }
 
-
 void CMACStatusBar::ShowFreeSpaceDrivePopup()
 {
     CMenu menuPopup; menuPopup.CreatePopupMenu();
         
     TCHAR aryDrive[4] = _T("C:\\");
-    for (int nDrive = 'C'; nDrive < 'Z'; nDrive++)
+    for (int nDrive = 'A'; nDrive < 'Z'; nDrive++)
     {
         aryDrive[0] = (TCHAR) nDrive; CString strDrive(aryDrive);
         if (GetDriveType(strDrive) == DRIVE_FIXED)
         {
             BOOL bChecked = (strDrive.Left(1).CompareNoCase(m_strFreeSpaceDrive) == 0);
             menuPopup.AppendMenu(MF_STRING | (bChecked ? MF_CHECKED : MF_UNCHECKED), 
-                1000 + nDrive, strDrive);
+                UINT_PTR(1000 + nDrive), strDrive);
         }
     }
 
@@ -254,5 +274,23 @@ void CMACStatusBar::ShowFreeSpaceDrivePopup()
     {
         m_strFreeSpaceDrive = CString(TCHAR(nRetVal - 1000));
         UpdateProgress(0, 0);
+    }
+}
+
+void CMACStatusBar::SizeStatusbar()
+{
+    // size
+    int aryWidth[3] = { 75, 300, 185 };
+    for (int nPane = 0; nPane <= 2; nPane++)
+    {
+        // get text
+        CString strPane = GetPaneText(nPane);
+
+        // measure text
+        CSize sizeText = m_pMACDlg->MeasureText(strPane);
+        sizeText.cx += theApp.GetSize(32, 0).cx;
+
+        // update size to maximimum of text or current size
+        SetPaneInfo(nPane, (UINT)-1, SBPS_NORMAL, ape_max(theApp.GetSize(aryWidth[nPane], 0).cx, sizeText.cx));
     }
 }

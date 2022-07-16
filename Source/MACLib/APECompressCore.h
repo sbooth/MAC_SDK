@@ -29,8 +29,8 @@ private:
     int Prepare(const void * pInputData, int nInputBytes, int * pSpecialCodes);
 
     CSmartPtr<CBitArray> m_spBitArray;
-    IPredictorCompress * m_aryPredictors[32];
-    BIT_ARRAY_STATE m_aryBitArrayStates[32];
+    IPredictorCompress * m_aryPredictors[APE_MAXIMUM_CHANNELS];
+    BIT_ARRAY_STATE m_aryBitArrayStates[APE_MAXIMUM_CHANNELS];
     CSmartPtr<int> m_spData;
     CSmartPtr<int> m_spTempData;
     CSmartPtr<CPrepare> m_spPrepare;

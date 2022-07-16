@@ -7,7 +7,6 @@
 #define COLUMN_COMPRESSION_PERCENTAGE   4
 #define COLUMN_TIME_ELAPSED             5
 #define COLUMN_STATUS                   6
-
 #define COLUMN_COUNT                    7
 
 #include "MACFileArray.h"
@@ -42,13 +41,15 @@ public:
     BOOL RemoveSelectedFiles();
 
     BOOL Update();
+    void LoadColumns();
 
     BOOL SelectNone();
     BOOL SelectAll();
     
     CString GetStatus(MAC_FILE & File);
     BOOL SetMode(MAC_MODES Mode);
-    
+    BOOL LoadFileList(const CString & strPath);
+
 protected:
 
     afx_msg void OnDestroy();
@@ -62,7 +63,6 @@ protected:
     DECLARE_MESSAGE_MAP()
 
     // helper functions
-    BOOL LoadFileList(const CString & strPath);
     BOOL SaveFileList(const CString & strPath);
     CString GetFilename(int nIndex);
 

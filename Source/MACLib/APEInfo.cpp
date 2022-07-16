@@ -45,7 +45,7 @@ CAPEInfo::CAPEInfo(int * pErrorCode, const wchar_t * pFilename, CAPETag * pTag, 
     }
 
     // get the file information
-    if (GetFileInformation(true) != 0)
+    if (GetFileInformation() != 0)
     {
         CloseFile();
         *pErrorCode = ERROR_INVALID_INPUT_FILE;
@@ -86,7 +86,7 @@ CAPEInfo::CAPEInfo(int * pErrorCode, CIO * pIO, CAPETag * pTag)
     m_spIO.Assign(pIO, false, false);
 
     // get the file information
-    if (GetFileInformation(true) != 0)
+    if (GetFileInformation() != 0)
     {
         CloseFile();
         *pErrorCode = ERROR_INVALID_INPUT_FILE;
@@ -165,7 +165,7 @@ int CAPEInfo::CheckHeaderInformation()
 /**************************************************************************************************
 Get the file information about the file
 **************************************************************************************************/
-int CAPEInfo::GetFileInformation(bool bGetTagInformation) 
+int CAPEInfo::GetFileInformation() 
 {
     // quit if there is no simple file
     if (m_spIO == NULL) { return ERROR_UNDEFINED; }
@@ -328,9 +328,8 @@ int64 CAPEInfo::GetInfo(IAPEDecompress::APE_DECOMPRESS_FIELDS Field, int64 nPara
                 }
                 else
                 {
-                    WAVEFORMATEX wfeFormat; GetInfo(IAPEDecompress::APE_INFO_WAVEFORMATEX, (int64)&wfeFormat, 0);
-                    RF64_HEADER WAVHeader; FillRF64Header(&WAVHeader, m_APEFileInfo.nWAVDataBytes, &wfeFormat,
-                        m_APEFileInfo.nWAVTerminatingBytes);
+                    WAVEFORMATEX wfeFormat; GetInfo(IAPEDecompress::APE_INFO_WAVEFORMATEX, (int64) &wfeFormat, 0);
+                    RF64_HEADER WAVHeader; FillRF64Header(&WAVHeader, m_APEFileInfo.nWAVDataBytes, &wfeFormat);
                     memcpy(pBuffer, &WAVHeader, sizeof(RF64_HEADER));
                     nResult = 0;
                 }
@@ -344,7 +343,7 @@ int64 CAPEInfo::GetInfo(IAPEDecompress::APE_DECOMPRESS_FIELDS Field, int64 nPara
                 }
                 else
                 {
-                    WAVEFORMATEX wfeFormat; GetInfo(IAPEDecompress::APE_INFO_WAVEFORMATEX, (int64)&wfeFormat, 0);
+                    WAVEFORMATEX wfeFormat; GetInfo(IAPEDecompress::APE_INFO_WAVEFORMATEX, (int64) &wfeFormat, 0);
                     WAVE_HEADER WAVHeader; FillWaveHeader(&WAVHeader, m_APEFileInfo.nWAVDataBytes, &wfeFormat,
                         m_APEFileInfo.nWAVTerminatingBytes);
                     memcpy(pBuffer, &WAVHeader, sizeof(WAVE_HEADER));
@@ -401,7 +400,7 @@ int64 CAPEInfo::GetInfo(IAPEDecompress::APE_DECOMPRESS_FIELDS Field, int64 nPara
     case IAPEDecompress::APE_INFO_WAVEFORMATEX:
     {
         WAVEFORMATEX * pWaveFormatEx = (WAVEFORMATEX *) nParam1;
-        FillWaveFormatEx(pWaveFormatEx, m_APEFileInfo.nFormatFlags, m_APEFileInfo.nSampleRate, m_APEFileInfo.nBitsPerSample, m_APEFileInfo.nChannels);
+        FillWaveFormatEx(pWaveFormatEx, WAVE_FORMAT_PCM, m_APEFileInfo.nSampleRate, m_APEFileInfo.nBitsPerSample, m_APEFileInfo.nChannels);
         nResult = 0;
         break;
     }

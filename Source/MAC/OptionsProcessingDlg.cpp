@@ -3,10 +3,13 @@
 #include "OptionsProcessingDlg.h"
 #include "OptionsShared.h"
 #include "APEButtons.h"
+#include "MACDlg.h"
 
-COptionsProcessingDlg::COptionsProcessingDlg(CWnd* pParent)
+COptionsProcessingDlg::COptionsProcessingDlg(CMACDlg * pMACDlg, OPTIONS_PAGE * pPage, CWnd * pParent)
     : CDialog(COptionsProcessingDlg::IDD, pParent)
 {
+    m_pMACDlg = pMACDlg;
+    m_pPage = pPage;
     m_bCompletionSound = FALSE;
     m_nPriorityMode = -1;
     m_nSimultaneousFiles = -1;
@@ -15,7 +18,6 @@ COptionsProcessingDlg::COptionsProcessingDlg(CWnd* pParent)
     m_bAutoVerify = FALSE;
     m_nVerifyMode = -1;
 }
-
 
 void COptionsProcessingDlg::DoDataExchange(CDataExchange* pDX)
 {
@@ -33,8 +35,8 @@ void COptionsProcessingDlg::DoDataExchange(CDataExchange* pDX)
     DDX_CBIndex(pDX, IDC_VERIFY_MODE_COMBO, m_nVerifyMode);
 }
 
-
 BEGIN_MESSAGE_MAP(COptionsProcessingDlg, CDialog)
+    ON_WM_SIZE()
     ON_BN_CLICKED(IDOK, OnOK)
     ON_BN_CLICKED(IDCANCEL, OnCancel)
     ON_WM_DESTROY()
@@ -45,6 +47,10 @@ BOOL COptionsProcessingDlg::OnInitDialog()
 {
     CDialog::OnInitDialog();
     
+    // set the font to all the controls
+    SetFont(&m_pMACDlg->GetFont());
+    SendMessageToDescendants(WM_SETFONT, (WPARAM) m_pMACDlg->GetFont().GetSafeHandle(), MAKELPARAM(FALSE, 0), TRUE);
+
     // images
     HICON hIcon = theApp.GetImageList(CMACApp::Image_OptionsPages)->ExtractIcon(TBB_OPTIONS_PROCESSING_GENERAL);
     m_ctrlGeneralPicture.SetIcon(hIcon);
@@ -71,6 +77,22 @@ BOOL COptionsProcessingDlg::OnInitDialog()
     m_bAutoVerify = theApp.GetSettings()->m_bProcessingAutoVerifyOnCreation;
     m_nVerifyMode = theApp.GetSettings()->m_nProcessingVerifyMode;
 
+    // layout (to get the ideal height)
+    Layout();
+
+    // settings
+    m_nSimultaneousFiles = theApp.GetSettings()->m_nProcessingSimultaneousFiles - 1;
+    m_nPriorityMode = theApp.GetSettings()->m_nProcessingPriorityMode;
+    m_bStopOnError = theApp.GetSettings()->m_bProcessingStopOnErrors;
+    m_bCompletionSound = theApp.GetSettings()->m_bProcessingPlayCompletionSound;
+    m_bShowExternalWindows = theApp.GetSettings()->m_bProcessingShowExternalWindows;
+    m_bAutoVerify = theApp.GetSettings()->m_bProcessingAutoVerifyOnCreation;
+    m_nVerifyMode = theApp.GetSettings()->m_nProcessingVerifyMode;
+
+    // update our size
+    //CRect rectWindow; GetWindowRect(&rectWindow);
+    //SetWindowPos(NULL, 0, 0, rectWindow.Width(), m_pPage->m_nIdealHeight + theApp.GetSize(128, 0).cx, SWP_NOMOVE);
+
     // update
     UpdateData(FALSE);
 
@@ -87,7 +109,7 @@ void COptionsProcessingDlg::OnDestroy()
     m_aryIcons.RemoveAll();
 }
 
-LRESULT COptionsProcessingDlg::OnSaveOptions(WPARAM wParam, LPARAM lParam)
+LRESULT COptionsProcessingDlg::OnSaveOptions(WPARAM, LPARAM)
 {
     UpdateData(TRUE);
 
@@ -103,6 +125,12 @@ LRESULT COptionsProcessingDlg::OnSaveOptions(WPARAM wParam, LPARAM lParam)
     return TRUE;
 }
 
+void COptionsProcessingDlg::OnSize(UINT nType, int cx, int cy)
+{
+    CDialog::OnSize(nType, cx, cy);
+    Layout();
+}
+
 void COptionsProcessingDlg::OnOK()
 {
 
@@ -111,4 +139,41 @@ void COptionsProcessingDlg::OnOK()
 void COptionsProcessingDlg::OnCancel()
 {
     
+}
+
+void COptionsProcessingDlg::Layout()
+{
+    // layout
+    CRect rectLayout; GetClientRect(&rectLayout);
+    int nBorder = theApp.GetSize(8, 0).cx;
+    rectLayout.DeflateRect(nBorder, nBorder, nBorder, nBorder);
+    int nLeft = rectLayout.left;
+
+    m_pMACDlg->LayoutControlTopWithDivider(GetDlgItem(IDC_TITLE1), GetDlgItem(IDC_DIVIDER1), GetDlgItem(IDC_GENERAL_PICTURE), rectLayout);
+    m_pMACDlg->LayoutControlTop(GetDlgItem(IDC_STATIC1), rectLayout);
+    m_pMACDlg->LayoutControlTop(GetDlgItem(IDC_SIMULTANEOUS_FILES_COMBO), rectLayout, false, true);
+    m_pMACDlg->LayoutControlTop(GetDlgItem(IDC_STATIC2), rectLayout);
+    m_pMACDlg->LayoutControlTop(GetDlgItem(IDC_PRIORITY_COMBO), rectLayout, false, true);
+
+    rectLayout.left = nLeft;
+    m_pMACDlg->LayoutControlTopWithDivider(GetDlgItem(IDC_TITLE2), GetDlgItem(IDC_DIVIDER2), GetDlgItem(IDC_VERIFY_PICTURE), rectLayout);
+    m_pMACDlg->LayoutControlTop(GetDlgItem(IDC_STATIC3), rectLayout);
+    m_pMACDlg->LayoutControlTop(GetDlgItem(IDC_VERIFY_MODE_COMBO), rectLayout, false, true);
+    m_pMACDlg->LayoutControlTop(GetDlgItem(IDC_AUTO_VERIFY_CHECK), rectLayout);
+
+    //m_pMACDlg->LayoutControlTop(GetDlgItem(IDC_OUTPUT_EXISTS_COMBO), rectLayout);
+    //m_pMACDlg->LayoutControlTop(GetDlgItem(IDC_AUTO_VERIFY_CHECK), rectLayout);
+
+    rectLayout.left = nLeft;
+    m_pMACDlg->LayoutControlTopWithDivider(GetDlgItem(IDC_TITLE3), GetDlgItem(IDC_DIVIDER3), GetDlgItem(IDC_ERROR_BEHAVIOR_PICTURE), rectLayout);
+    m_pMACDlg->LayoutControlTop(GetDlgItem(IDC_STOP_ON_ERROR_CHECK), rectLayout);
+    rectLayout.top += nBorder; // extra space
+
+    rectLayout.left = nLeft;
+    m_pMACDlg->LayoutControlTopWithDivider(GetDlgItem(IDC_TITLE4), GetDlgItem(IDC_DIVIDER4), GetDlgItem(IDC_OTHER_PICTURE), rectLayout);
+    m_pMACDlg->LayoutControlTop(GetDlgItem(IDC_COMPLETION_SOUND_CHECK), rectLayout);
+    m_pMACDlg->LayoutControlTop(GetDlgItem(IDC_SHOW_EXTERNAL_WINDOWS), rectLayout);
+
+    // update ideal height
+    m_pPage->m_nIdealHeight = rectLayout.top + nBorder;
 }

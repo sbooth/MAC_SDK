@@ -11,7 +11,7 @@
 ////////////////////////////////////////////
 __declspec(dllexport) int FAR PASCAL FilterGetFileSize(HANDLE hInput)
 {    
-    IAPEDecompress* pAPEDecompress = (IAPEDecompress*) hInput;
+    IAPEDecompress* pAPEDecompress = (IAPEDecompress *) hInput;
     if (hInput == NULL) return 0;
     
     int64 nBytesPerSample = pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_BYTES_PER_SAMPLE);
@@ -19,7 +19,7 @@ __declspec(dllexport) int FAR PASCAL FilterGetFileSize(HANDLE hInput)
     return int(pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_TOTAL_BLOCKS) * pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_CHANNELS) * nBytesPerSample);
 }
 
-__declspec(dllexport) HANDLE FAR PASCAL OpenFilterInput( LPSTR lpstrFilename, int far *lSamprate, WORD far *wBitsPerSample, WORD far *wChannels, HWND hWnd, int far *lChunkSize)
+__declspec(dllexport) HANDLE FAR PASCAL OpenFilterInput(LPSTR lpstrFilename, int far * lSamprate, WORD far * wBitsPerSample, WORD far * wChannels, HWND, int far * lChunkSize)
 {
     ///////////////////////////////////////////////////////////////////////////////
     // open the APE file
@@ -44,7 +44,7 @@ __declspec(dllexport) HANDLE FAR PASCAL OpenFilterInput( LPSTR lpstrFilename, in
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //ReadFilterInput: Effective Reading
 ////////////////////////////////////
-__declspec(dllexport) DWORD FAR PASCAL ReadFilterInput(HANDLE hInput, unsigned char far *buf, int lBytes)
+__declspec(dllexport) DWORD FAR PASCAL ReadFilterInput(HANDLE hInput, unsigned char far * buf, int lBytes)
 {
     IAPEDecompress * pAPEDecompress = (IAPEDecompress *) hInput;
     if (hInput == NULL) return 0;
@@ -63,10 +63,10 @@ __declspec(dllexport) DWORD FAR PASCAL ReadFilterInput(HANDLE hInput, unsigned c
             return 0;
 
         // expand to 32 bit
-        unsigned char * p24Bit = (unsigned char*) &buf[(nBlocksDecoded * pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_BLOCK_ALIGN)) - 3];
-        float * p32Bit = (float*) &buf[(nBlocksDecoded * pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_CHANNELS) * 4) - 4];
+        unsigned char * p24Bit = (unsigned char *) &buf[(nBlocksDecoded * pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_BLOCK_ALIGN)) - 3];
+        float * p32Bit = (float *) &buf[(nBlocksDecoded * pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_CHANNELS) * 4) - 4];
 
-        while (p32Bit >= (float*) &buf[0])
+        while (p32Bit >= (float *) &buf[0])
         {
             float fValue = (float) (*p24Bit + *(p24Bit + 1) * 256 + *(p24Bit + 2) * 65536) / 256;
             if (fValue > 32768) fValue -= 65536;
@@ -81,7 +81,7 @@ __declspec(dllexport) DWORD FAR PASCAL ReadFilterInput(HANDLE hInput, unsigned c
         ///////////////////////////////////////////////////////////////////////////////
         // 8 and 16 bits decode
         //////////////////////
-        if (pAPEDecompress->GetData((char*) buf, nBlocksToDecode, &nBlocksDecoded) != ERROR_SUCCESS)
+        if (pAPEDecompress->GetData((char *) buf, nBlocksToDecode, &nBlocksDecoded) != ERROR_SUCCESS)
             return 0;
     }
 
@@ -90,14 +90,12 @@ __declspec(dllexport) DWORD FAR PASCAL ReadFilterInput(HANDLE hInput, unsigned c
     return DWORD(nBlocksDecoded * pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_CHANNELS) * BytesPerSample);
 }
 
-
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //CloseFileInput: Closes the file after reading
 ///////////////////////////////////////////////
 __declspec(dllexport) void FAR PASCAL CloseFilterInput(HANDLE hInput)
 {
-    IAPEDecompress* pAPEDecompress = (IAPEDecompress*) hInput;
+    IAPEDecompress * pAPEDecompress = (IAPEDecompress *) hInput;
     if (pAPEDecompress != NULL) 
     {
         delete pAPEDecompress;
@@ -111,7 +109,7 @@ __declspec(dllexport) DWORD FAR PASCAL FilterOptions(HANDLE hInput)
 { 
     int nCompressionLevel = 2;
 
-    IAPEDecompress* pAPEDecompress = (IAPEDecompress*) hInput;
+    IAPEDecompress * pAPEDecompress = (IAPEDecompress *) hInput;
     if (pAPEDecompress != NULL) 
     {
         switch (pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_COMPRESSION_LEVEL))
@@ -120,6 +118,7 @@ __declspec(dllexport) DWORD FAR PASCAL FilterOptions(HANDLE hInput)
         case MAC_COMPRESSION_LEVEL_NORMAL: nCompressionLevel = 2; break;
         case MAC_COMPRESSION_LEVEL_HIGH: nCompressionLevel = 3; break;
         case MAC_COMPRESSION_LEVEL_EXTRA_HIGH: nCompressionLevel = 4; break;
+        case MAC_COMPRESSION_LEVEL_INSANE: nCompressionLevel = 5; break;
         }
     }
     
@@ -131,17 +130,18 @@ __declspec(dllexport) DWORD FAR PASCAL FilterOptions(HANDLE hInput)
 /////////////////////////////////////////////////////////////
 __declspec(dllexport) DWORD FAR PASCAL FilterOptionsString(HANDLE hInput, LPSTR szString)
 { 
-    #pragma warning(push)
-    #pragma warning(disable: 4996)
-
+    // the safe buffer size was found to be around 120 with the Cool Edit Pro 2 installed on my computer
+    // so that's the copy limit size -- it should be way more than we ever put in the buffer anyway
+    
     // default
-    strcpy(szString, "Compression Level: Normal");
+    strncpy_s(szString, 120, "Compression Level: Normal", _TRUNCATE);
 
     // fill in from decoder
-    IAPEDecompress* pAPEDecompress = (IAPEDecompress*) hInput;
+    IAPEDecompress * pAPEDecompress = (IAPEDecompress *) hInput;
     if (pAPEDecompress != NULL) 
     {
-        char Title[256]; strcpy_s(Title, 256, "Compression Level: ");
+        char Title[256] = { 0 }; 
+        strcpy_s(Title, 256, "Compression Level: ");
         
         switch (pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_COMPRESSION_LEVEL))
         {
@@ -149,13 +149,11 @@ __declspec(dllexport) DWORD FAR PASCAL FilterOptionsString(HANDLE hInput, LPSTR 
         case MAC_COMPRESSION_LEVEL_NORMAL: strcat_s(Title, 256, "Normal"); break;
         case MAC_COMPRESSION_LEVEL_HIGH: strcat_s(Title, 256, "High"); break;
         case MAC_COMPRESSION_LEVEL_EXTRA_HIGH: strcat_s(Title, 256, "Extra High"); break;
+        case MAC_COMPRESSION_LEVEL_INSANE: strcat_s(Title, 256, "Insane"); break;
         }
 
-        Title[30] = 0x00;
-        strcpy(szString, Title);
+        strncpy_s(szString, 120, Title, _TRUNCATE);
     }
-
-    #pragma warning(pop)
 
     // return compression level
     return FilterOptions(hInput);
@@ -164,7 +162,7 @@ __declspec(dllexport) DWORD FAR PASCAL FilterOptionsString(HANDLE hInput, LPSTR 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //FilterGetFirstSpecialData:
 ////////////////////////////
-__declspec(dllexport) DWORD FAR PASCAL FilterGetFirstSpecialData(HANDLE hInput, SPECIALDATA * psp)
+__declspec(dllexport) DWORD FAR PASCAL FilterGetFirstSpecialData(HANDLE, SPECIALDATA *)
 {    
     return 0;
 }
@@ -172,7 +170,7 @@ __declspec(dllexport) DWORD FAR PASCAL FilterGetFirstSpecialData(HANDLE hInput, 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //FilterGetNextSpecialData:
 ///////////////////////////
-__declspec(dllexport) DWORD FAR PASCAL FilterGetNextSpecialData(HANDLE hInput, SPECIALDATA * psp)
+__declspec(dllexport) DWORD FAR PASCAL FilterGetNextSpecialData(HANDLE, SPECIALDATA *)
 {    
     return 0;
 }

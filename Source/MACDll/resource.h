@@ -13,6 +13,7 @@
 #define IDC_R3                          1001
 #define IDC_R2                          1002
 #define IDC_R4                          1003
+#define IDC_R5                          1004
 #define CANCEL_BUTTON                   1011
 #define THREAD_PRIORITY_SLIDER          1014
 #define FILE_DISPLAY_METHOD_EDIT        1028

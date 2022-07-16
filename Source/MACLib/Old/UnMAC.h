@@ -27,7 +27,7 @@ public:
     // functions
     int Initialize(IAPEDecompress * pAPEDecompress);
     int Uninitialize();
-    intn DecompressFrame(unsigned char * pOutputData, int32 FrameIndex, int CPULoadBalancingFactor = 0);
+    intn DecompressFrame(unsigned char * pOutputData, int32 FrameIndex);
 
     int SeekToFrame(intn FrameIndex);
     
@@ -42,12 +42,12 @@ private:
     CAPEDecompressCore * m_pAPEDecompressCore;
 
     // functions
-    void GenerateDecodedArrays(intn nBlocks, intn nSpecialCodes, intn nFrameIndex, intn nCPULoadBalancingFactor);
-    void GenerateDecodedArray(int * Input_Array, uint32 Number_of_Elements, intn Frame_Index, CAntiPredictor *pAntiPredictor, intn CPULoadBalancingFactor = 0);
+    void GenerateDecodedArrays(intn nBlocks, intn nSpecialCodes, intn nFrameIndex);
+    void GenerateDecodedArray(int * Input_Array, uint32 Number_of_Elements, intn Frame_Index, CAntiPredictor * pAntiPredictor);
 
     int CreateAntiPredictors(int nCompressionLevel, int nVersion);
 
-    intn DecompressFrameOld(unsigned char * pOutputData, int32 FrameIndex, int CPULoadBalancingFactor);
+    intn DecompressFrameOld(unsigned char * pOutputData, int32 FrameIndex);
     uint32 CalculateOldChecksum(int * pDataX, int * pDataY, intn nChannels, intn nBlocks);
 
 public:

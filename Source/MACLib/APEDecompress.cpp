@@ -46,7 +46,7 @@ CAPEDecompress::CAPEDecompress(int * pErrorCode, CAPEInfo * pAPEInfo, int64 nSta
     m_bIsRanged = (m_nStartBlock != 0) || (m_nFinishBlock != GetInfo(APE_INFO_TOTAL_BLOCKS));
 
     // channel data
-    m_sparyChannelData.Assign(new int[32], true);
+    m_sparyChannelData.Assign(new int [APE_MAXIMUM_CHANNELS], true);
 
     // predictors
     memset(m_aryPredictor, 0, sizeof(m_aryPredictor));
@@ -55,7 +55,7 @@ CAPEDecompress::CAPEDecompress(int * pErrorCode, CAPEInfo * pAPEInfo, int64 nSta
 CAPEDecompress::~CAPEDecompress()
 {
     m_sparyChannelData.Delete();
-    for (int z = 0; z < 32; z++)
+    for (int z = 0; z < APE_MAXIMUM_CHANNELS; z++)
     {
         if (m_aryPredictor[z] != NULL)
             delete m_aryPredictor[z];
@@ -283,7 +283,7 @@ int CAPEDecompress::FillFrameBuffer()
             if (m_bLegacyMode == false)
             {
                 m_bLegacyMode = true;
-                for (int z = 0; z < 32; z++)
+                for (int z = 0; z < APE_MAXIMUM_CHANNELS; z++)
                 {
                     if (m_aryPredictor[z] != NULL)
                         m_aryPredictor[z]->SetLegacyDecode(true);
@@ -444,13 +444,13 @@ void CAPEDecompress::StartFrame()
         m_nStoredCRC &= 0x7FFFFFFF;
     }
 
-    for (int z = 0; z < 32; z++)
+    for (int z = 0; z < APE_MAXIMUM_CHANNELS; z++)
     {
         if (m_aryPredictor[z] != NULL)
             m_aryPredictor[z]->Flush();
     }
 
-    for (int z = 0; z < 32; z++)
+    for (int z = 0; z < APE_MAXIMUM_CHANNELS; z++)
     {
         m_spUnBitArray->FlushState(m_aryBitArrayStates[z]);
     }

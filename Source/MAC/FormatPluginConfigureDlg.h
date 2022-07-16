@@ -1,9 +1,11 @@
 #pragma once
 
+class CMACDlg;
+
 class CFormatPluginConfigureDlg : public CDialog
 {
 public:
-    CFormatPluginConfigureDlg(CString strConfigureDescription1,
+    CFormatPluginConfigureDlg(CMACDlg * pMACDlg, CString strConfigureDescription1,
         CString strConfigureValue1, CString strConfigureDescription2, CString strConfigureValue2,
         CString strConfigureDescription3, CString strConfigureValue3, CWnd * pParent = NULL);
 
@@ -21,4 +23,6 @@ protected:
     virtual BOOL OnInitDialog();
 
     DECLARE_MESSAGE_MAP()
+
+    CMACDlg * m_pMACDlg;
 };

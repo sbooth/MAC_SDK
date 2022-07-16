@@ -1,11 +1,7 @@
 #include "All.h"
 #include "NewPredictor.h"
 #include "MACLib.h"
-
-#ifdef _MSC_VER
-    // disable warning of constant conditional expressions
-    #pragma warning( disable : 4127 )
-#endif
+#include "GlobalFunctions.h"
 
 namespace APE
 {
@@ -14,9 +10,12 @@ namespace APE
 CPredictorCompressNormal
 **************************************************************************************************/
 template <class INTTYPE> CPredictorCompressNormal<INTTYPE>::CPredictorCompressNormal(int nCompressionLevel, int nBitsPerSample)
-    : IPredictorCompress(nCompressionLevel)
 {
     m_nBitsPerSample = nBitsPerSample;
+
+    // initialize (to avoid warnings)
+    memset(&m_aryM[0], 0, sizeof(m_aryM));
+    m_nCurrentIndex = 0;
 
     if (nCompressionLevel == MAC_COMPRESSION_LEVEL_FAST)
     {
@@ -63,7 +62,7 @@ template <class INTTYPE> int CPredictorCompressNormal<INTTYPE>::Flush()
     m_rbAdapt.Flush();
     m_Stage1FilterA.Flush(); m_Stage1FilterB.Flush();
 
-    memset(m_aryM, 0, sizeof(m_aryM));
+    memset(&m_aryM[0], 0, sizeof(m_aryM));
 
     INTTYPE * paryM = &m_aryM[8];
     paryM[0] = 360;
@@ -98,8 +97,7 @@ template <class INTTYPE> int64 CPredictorCompressNormal<INTTYPE>::CompressValue(
 
     INTTYPE * paryM = &m_aryM[8];
     INTTYPE nOutput;
-
-    if ((sizeof(INTTYPE) == 8) || (m_nBitsPerSample <= 16))
+    if ((m_nBitsPerSample <= 16) || (sizeof(INTTYPE) == 8))
     {
         INTTYPE nPredictionA = (m_rbPrediction[-1] * paryM[0]) + (m_rbPrediction[-2] * paryM[-1]) + (m_rbPrediction[-3] * paryM[-2]) + (m_rbPrediction[-4] * paryM[-3]);
         INTTYPE nPredictionB = (m_rbPrediction[-5] * paryM[-4]) + (m_rbPrediction[-6] * paryM[-5]) + (m_rbPrediction[-7] * paryM[-6]) + (m_rbPrediction[-8] * paryM[-7]) + (m_rbPrediction[-9] * paryM[-8]);
@@ -162,8 +160,10 @@ template class CPredictorCompressNormal<int64>;
 CPredictorDecompressNormal3930to3950
 **************************************************************************************************/
 CPredictorDecompressNormal3930to3950::CPredictorDecompressNormal3930to3950(int nCompressionLevel, int nVersion)
-    : IPredictorDecompress(nCompressionLevel, nVersion)
 {
+    // initialize (to avoid warnings)
+    memset(&m_aryM[0], 0, sizeof(m_aryM));
+
     m_spBuffer.Assign(new int [HISTORY_ELEMENTS + WINDOW_BLOCKS], true);
 
     if (nCompressionLevel == MAC_COMPRESSION_LEVEL_FAST)
@@ -272,11 +272,14 @@ int CPredictorDecompressNormal3930to3950::DecompressValue(int64 _nInput, int64)
 CPredictorDecompress3950toCurrent
 **************************************************************************************************/
 template <class INTTYPE> CPredictorDecompress3950toCurrent<INTTYPE>::CPredictorDecompress3950toCurrent(int nCompressionLevel, int nVersion, int nBitsPerSample)
-    : IPredictorDecompress(nCompressionLevel, nVersion)
 {
     m_nVersion = nVersion;
     m_nBitsPerSample = nBitsPerSample;
     m_bLegacyDecode = false;
+
+    // initialize (to avoid warnings)
+    memset(&m_aryMA[0], 0, sizeof(m_aryMA));
+    memset(&m_aryMB[0], 0, sizeof(m_aryMB));
 
     if (nCompressionLevel == MAC_COMPRESSION_LEVEL_FAST)
     {
@@ -381,8 +384,7 @@ template <class INTTYPE> int CPredictorDecompress3950toCurrent<INTTYPE>::Decompr
     m_rbPredictionB[-1] = m_rbPredictionB[0] - m_rbPredictionB[-1];
 
     INTTYPE nCurrentA;
-
-    if ((sizeof(INTTYPE) == 8) || (m_nBitsPerSample <= 16))
+    if ((m_nBitsPerSample <= 16) || (sizeof(INTTYPE) == 8))
     {
         INTTYPE nPredictionA = (m_rbPredictionA[0] * m_aryMA[0]) + (m_rbPredictionA[-1] * m_aryMA[1]) + (m_rbPredictionA[-2] * m_aryMA[2]) + (m_rbPredictionA[-3] * m_aryMA[3]);
         INTTYPE nPredictionB = (m_rbPredictionB[0] * m_aryMB[0]) + (m_rbPredictionB[-1] * m_aryMB[1]) + (m_rbPredictionB[-2] * m_aryMB[2]) + (m_rbPredictionB[-3] * m_aryMB[3]) + (m_rbPredictionB[-4] * m_aryMB[4]);

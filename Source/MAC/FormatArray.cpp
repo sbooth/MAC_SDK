@@ -4,10 +4,11 @@
 #include "FormatPlugin.h"
 #include "FormatAPE.h"
 #include "MACFile.h"
+#include "MACDlg.h"
 
-CFormatArray::CFormatArray()
+CFormatArray::CFormatArray(CMACDlg * pMACDlg)
 {
-
+    m_pMACDlg = pMACDlg;
 }
 
 CFormatArray::~CFormatArray()
@@ -30,7 +31,7 @@ BOOL CFormatArray::Load()
     {
         if (CFilename(aryFiles[z]).GetExtension() == _T(".apx"))
         {
-            IFormat * pPlugin = new CFormatPlugin(int(m_aryFormats.GetSize()), aryFiles[z]);
+            IFormat * pPlugin = new CFormatPlugin(m_pMACDlg, int(m_aryFormats.GetSize()), aryFiles[z]);
             m_aryFormats.Add(pPlugin);
         }
     }
@@ -219,7 +220,7 @@ CString CFormatArray::GetOpenFilesFilter(BOOL bAddAllFiles)
     for (int z = 0; z < aryExtensions.GetSize(); z++)
         strSupportedExtensions += _T("*") + aryExtensions[z] + _T(";");
     strSupportedExtensions.TrimRight(_T(";"));
-    strFilter.Format(_T("All Supported Files (%s)|%s|"), strSupportedExtensions, strSupportedExtensions);
+    strFilter.Format(_T("All Supported Files (%s)|%s|"), (LPCTSTR) strSupportedExtensions, (LPCTSTR) strSupportedExtensions);
 
     // build the list on a per-format basis
     for (int z = 0; z < m_aryFormats.GetSize(); z++)
@@ -237,7 +238,7 @@ CString CFormatArray::GetOpenFilesFilter(BOOL bAddAllFiles)
 
             // build the filter string
             CString strFormatFilter;
-            strFormatFilter.Format(_T("%s Files (%s)|%s|"), m_aryFormats[z]->GetName(), strFormatExtensions, strFormatExtensions);
+            strFormatFilter.Format(_T("%s Files (%s)|%s|"), (LPCTSTR) m_aryFormats[z]->GetName(), (LPCTSTR) strFormatExtensions, (LPCTSTR) strFormatExtensions);
             strFilter += strFormatFilter;
         }
     }

@@ -54,8 +54,8 @@ protected:
     // more decoding components
     CSmartPtr<CAPEInfo> m_spAPEInfo;
     CSmartPtr<CUnBitArrayBase> m_spUnBitArray;
-    UNBIT_ARRAY_STATE m_aryBitArrayStates[32];
-    IPredictorDecompress * m_aryPredictor[32];
+    UNBIT_ARRAY_STATE m_aryBitArrayStates[APE_MAXIMUM_CHANNELS];
+    IPredictorDecompress * m_aryPredictor[APE_MAXIMUM_CHANNELS];
     int m_nLastX;
     
     // decoding buffer

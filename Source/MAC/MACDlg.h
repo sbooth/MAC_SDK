@@ -17,9 +17,15 @@ public:
     CToolBar m_ctrlToolbar;
 
     BOOL GetProcessing() { return (m_spProcessFiles != NULL); }
+    BOOL GetInitialized() { return m_bInitialized; }
+    CFont & GetFont() { return m_Font; }
+    CSize MeasureText(const CString & strText);
 
     virtual BOOL PreTranslateMessage(MSG * pMsg);
     virtual void WinHelp(DWORD_PTR dwData, UINT nCmd = HELP_CONTEXT);
+
+    void LayoutControlTop(CWnd * pwndLayout, CRect & rectLayout, bool bOnlyControlWidth = false, bool bCombobox = false, CWnd * pwndRight = NULL);
+    void LayoutControlTopWithDivider(CWnd * pwndLayout, CWnd * pwndDivider, CWnd * pwndImage, CRect & rectLayout);
 
 protected:
 
@@ -59,7 +65,7 @@ protected:
     afx_msg void OnHelpHelp();
     afx_msg void OnHelpAbout();
     afx_msg void OnHelpWebsiteMonkeysAudio();
-    afx_msg void OnHelpWebsiteMediaJukebox();
+    afx_msg void OnHelpWebsiteJRiver();
     afx_msg void OnHelpWebsiteWinamp();
     afx_msg void OnHelpWebsiteEac();
     afx_msg void OnToolsOptions();
@@ -68,6 +74,7 @@ protected:
     afx_msg void OnGetMinMaxInfo(MINMAXINFO FAR * lpMMI);
     afx_msg BOOL OnQueryEndSession();
     afx_msg void OnEndSession(BOOL bEnding);
+    afx_msg LRESULT OnDPIChange(WPARAM wParam, LPARAM lParam);
     DECLARE_MESSAGE_MAP()
 
     BOOL m_bInitialized;
@@ -77,6 +84,9 @@ protected:
     CString m_strAddFilesBasePath;
     CMenu m_menuMain;
     HICON m_hIcon;
+    CFont m_Font;
+    CFont m_fontStart;
+    BOOL m_bLastLoadMenuAndToolbarProcessing;
 
     void LayoutWindow();
     void UpdateWindow();
@@ -86,5 +96,6 @@ protected:
     BOOL LoadMenuAndToolbar(BOOL bProcessing);
     void SetToolbarButtonBitmap(int nID, int nBitmap);
     void PlayDefaultSound();
+    void LoadScale();
 };
 

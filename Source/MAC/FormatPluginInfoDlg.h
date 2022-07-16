@@ -1,12 +1,13 @@
 #pragma once
 
 #include "Hyperlink.h"
+class CMACDlg;
 
 class CFormatPluginInfoDlg : public CDialog
 {
 public:
     
-    CFormatPluginInfoDlg(CString strName, CString strVersion, CString strAuthor, CString strDescription, CString strURL, CWnd * pParent = NULL);
+    CFormatPluginInfoDlg(CMACDlg * pMACDlg, CString strName, CString strVersion, CString strAuthor, CString strDescription, CString strURL, CWnd * pParent = NULL);
 
     enum { IDD = IDD_FORMAT_PLUGIN_INFO };
     CHyperLink m_ctrlURL;
@@ -20,5 +21,6 @@ protected:
 
     DECLARE_MESSAGE_MAP()
 
+    CMACDlg * m_pMACDlg;
     CString m_strURL;
 };

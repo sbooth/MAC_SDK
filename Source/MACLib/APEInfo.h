@@ -38,7 +38,7 @@ struct APE_FILE_INFO
     uint32 nWAVTerminatingBytes;                    // terminating bytes of the original WAV
     int64 nWAVTotalBytes;                           // total bytes of the original WAV
     int64 nAPETotalBytes;                           // total bytes of the APE file
-    int nTotalBlocks;                               // the total number audio blocks
+    int64 nTotalBlocks;                             // the total number audio blocks
     int nLengthMS;                                  // the length in milliseconds
     int nAverageBitrate;                            // the kbps (i.e. 637 kpbs)
     int nDecompressedBitrate;                       // the kbps of the decompressed audio (i.e. 1440 kpbs for CD audio)
@@ -78,7 +78,7 @@ public:
     
 private:
     // internal functions
-    int GetFileInformation(bool bGetTagInformation = true);
+    int GetFileInformation();
     int CloseFile();
     int CheckHeaderInformation();
     

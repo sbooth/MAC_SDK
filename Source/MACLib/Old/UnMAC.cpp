@@ -61,7 +61,7 @@ int CUnMAC::Initialize(IAPEDecompress * pAPEDecompress)
     // set the last decode frame to -1 so it forces a seek on start
     m_LastDecodedFrameIndex = -1;
 
-    m_pAPEDecompressCore = new CAPEDecompressCore(GET_IO(pAPEDecompress), pAPEDecompress);
+    m_pAPEDecompressCore = new CAPEDecompressCore(pAPEDecompress);
     m_pPrepare = new CPrepare;
 
     // set the initialized flag to true
@@ -99,9 +99,9 @@ int CUnMAC::Uninitialize()
 /**************************************************************************************************
 Decompress frame
 **************************************************************************************************/
-intn CUnMAC::DecompressFrame(unsigned char * pOutputData, int32 FrameIndex, int CPULoadBalancingFactor) 
+intn CUnMAC::DecompressFrame(unsigned char * pOutputData, int32 FrameIndex) 
 {
-    return DecompressFrameOld(pOutputData, FrameIndex, CPULoadBalancingFactor);
+    return DecompressFrameOld(pOutputData, FrameIndex);
 }
 
 /**************************************************************************************************
@@ -135,7 +135,7 @@ int CUnMAC::SeekToFrame(intn FrameIndex)
 /**************************************************************************************************
 Old code for frame decompression
 **************************************************************************************************/
-intn CUnMAC::DecompressFrameOld(unsigned char * pOutputData, int32 FrameIndex, int CPULoadBalancingFactor) 
+intn CUnMAC::DecompressFrameOld(unsigned char * pOutputData, int32 FrameIndex) 
 {
     // error check the parameters (too high of a frame index, etc.)
     if (FrameIndex >= m_pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_TOTAL_FRAMES)) { return ERROR_SUCCESS; }
@@ -184,19 +184,19 @@ intn CUnMAC::DecompressFrameOld(unsigned char * pOutputData, int32 FrameIndex, i
     // sort of int and ugly.... sorry
     if (m_pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_CHANNELS) == 2)
     {
-        m_pAPEDecompressCore->GenerateDecodedArrays(nBlocks, nSpecialCodes, FrameIndex, CPULoadBalancingFactor);
+        m_pAPEDecompressCore->GenerateDecodedArrays(nBlocks, nSpecialCodes, FrameIndex);
 
         WAVEFORMATEX WaveFormatEx = { 0 }; m_pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_WAVEFORMATEX, (int64)&WaveFormatEx);
         m_pPrepare->UnprepareOld(m_pAPEDecompressCore->GetDataX(), m_pAPEDecompressCore->GetDataY(), nBlocks, &WaveFormatEx, 
-            pOutputData, (unsigned int *) &CRC, (int *) &nSpecialCodes, (int) m_pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_FILE_VERSION));
+            pOutputData, (unsigned int *) &CRC, (int) m_pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_FILE_VERSION));
     }
     else if (m_pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_CHANNELS) == 1)
     {
-        m_pAPEDecompressCore->GenerateDecodedArrays(nBlocks, nSpecialCodes, FrameIndex, CPULoadBalancingFactor);
+        m_pAPEDecompressCore->GenerateDecodedArrays(nBlocks, nSpecialCodes, FrameIndex);
         
         WAVEFORMATEX WaveFormatEx = { 0 }; m_pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_WAVEFORMATEX, (int64)&WaveFormatEx);
         m_pPrepare->UnprepareOld(m_pAPEDecompressCore->GetDataX(), NULL, nBlocks, &WaveFormatEx, 
-            pOutputData, (unsigned int *) &CRC, (int *) &nSpecialCodes, (int) m_pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_FILE_VERSION));
+            pOutputData, (unsigned int *) &CRC, (int) m_pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_FILE_VERSION));
     }
 
     if (GET_USES_SPECIAL_FRAMES(m_pAPEDecompress))

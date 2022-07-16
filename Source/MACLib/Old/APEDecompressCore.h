@@ -6,11 +6,11 @@ namespace APE
 class CAPEDecompressCore
 {
 public:
-    CAPEDecompressCore(CIO * pIO, IAPEDecompress * pAPEDecompress);
+    CAPEDecompressCore(IAPEDecompress * pAPEDecompress);
     ~CAPEDecompressCore();
     
-    void GenerateDecodedArrays(intn nBlocks, intn nSpecialCodes, intn nFrameIndex, intn nCPULoadBalancingFactor);
-    void GenerateDecodedArray(int *Input_Array, uint32 Number_of_Elements, intn Frame_Index, CAntiPredictor *pAntiPredictor, intn CPULoadBalancingFactor = 0);
+    void GenerateDecodedArrays(intn nBlocks, intn nSpecialCodes, intn nFrameIndex);
+    void GenerateDecodedArray(int * Input_Array, uint32 Number_of_Elements, intn Frame_Index, CAntiPredictor * pAntiPredictor);
     
     int * GetDataX() { return m_spDataX; }
     int * GetDataY() { return m_spDataY; }
@@ -30,7 +30,6 @@ public:
     
     IAPEDecompress * m_pAPEDecompress;
     
-    bool m_bMMXAvailable;
     int m_nBlocksProcessed;
 };
 

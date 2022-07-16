@@ -1,12 +1,13 @@
 #pragma once
 
 class MAC_FILE_ARRAY;
+class CMACDlg;
 
 class CMACStatusBar : public CStatusBar
 {
 public:
     
-    CMACStatusBar();
+    CMACStatusBar(CMACDlg * pMACDlg);
     virtual ~CMACStatusBar();
 
     BOOL UpdateProgress(double dProgress, double dSecondsLeft);
@@ -24,7 +25,9 @@ protected:
     DECLARE_MESSAGE_MAP()
 
     void ShowFreeSpaceDrivePopup();
+    void SizeStatusbar();
 
+    CMACDlg * m_pMACDlg;
     HWND m_hwndParent;
     CProgressCtrl m_ctrlProgress;
     bool m_bShowProgress;
@@ -32,4 +35,5 @@ protected:
     CString m_strFreeSpaceDrive;
     ITaskbarList3 * m_pTaskBarlist;
     bool m_bDisableSleep;
+    bool m_bProcessing;
 };

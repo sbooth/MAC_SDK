@@ -15,15 +15,15 @@ it takes around 8k per hour of CD music, so it isn't a big deal to allocate more
 needed.  You can also specify MAX_AUDIO_BYTES_UNKNOWN to allocate as much space as possible. (2 GB)
 
 Notes for use in a new project:
-	-you need to include "MACLib.lib" in the included libraries list
-	-life will be easier if you set the [MAC SDK]\\Shared directory as an include 
-	directory and an additional library input path in the project settings
-	-set the runtime library to "Mutlithreaded"
+    -you need to include "MACLib.lib" in the included libraries list
+    -life will be easier if you set the [MAC SDK]\\Shared directory as an include 
+    directory and an additional library input path in the project settings
+    -set the runtime library to "Mutlithreaded"
 
 WARNING:
-	-This class driven system for using Monkey's Audio is still in development, so
-	I can't make any guarantees that the classes and libraries won't change before
-	everything gets finalized.  Use them at your own risk
+    -This class driven system for using Monkey's Audio is still in development, so
+    I can't make any guarantees that the classes and libraries won't change before
+    everything gets finalized.  Use them at your own risk
 ***************************************************************************************/
 
 // includes
@@ -39,84 +39,84 @@ Main (the main function)
 ***************************************************************************************/
 int main(int argc, char* argv[]) 
 {
-	///////////////////////////////////////////////////////////////////////////////
-	// variable declares
-	///////////////////////////////////////////////////////////////////////////////
-	int nAudioBytes = 1048576*10;
-	const wchar_t cOutputFile[MAX_PATH] = _T("c:\\Noise.ape");
-	
-	_tprintf(_T("Creating file: %s\n"), cOutputFile);
-	
-	///////////////////////////////////////////////////////////////////////////////
-	// create and start the encoder
-	///////////////////////////////////////////////////////////////////////////////
-	
-	// set the input WAV format
-	APE::WAVEFORMATEX wfeAudioFormat; FillWaveFormatEx(&wfeAudioFormat, WAVE_FORMAT_PCM, 44100, 16, 2);
-	
-	// create the encoder interface
-	IAPECompress * pAPECompress = CreateIAPECompress();
-	
-	// start the encoder
-	int nRetVal = pAPECompress->Start(cOutputFile, &wfeAudioFormat, nAudioBytes, 
-		MAC_COMPRESSION_LEVEL_HIGH, NULL, CREATE_WAV_HEADER_ON_DECOMPRESSION);
+    ///////////////////////////////////////////////////////////////////////////////
+    // variable declares
+    ///////////////////////////////////////////////////////////////////////////////
+    int nAudioBytes = 1048576*10;
+    const wchar_t cOutputFile[MAX_PATH] = _T("c:\\Noise.ape");
+    
+    _tprintf(_T("Creating file: %s\n"), cOutputFile);
+    
+    ///////////////////////////////////////////////////////////////////////////////
+    // create and start the encoder
+    ///////////////////////////////////////////////////////////////////////////////
+    
+    // set the input WAV format
+    APE::WAVEFORMATEX wfeAudioFormat; FillWaveFormatEx(&wfeAudioFormat, WAVE_FORMAT_PCM, 44100, 16, 2);
+    
+    // create the encoder interface
+    IAPECompress * pAPECompress = CreateIAPECompress();
+    
+    // start the encoder
+    int nRetVal = pAPECompress->Start(cOutputFile, &wfeAudioFormat, nAudioBytes, 
+        MAC_COMPRESSION_LEVEL_HIGH, NULL, CREATE_WAV_HEADER_ON_DECOMPRESSION);
 
-	if (nRetVal != 0)
-	{
-		SAFE_DELETE(pAPECompress)
-		printf("Error starting encoder.\n");
-		return -1;
-	}
-	
-	///////////////////////////////////////////////////////////////////////////////
-	// pump through and feed the encoder audio data (white noise for the sample)
-	///////////////////////////////////////////////////////////////////////////////
-	int64 nAudioBytesLeft = nAudioBytes;
-	
-	while (nAudioBytesLeft > 0)
-	{
-		///////////////////////////////////////////////////////////////////////////////
-		// NOTE: we're locking the buffer used internally by MAC and copying the data
-		//		 directly into it... however, you could also use the AddData(...) command
-		//       to avoid the added complexity of locking and unlocking 
-		//       the buffer (but it may be a little slower )
-		///////////////////////////////////////////////////////////////////////////////
-	
-		// lock the compression buffer
-		int64 nBufferBytesAvailable = 0;
-		unsigned char * pBuffer = pAPECompress->LockBuffer(&nBufferBytesAvailable);
-	
-		// fill the buffer with white noise
-		int64 nNoiseBytes = min(nBufferBytesAvailable, nAudioBytesLeft);
-		for (int z = 0; z < nNoiseBytes; z++)
-		{
-			pBuffer[z] = rand() % 255;
-		}
+    if (nRetVal != 0)
+    {
+        SAFE_DELETE(pAPECompress)
+        printf("Error starting encoder.\n");
+        return -1;
+    }
+    
+    ///////////////////////////////////////////////////////////////////////////////
+    // pump through and feed the encoder audio data (white noise for the sample)
+    ///////////////////////////////////////////////////////////////////////////////
+    int64 nAudioBytesLeft = nAudioBytes;
+    
+    while (nAudioBytesLeft > 0)
+    {
+        ///////////////////////////////////////////////////////////////////////////////
+        // NOTE: we're locking the buffer used internally by MAC and copying the data
+        //         directly into it... however, you could also use the AddData(...) command
+        //       to avoid the added complexity of locking and unlocking 
+        //       the buffer (but it may be a little slower )
+        ///////////////////////////////////////////////////////////////////////////////
+    
+        // lock the compression buffer
+        int64 nBufferBytesAvailable = 0;
+        unsigned char * pBuffer = pAPECompress->LockBuffer(&nBufferBytesAvailable);
+    
+        // fill the buffer with white noise
+        int64 nNoiseBytes = min(nBufferBytesAvailable, nAudioBytesLeft);
+        for (int z = 0; z < nNoiseBytes; z++)
+        {
+            pBuffer[z] = rand() % 255;
+        }
 
-		// unlock the buffer and let it get processed
-		APE::int64 nRetVal = pAPECompress->UnlockBuffer(nNoiseBytes, TRUE);
-		if (nRetVal != 0)
-		{
-			_tprintf(_T("Error Encoding Frame (error: %I64d)\n"), nRetVal);
-			break;
-		}
+        // unlock the buffer and let it get processed
+        APE::int64 nRetVal = pAPECompress->UnlockBuffer(nNoiseBytes, TRUE);
+        if (nRetVal != 0)
+        {
+            _tprintf(_T("Error Encoding Frame (error: %I64d)\n"), nRetVal);
+            break;
+        }
 
-		// update the audio bytes left
-		nAudioBytesLeft -= nNoiseBytes;
-	}
+        // update the audio bytes left
+        nAudioBytesLeft -= nNoiseBytes;
+    }
 
-	///////////////////////////////////////////////////////////////////////////////
-	// finalize the file (could append a tag, or WAV terminating data)
-	///////////////////////////////////////////////////////////////////////////////
-	if (pAPECompress->Finish(NULL, 0, 0) != 0)
-	{
-		_tprintf(_T("Error finishing encoder.\n"));
-	}
+    ///////////////////////////////////////////////////////////////////////////////
+    // finalize the file (could append a tag, or WAV terminating data)
+    ///////////////////////////////////////////////////////////////////////////////
+    if (pAPECompress->Finish(NULL, 0, 0) != 0)
+    {
+        _tprintf(_T("Error finishing encoder.\n"));
+    }
 
-	///////////////////////////////////////////////////////////////////////////////
-	// clean up and quit
-	///////////////////////////////////////////////////////////////////////////////
-	SAFE_DELETE(pAPECompress)
-	printf("Done.\n");
-	return 0;
+    ///////////////////////////////////////////////////////////////////////////////
+    // clean up and quit
+    ///////////////////////////////////////////////////////////////////////////////
+    SAFE_DELETE(pAPECompress)
+    printf("Done.\n");
+    return 0;
 }

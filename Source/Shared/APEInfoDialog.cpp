@@ -118,7 +118,7 @@ intn CAPEInfoDialog::FillGenreComboBox(HWND hDlg, int nComboBoxID, char *pSelect
 /**************************************************************************************************
 The dialog procedure
 **************************************************************************************************/
-LRESULT CALLBACK CAPEInfoDialog::DialogProc(HWND hDlg, UINT message, intn wParam, intn lParam)
+LRESULT CALLBACK CAPEInfoDialog::DialogProc(HWND hDlg, UINT message, intn wParam, intn)
 {
     // get the class
     IAPEDecompress * pAPEDecompress = g_pAPEDecompressDialog->m_pAPEDecompress;

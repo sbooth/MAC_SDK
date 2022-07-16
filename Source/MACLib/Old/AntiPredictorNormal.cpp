@@ -3,12 +3,6 @@
 
 #include "Anti-Predictor.h"
 
-#if defined(PLATFORM_ANDROID) || defined(PLATFORM_APPLE)
-#define REGISTER
-#else
-#define REGISTER register
-#endif
-
 namespace APE
 {
 
@@ -222,7 +216,7 @@ void CAntiPredictorNormal3800ToCurrent::AntiPredict(int * pInputArray, int * pOu
     for (; op < &pOutputArray[NumberOfElements]; op++, ip++)
     {
 
-        REGISTER int o = *op, i = *ip;
+        int o = *op, i = *ip;
         
         /////////////////////////////////////////////
         o = i + (((p2 * m2) + (p3 * m3) + (p4 * m4)) >> 11);

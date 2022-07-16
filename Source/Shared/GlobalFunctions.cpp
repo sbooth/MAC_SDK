@@ -99,30 +99,6 @@ void FreeAligned(void * pMemory)
 #endif
 }
 
-bool GetMMXAvailable()
-{
-#if defined(__MMX__)
-    return true;
-#else
-    bool bMMX = false;
-#if defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_X64))
-    #define CPU_MMX (1 << 23)
-
-    int cpuInfo[4] = { 0 };
-    __cpuid(cpuInfo, 0);
-
-    int nIds = cpuInfo[0];
-    if (nIds >= 1)
-    {
-        __cpuid(cpuInfo, 1);
-        if (cpuInfo[3] & CPU_MMX)
-            bMMX = true;
-    }
-#endif
-    return bMMX;
-#endif
-}
-
 bool GetSSEAvailable(bool bTestForSSE41)
 {
 #if defined(__SSE41__)

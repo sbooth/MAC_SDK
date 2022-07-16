@@ -118,7 +118,7 @@ long CWAVInfoDialog::InitDialog(HWND hDlg)
 /**************************************************************************************************
 The dialog procedure
 **************************************************************************************************/
-LRESULT CALLBACK CWAVInfoDialog::DialogProc(HWND hDlg, UINT message, intn wParam, intn lParam)
+LRESULT CALLBACK CWAVInfoDialog::DialogProc(HWND hDlg, UINT message, intn wParam, intn)
 {
     int wmID, wmEvent;
     long RetVal;

@@ -199,7 +199,7 @@ void CAntiPredictorExtraHigh3700To3800::AntiPredictorOffset(int* Input_Array, in
 /**************************************************************************************************
 Extra high 3800 to Current
 **************************************************************************************************/
-void CAntiPredictorExtraHigh3800ToCurrent::AntiPredict(int * pInputArray, int * pOutputArray, int NumberOfElements, bool bMMXAvailable, intn CPULoadBalancingFactor, intn nVersion) 
+void CAntiPredictorExtraHigh3800ToCurrent::AntiPredict(int * pInputArray, int * pOutputArray, int NumberOfElements, intn nVersion) 
 {
     const int nFilterStageElements = (nVersion < 3830) ? 128 : 256;
     const int nFilterStageShift = (nVersion < 3830) ? 11 : 12;
@@ -207,23 +207,23 @@ void CAntiPredictorExtraHigh3800ToCurrent::AntiPredict(int * pInputArray, int * 
     const int nFirstElement = (nVersion < 3830) ? 128 : 256;
     const int nStageCShift = (nVersion < 3830) ? 10 : 11;
   
-    //short frame handling
+    // short frame handling
     if (NumberOfElements < nMaxElements) 
     {
         memcpy(pOutputArray, pInputArray, NumberOfElements * 4);
         return;
     }
 
-    //make the first five samples identical in both arrays
+    // make the first five samples identical in both arrays
     memcpy(pOutputArray, pInputArray, nFirstElement * 4);
     
-    //variable declares and initializations
+    // variable declares and initializations
     //short bm[nFirstElement]; memset(bm, 0, nFirstElement * 2);
     short bm[256]; memset(bm, 0, 256 * 2);
     int m2 = 64, m3 = 115, m4 = 64, m5 = 740, m6 = 0;
     int p4 = pInputArray[nFirstElement - 1];
     int p3 = (pInputArray[nFirstElement - 1] - pInputArray[nFirstElement - 2]) << 1;
-    int p2 = pInputArray[nFirstElement - 1] + ((pInputArray[nFirstElement - 3] - pInputArray[nFirstElement - 2]) << 3);// - pInputArray[3] + pInputArray[2];
+    int p2 = pInputArray[nFirstElement - 1] + ((pInputArray[nFirstElement - 3] - pInputArray[nFirstElement - 2]) << 3);
     int * op = &pOutputArray[nFirstElement];
     int * ip = &pInputArray[nFirstElement];
     int IPP2 = ip[-2];
@@ -232,14 +232,14 @@ void CAntiPredictorExtraHigh3800ToCurrent::AntiPredict(int * pInputArray, int * 
     int Original;
     CAntiPredictorExtraHighHelper Helper;
     
-    //undo the initial prediction stuff
+    // undo the initial prediction stuff
     int q; // loop variable
     for (q = 1; q < nFirstElement; q++) 
     {
         pOutputArray[q] += pOutputArray[q - 1];
     }
 
-    //pump the primary loop
+    // pump the primary loop
     short *IPAdaptFactor = (short *) calloc(NumberOfElements, 2);
     short *IPShort = (short *) calloc(NumberOfElements, 2);
     for (q = 0; q < nFirstElement; q++) 
@@ -253,12 +253,6 @@ void CAntiPredictorExtraHigh3800ToCurrent::AntiPredict(int * pInputArray, int * 
 
     for (q = nFirstElement; op < &pOutputArray[NumberOfElements]; op++, ip++, q++) 
     {
-        //CPU load-balancing
-        if (CPULoadBalancingFactor > 0) 
-        {
-            if ((q % CPULoadBalancingFactor) == 0) { SLEEP(1); }
-        }
-
         if (nVersion >= 3830)
         {
             int * pFP = &FP[8];
@@ -288,18 +282,7 @@ void CAntiPredictorExtraHigh3800ToCurrent::AntiPredict(int * pInputArray, int * 
         IPShort[q] = short(*ip);
         IPAdaptFactor[q] = ((ip[0] >> 30) & 2) - 1;
 
-#ifdef ENABLE_MMX_ASSEMBLY
-        if (bMMXAvailable && (Original != 0))
-        {
-            *ip -= (Helper.MMXDotProduct(&IPShort[q-nFirstElement], &bm[0], &IPAdaptFactor[q-nFirstElement], Original, nFilterStageElements) >> nFilterStageShift);
-        }
-        else
-        {
-            *ip -= (Helper.ConventionalDotProduct(&IPShort[q-nFirstElement], &bm[0], &IPAdaptFactor[q-nFirstElement], Original, nFilterStageElements) >> nFilterStageShift);
-        }
-#else
         *ip -= (Helper.ConventionalDotProduct(&IPShort[q-nFirstElement], &bm[0], &IPAdaptFactor[q-nFirstElement], Original, nFilterStageElements) >> nFilterStageShift);
-#endif
 
         IPShort[q] = short(*ip);
         IPAdaptFactor[q] = ((ip[0] >> 30) & 2) - 1;
@@ -345,7 +328,6 @@ void CAntiPredictorExtraHigh3800ToCurrent::AntiPredict(int * pInputArray, int * 
 
         /////////////////////////////////////////////
         *op += ((op[-1] * 31) >> 5);
-        
     }
 
     free(IPAdaptFactor);

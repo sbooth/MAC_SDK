@@ -169,7 +169,7 @@ int CAPEHeader::Analyze(APE_FILE_INFO * pInfo)
     }
 
     // check for invalid channels
-    if (pInfo->nChannels > 32 || pInfo->nChannels < 1)
+    if ((pInfo->nChannels > APE_MAXIMUM_CHANNELS) || (pInfo->nChannels < APE_MINIMUM_CHANNELS))
     {
         return ERROR_INVALID_INPUT_FILE;
     }
@@ -221,7 +221,7 @@ int CAPEHeader::AnalyzeCurrent(APE_FILE_INFO * pInfo)
     pInfo->nBitsPerSample         = int(APEHeader.nBitsPerSample);
     pInfo->nBytesPerSample        = pInfo->nBitsPerSample / 8;
     pInfo->nBlockAlign            = pInfo->nBytesPerSample * pInfo->nChannels;
-    pInfo->nTotalBlocks           = (APEHeader.nTotalFrames == 0) ? 0 : ((APEHeader.nTotalFrames -  1) * pInfo->nBlocksPerFrame) + APEHeader.nFinalFrameBlocks;
+    pInfo->nTotalBlocks           = (APEHeader.nTotalFrames == 0) ? 0 : (int64(APEHeader.nTotalFrames -  1) * int64(pInfo->nBlocksPerFrame)) + int64(APEHeader.nFinalFrameBlocks);
 
     pInfo->nWAVDataBytes = int64(pInfo->nTotalBlocks) * int64(pInfo->nBlockAlign);
     pInfo->nWAVTotalBytes = pInfo->nWAVDataBytes + pInfo->nWAVHeaderBytes + pInfo->nWAVTerminatingBytes;
@@ -336,7 +336,7 @@ int CAPEHeader::AnalyzeOld(APE_FILE_INFO * pInfo)
     pInfo->nBitsPerSample         = (pInfo->nFormatFlags & MAC_FORMAT_FLAG_8_BIT) ? 8 : ((pInfo->nFormatFlags & MAC_FORMAT_FLAG_24_BIT) ? 24 : 16);
     pInfo->nBytesPerSample        = pInfo->nBitsPerSample / 8;
     pInfo->nBlockAlign            = pInfo->nBytesPerSample * pInfo->nChannels;
-    pInfo->nTotalBlocks           = (APEHeader.nTotalFrames == 0) ? 0 : ((APEHeader.nTotalFrames -  1) * pInfo->nBlocksPerFrame) + APEHeader.nFinalFrameBlocks;
+    pInfo->nTotalBlocks           = (APEHeader.nTotalFrames == 0) ? 0 : (int64(APEHeader.nTotalFrames -  1) * int64(pInfo->nBlocksPerFrame)) + int64(APEHeader.nFinalFrameBlocks);
     pInfo->nWAVHeaderBytes        = (APEHeader.nFormatFlags & MAC_FORMAT_FLAG_CREATE_WAV_HEADER) ? sizeof(WAVE_HEADER) : APEHeader.nHeaderBytes;
     pInfo->nWAVTerminatingBytes   = int(APEHeader.nTerminatingBytes);
     pInfo->nWAVDataBytes          = pInfo->nTotalBlocks * pInfo->nBlockAlign;

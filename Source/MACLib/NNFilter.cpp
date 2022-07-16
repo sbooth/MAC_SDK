@@ -10,11 +10,6 @@
     #include <immintrin.h> // AVX
 #endif
 
-#ifdef _MSC_VER
-    // disable warning of constant conditional expressions
-    #pragma warning( disable : 4127 )
-#endif
-
 namespace APE
 {
 
@@ -101,7 +96,9 @@ template <class INTTYPE> void CNNFilter<INTTYPE>::Flush()
 
 template <class INTTYPE> INTTYPE CNNFilter<INTTYPE>::Compress(INTTYPE nInput)
 {
-    if (sizeof(INTTYPE) == 4)
+    switch (sizeof(INTTYPE))
+    {
+    case 4: // 4 byte (int)
     {
         // convert the input to a short and store it
         m_rbInput16[0] = GetSaturatedShortFromInt(nInput);
@@ -163,7 +160,7 @@ template <class INTTYPE> INTTYPE CNNFilter<INTTYPE>::Compress(INTTYPE nInput)
 
         return nOutput;
     }
-    else // sizeof(INTTYPE) == 4
+    default: // 8 byte (int64)
     {
         // convert the input to a short and store it
         m_rbInput32[0] = GetSaturatedShortFromInt(nInput);
@@ -210,11 +207,14 @@ template <class INTTYPE> INTTYPE CNNFilter<INTTYPE>::Compress(INTTYPE nInput)
 
         return nOutput;
     }
+    }
 }
 
 template <class INTTYPE> INTTYPE CNNFilter<INTTYPE>::Decompress(INTTYPE nInput)
 {
-    if (sizeof(INTTYPE) == 4)
+    switch (sizeof(INTTYPE))
+    {
+    case 4: // 4 byte (int)
     {
         // figure a dot product
         int64 nDotProduct;
@@ -285,7 +285,7 @@ template <class INTTYPE> INTTYPE CNNFilter<INTTYPE>::Decompress(INTTYPE nInput)
 
         return nOutput;
     }
-    else // sizeof(INTTYPE) == 4
+    default: // 8 byte (int64)
     {
         // figure a dot product
         int64 nDotProduct = CalculateDotProduct(&m_rbInput32[-m_nOrder], &m_paryM32[0], m_nOrder);
@@ -340,6 +340,7 @@ template <class INTTYPE> INTTYPE CNNFilter<INTTYPE>::Decompress(INTTYPE nInput)
         m_rbDeltaM32.IncrementSafe();
     
         return nOutput;
+    }
     }
 }
 
@@ -427,7 +428,7 @@ void AdaptSSE(int * pM, int * pAdapt, int64 nDirection, int nOrder)
             __m128i sseM = _mm_load_si128((__m128i *) &pM[z]);
             __m128i sseAdapt = _mm_loadu_si128((__m128i *) &pAdapt[z]);
             __m128i sseNew = _mm_add_epi32(sseM, sseAdapt);
-            _mm_store_si128((__m128i *) & pM[z], sseNew);
+            _mm_store_si128((__m128i *) &pM[z], sseNew);
         }
     }
     else if (nDirection > 0)
@@ -437,7 +438,7 @@ void AdaptSSE(int * pM, int * pAdapt, int64 nDirection, int nOrder)
             __m128i sseM = _mm_load_si128((__m128i *) &pM[z]);
             __m128i sseAdapt = _mm_loadu_si128((__m128i *) &pAdapt[z]);
             __m128i sseNew = _mm_sub_epi32(sseM, sseAdapt);
-            _mm_store_si128((__m128i *) & pM[z], sseNew);
+            _mm_store_si128((__m128i *) &pM[z], sseNew);
         }
     }
 }
@@ -454,7 +455,7 @@ void AdaptSSEx16(short * pM, short * pAdapt, int64 nDirection, int nOrder)
             __m128i sseM = _mm_load_si128((__m128i *) &pM[z]);
             __m128i sseAdapt = _mm_loadu_si128((__m128i *) &pAdapt[z]);
             __m128i sseNew = _mm_add_epi16(sseM, sseAdapt);
-            _mm_store_si128((__m128i *) & pM[z], sseNew);
+            _mm_store_si128((__m128i *) &pM[z], sseNew);
         }
     }
     else if (nDirection > 0)
@@ -464,7 +465,7 @@ void AdaptSSEx16(short * pM, short * pAdapt, int64 nDirection, int nOrder)
             __m128i sseM = _mm_load_si128((__m128i *) &pM[z]);
             __m128i sseAdapt = _mm_loadu_si128((__m128i *) &pAdapt[z]);
             __m128i sseNew = _mm_sub_epi16(sseM, sseAdapt);
-            _mm_store_si128((__m128i *) & pM[z], sseNew);
+            _mm_store_si128((__m128i *) &pM[z], sseNew);
         }
     }
 }

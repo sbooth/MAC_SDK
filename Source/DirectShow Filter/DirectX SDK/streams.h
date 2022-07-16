@@ -18,6 +18,13 @@
 #pragma warning(disable:4512) // warning C4512: assignment operator could not be generated
 #pragma warning(disable:4514) // warning C4514: "unreferenced inline function has been removed"
 
+// some more added by Matt Ashland on 5/27/2022
+#pragma warning(disable:4189)
+#pragma warning(disable:4456)
+#pragma warning(disable:4701)
+#pragma warning(disable:4703)
+#pragma warning(disable:4706)
+
 #if _MSC_VER>=1100
 #define AM_NOVTABLE __declspec(novtable)
 #else

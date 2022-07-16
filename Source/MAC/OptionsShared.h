@@ -6,13 +6,12 @@ class OPTIONS_PAGE
 {
 public:
     
-    OPTIONS_PAGE(CDialog * pDialog, CString strCaption, int nIcon, int nResourceID, CWnd * pParent)
+    OPTIONS_PAGE(CDialog * pDialog, CString strCaption, int nIcon)
     {
         m_pDialog = pDialog;
         m_strCaption = strCaption;
         m_nIcon = nIcon;
-
-        m_pDialog->Create(nResourceID, pParent);
+        m_nIdealHeight = -1;
     }
 
     ~OPTIONS_PAGE()
@@ -27,4 +26,5 @@ public:
     CDialog * m_pDialog;
     CString m_strCaption;
     int m_nIcon;
+    int m_nIdealHeight;
 };

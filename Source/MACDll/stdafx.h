@@ -4,7 +4,7 @@
 #include "WindowsEnvironment.h"
 
 // defines for reducing size
-#define VC_EXTRALEAN                            // Exclude rarely-used stuff from Windows headers
+#define VC_EXTRALEAN                              // exclude rarely-used stuff from Windows headers
 #define _ATL_CSTRING_EXPLICIT_CONSTRUCTORS        // some CString constructors will be explicit
 
 // MFC

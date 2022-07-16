@@ -17,12 +17,14 @@ CAPECompressCore::CAPECompressCore(CIO * pIO, const WAVEFORMATEX * pwfeInput, in
     m_spData.Assign(new int[m_nMaxFrameBlocks * nChannels], true);
     m_spTempData.Assign(new int [nMaxFrameBlocks], true);
     m_spPrepare.Assign(new CPrepare);
-    memset(m_aryPredictors, 0, 32 * sizeof(IPredictorCompress*));
+    memset(m_aryPredictors, 0, APE_MAXIMUM_CHANNELS * sizeof(IPredictorCompress *));
     for (int nChannel = 0; nChannel < nChannels; nChannel++)
+    {
         if (pwfeInput->wBitsPerSample < 32)
             m_aryPredictors[nChannel] = new CPredictorCompressNormal<int>(nCompressionLevel, pwfeInput->wBitsPerSample);
         else
             m_aryPredictors[nChannel] = new CPredictorCompressNormal<int64>(nCompressionLevel, pwfeInput->wBitsPerSample);
+    }
 
     memcpy(&m_wfeInput, pwfeInput, sizeof(WAVEFORMATEX));
     m_nPeakLevel = 0;
@@ -30,7 +32,7 @@ CAPECompressCore::CAPECompressCore(CIO * pIO, const WAVEFORMATEX * pwfeInput, in
 
 CAPECompressCore::~CAPECompressCore()
 {
-    for (int z = 0; z < 32; z++)
+    for (int z = 0; z < APE_MAXIMUM_CHANNELS; z++)
     {
         if (m_aryPredictors[z] != NULL)
             delete m_aryPredictors[z];
@@ -49,7 +51,7 @@ int CAPECompressCore::EncodeFrame(const void * pInputData, int nInputBytes)
     // do the preparation stage
     RETURN_ON_ERROR(Prepare(pInputData, nInputBytes, &nSpecialCodes))
 
-    for (int z = 0; z < 32; z++)
+    for (int z = 0; z < APE_MAXIMUM_CHANNELS; z++)
     {
         if (m_aryPredictors[z] != NULL)
             m_aryPredictors[z]->Flush();

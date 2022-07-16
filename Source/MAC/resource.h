@@ -42,6 +42,8 @@
 #define IDC_OUTPUT_LOCATION_DIRECTORY_BROWSE 1014
 #define IDC_OUTPUT_LOCATION_RECREATE_DIRECTORY_STRUCTURE_CHECK 1015
 #define IDC_OUTPUT_LOCATION_RECREATE_DIRECTORY_STRUCTURE_LEVELS_EDIT 1016
+#define IDC_OUTPUT_LOCATION_DIRECTORY_COMBO2 1017
+#define IDC_OUTPUT_LOCATION_DIRECTORY_RECREATE 1017
 #define IDC_SIMULTANEOUS_FILES_COMBO    1018
 #define IDC_SIMULTANEOUS_FILES_PICTURE  1019
 #define IDC_GENERAL_PICTURE             1019
@@ -77,6 +79,20 @@
 #define IDC_TABS                        1046
 #define IDC_RICHEDIT21                  1048
 #define IDC_FORMAT                      1049
+#define IDC_DIVIDER2                    1053
+#define IDC_DIVIDER1                    1054
+#define IDC_DIVIDER3                    1059
+#define IDC_DIVIDER4                    1060
+#define IDC_TITLE1                      1061
+#define IDC_TITLE2                      1062
+#define IDC_TITLE3                      1063
+#define IDC_TITLE4                      1064
+#define IDC_STATIC1                     1065
+#define IDC_STATIC2                     1066
+#define IDC_STATIC3                     1067
+#define IDC_STATICB1                    1068
+#define IDC_STATICB2                    1069
+#define IDC_STATICO1                    1070
 #define ID_SETTINGS_CUSTOMIZE_TOOLBAR   32771
 #define ID_FILE_ADD_FILES               32772
 #define ID_FILE_PROCESS_FILES           32773
@@ -121,7 +137,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        163
 #define _APS_NEXT_COMMAND_VALUE         32809
-#define _APS_NEXT_CONTROL_VALUE         1050
+#define _APS_NEXT_CONTROL_VALUE         1071
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

@@ -108,7 +108,7 @@ CString CFormatAPE::GetInputExtensions(MAC_MODES Mode)
     return strRetVal;
 }
 
-CString CFormatAPE::GetOutputExtension(MAC_MODES Mode, const CString & strInputFilename, int nLevel)
+CString CFormatAPE::GetOutputExtension(MAC_MODES Mode, const CString &, int)
 {
     CString strExtension;
 

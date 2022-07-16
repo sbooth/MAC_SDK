@@ -8,12 +8,6 @@
     <Filter Include="Source Files\Options">
       <UniqueIdentifier>{dd5fb7c0-7154-40d1-b050-6c8cb36c3414}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Helpers">
-      <UniqueIdentifier>{76bfeade-0bb1-4d18-a9c3-abf29e05baf9}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Controls">
-      <UniqueIdentifier>{e8b3e3b0-2459-486d-aa50-8879de0cbe70}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Format">
       <UniqueIdentifier>{eecadf0b-6792-4255-8f96-77f8c88da065}</UniqueIdentifier>
     </Filter>
@@ -23,12 +17,6 @@
     </Filter>
     <Filter Include="Header Files\Options %28h%29">
       <UniqueIdentifier>{77a7ffd7-0577-44df-b0e2-3b344ef18b90}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\Helpers %28h%29">
-      <UniqueIdentifier>{1e200381-c973-4662-9095-98c919b2259b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\Controls %28h%29">
-      <UniqueIdentifier>{5c29d4a9-ab66-4654-b1d4-722e4016d770}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\Format %28h%29">
       <UniqueIdentifier>{fc32508c-2def-41c7-9f95-c752026c3fc3}</UniqueIdentifier>
@@ -251,5 +239,8 @@
   </ItemGroup>
   <ItemGroup>
     <Media Include="..\..\..\MAC\res\Completion Sound.wav" />
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="..\..\..\MAC\MAC.manifest" />
   </ItemGroup>
 </Project>

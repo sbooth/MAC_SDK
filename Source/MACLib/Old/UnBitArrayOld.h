@@ -22,7 +22,7 @@ public:
 private:
     // helpers
     void GenerateArrayOld(int * pOutputArray, uint32 NumberOfElements, int MinimumBitArrayBytes);
-    void GenerateArrayRice(int * pOutputArray, uint32 NumberOfElements, int MinimumBitArrayBytes);
+    void GenerateArrayRice(int * pOutputArray, uint32 NumberOfElements);
     uint32 DecodeValueRiceUnsigned(uint32 kl);
     
     // data 

@@ -1,8 +1,5 @@
 #pragma once
 
-#pragma warning (disable: 4840)
-#pragma warning (disable: 26495)
-
 #include "WindowsEnvironment.h"
 
 #define VC_EXTRALEAN        // Exclude rarely-used stuff from Windows headers

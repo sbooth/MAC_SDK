@@ -6,7 +6,6 @@ public:
     CAboutDlg(CWnd * pParent = NULL);
 
     enum { IDD = IDD_ABOUT };
-    CStatic    m_ctrlTextPlaceholder;
 
 protected:
 
@@ -16,4 +15,8 @@ protected:
     afx_msg HBRUSH OnCtlColor(CDC * pDC, CWnd * pWnd, UINT nCtlColor);
     afx_msg void OnPaint();
     DECLARE_MESSAGE_MAP()
+
+    bool m_bFontsCreated;
+    CFont m_fontSmall;
+    CFont m_fontLarge;
 };

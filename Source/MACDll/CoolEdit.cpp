@@ -74,6 +74,7 @@ __declspec(dllexport) BOOL FAR PASCAL DIALOGMsgProc(HWND hWndDlg, UINT Message, 
         else if (nDialogReturn == 2) CheckDlgButton(hWndDlg, IDC_R2, TRUE);
         else if (nDialogReturn == 3) CheckDlgButton(hWndDlg, IDC_R3, TRUE);
         else if (nDialogReturn == 4) CheckDlgButton(hWndDlg, IDC_R4, TRUE);
+        else if (nDialogReturn == 5) CheckDlgButton(hWndDlg, IDC_R5, TRUE);
     }
     break;
 
@@ -96,6 +97,7 @@ __declspec(dllexport) BOOL FAR PASCAL DIALOGMsgProc(HWND hWndDlg, UINT Message, 
             else if (IsDlgButtonChecked(hWndDlg, IDC_R2)) nDialogReturn = 2;
             else if (IsDlgButtonChecked(hWndDlg, IDC_R3)) nDialogReturn = 3;
             else if (IsDlgButtonChecked(hWndDlg, IDC_R4)) nDialogReturn = 4;
+            else if (IsDlgButtonChecked(hWndDlg, IDC_R5)) nDialogReturn = 5;
 
             EndDialog(hWndDlg, (short)nDialogReturn);
         }
@@ -118,7 +120,7 @@ __declspec(dllexport) BOOL FAR PASCAL DIALOGMsgProc(HWND hWndDlg, UINT Message, 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //FilterGetOptions: Show Dialog to select Compression Level
 ///////////////////////////////////////////////////////////
-__declspec(dllexport) DWORD FAR PASCAL FilterGetOptions(HWND hWnd, HINSTANCE hInst, long lSamprate, WORD wChannels, WORD wBitsPerSample, DWORD dwOptions)
+__declspec(dllexport) DWORD FAR PASCAL FilterGetOptions(HWND hWnd, HINSTANCE hInst, long, WORD, WORD, DWORD dwOptions)
 {
     long nDialogReturn = 0L;
             

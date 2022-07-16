@@ -14,20 +14,20 @@ were encountered.  In these cases, the decoder will do the best job it can to ke
 returning valid data. (corrupt data will be converted to silence)
 
 General Notes:
-	-the terminology "Sample" refers to a single sample value, and "Block" refers 
-	to a collection	of "Channel" samples.  For simplicity, MAC typically uses blocks
-	everywhere so that channel mis-alignment cannot happen.
+    -the terminology "Sample" refers to a single sample value, and "Block" refers 
+    to a collection    of "Channel" samples.  For simplicity, MAC typically uses blocks
+    everywhere so that channel mis-alignment cannot happen.
 
 Notes for use in a new project:
-	-you need to include "MACLib.lib" in the included libraries list
-	-life will be easier if you set the [MAC SDK]\\Shared directory as an include 
-	directory and an additional library input path in the project settings
-	-set the runtime library to "Mutlithreaded"
+    -you need to include "MACLib.lib" in the included libraries list
+    -life will be easier if you set the [MAC SDK]\\Shared directory as an include 
+    directory and an additional library input path in the project settings
+    -set the runtime library to "Mutlithreaded"
 
 WARNING:
-	-This class driven system for using Monkey's Audio is still in development, so
-	I can't make any guarantees that the classes and libraries won't change before
-	everything gets finalized.  Use them at your own risk
+    -This class driven system for using Monkey's Audio is still in development, so
+    I can't make any guarantees that the classes and libraries won't change before
+    everything gets finalized.  Use them at your own risk
 ***************************************************************************************/
 
 // includes
@@ -42,73 +42,73 @@ Main (the main function)
 ***************************************************************************************/
 int wmain(int argc, TCHAR* argv[]) 
 {
-	///////////////////////////////////////////////////////////////////////////////
-	// error check the command line parameters
-	///////////////////////////////////////////////////////////////////////////////
-	if (argc != 2) 
-	{
-		printf("~~~Improper Usage~~~\r\n\r\n");
-		printf("Usage Example: Sample 2.exe \"c:\\1.ape\"\r\n\r\n");
-		return 0;
-	}
+    ///////////////////////////////////////////////////////////////////////////////
+    // error check the command line parameters
+    ///////////////////////////////////////////////////////////////////////////////
+    if (argc != 2) 
+    {
+        printf("~~~Improper Usage~~~\r\n\r\n");
+        printf("Usage Example: Sample 2.exe \"c:\\1.ape\"\r\n\r\n");
+        return 0;
+    }
 
-	///////////////////////////////////////////////////////////////////////////////
-	// variable declares
-	///////////////////////////////////////////////////////////////////////////////
-	int nPercentageDone = 0;	// the percentage done... continually updated by the decoder
-	int nKillFlag = 0;			// the kill flag for controlling the decoder
-	int nRetVal = 0;			// generic holder for return values
-	TCHAR * pFilename = argv[1];	// the file to open
-	
-	///////////////////////////////////////////////////////////////////////////////
-	// open the APE file
-	///////////////////////////////////////////////////////////////////////////////
-	IAPEDecompress * pAPEDecompress = CreateIAPEDecompress(pFilename, &nRetVal, false, true, false);
-	if (pAPEDecompress == NULL)
-	{
-		printf("Error opening APE file (error code: %d)\r\n", nRetVal);
-		return -1;
-	}
+    ///////////////////////////////////////////////////////////////////////////////
+    // variable declares
+    ///////////////////////////////////////////////////////////////////////////////
+    int nPercentageDone = 0;    // the percentage done... continually updated by the decoder
+    int nKillFlag = 0;            // the kill flag for controlling the decoder
+    int nRetVal = 0;            // generic holder for return values
+    TCHAR * pFilename = argv[1];    // the file to open
+    
+    ///////////////////////////////////////////////////////////////////////////////
+    // open the APE file
+    ///////////////////////////////////////////////////////////////////////////////
+    IAPEDecompress * pAPEDecompress = CreateIAPEDecompress(pFilename, &nRetVal, false, true, false);
+    if (pAPEDecompress == NULL)
+    {
+        printf("Error opening APE file (error code: %d)\r\n", nRetVal);
+        return -1;
+    }
 
-	///////////////////////////////////////////////////////////////////////////////
-	// allocate space for the raw decompressed data
-	///////////////////////////////////////////////////////////////////////////////
-	char * pRawData = new char [size_t(1024 * pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_BLOCK_ALIGN))];
-	if (pRawData == NULL) { return -1; }
+    ///////////////////////////////////////////////////////////////////////////////
+    // allocate space for the raw decompressed data
+    ///////////////////////////////////////////////////////////////////////////////
+    char * pRawData = new char [size_t(1024 * pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_BLOCK_ALIGN))];
+    if (pRawData == NULL) { return -1; }
 
-	///////////////////////////////////////////////////////////////////////////////
-	// ask for data at a a few random locations and display the sum of 1024 blocks
-	///////////////////////////////////////////////////////////////////////////////
-	for (int z = 0; z < 16; z++) 
-	{
-		// figure a random location in the file and seek to it
-		int nRandomBlock = rand() % (pAPEDecompress->GetInfo(IAPEDecompress::APE_DECOMPRESS_TOTAL_BLOCKS) - 1024);
-		if (pAPEDecompress->Seek(nRandomBlock) != 0) { return -1; }
+    ///////////////////////////////////////////////////////////////////////////////
+    // ask for data at a a few random locations and display the sum of 1024 blocks
+    ///////////////////////////////////////////////////////////////////////////////
+    for (int z = 0; z < 16; z++) 
+    {
+        // figure a random location in the file and seek to it
+        int nRandomBlock = rand() % (pAPEDecompress->GetInfo(IAPEDecompress::APE_DECOMPRESS_TOTAL_BLOCKS) - 1024);
+        if (pAPEDecompress->Seek(nRandomBlock) != 0) { return -1; }
 
-		// decompress 1024 blocks from that location
-		int64 nBlocksRetrieved;
-		nRetVal = pAPEDecompress->GetData(pRawData, 1024, &nBlocksRetrieved);
-		if (nRetVal != ERROR_SUCCESS)
-		{
-			printf("Decoding error (%d)\r\n", nRetVal);
-		}
-		
-		// figure the sum of the decoded data
-		int64 nBytesRetrieved = nBlocksRetrieved * pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_BLOCK_ALIGN);		
-		int nSum = 0;
-		for (int x = 0; x < nBytesRetrieved; x++) 
-		{
-			nSum += pRawData[x];
-		}
+        // decompress 1024 blocks from that location
+        int64 nBlocksRetrieved;
+        nRetVal = pAPEDecompress->GetData(pRawData, 1024, &nBlocksRetrieved);
+        if (nRetVal != ERROR_SUCCESS)
+        {
+            printf("Decoding error (%d)\r\n", nRetVal);
+        }
+        
+        // figure the sum of the decoded data
+        int64 nBytesRetrieved = nBlocksRetrieved * pAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_BLOCK_ALIGN);        
+        int nSum = 0;
+        for (int x = 0; x < nBytesRetrieved; x++) 
+        {
+            nSum += pRawData[x];
+        }
 
-		// display the sum
-		printf("Block / Sum = %.4d / %d\r\n", nRandomBlock, nSum);
+        // display the sum
+        printf("Block / Sum = %.4d / %d\r\n", nRandomBlock, nSum);
 
-	}
+    }
 
-	///////////////////////////////////////////////////////////////////////////////
-	// clean-up and quit
-	///////////////////////////////////////////////////////////////////////////////
-	delete pAPEDecompress;
-	return 0;
+    ///////////////////////////////////////////////////////////////////////////////
+    // clean-up and quit
+    ///////////////////////////////////////////////////////////////////////////////
+    delete pAPEDecompress;
+    return 0;
 }

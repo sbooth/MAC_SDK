@@ -32,15 +32,11 @@ int CAPECompressCreate::Start(CIO * pioOutput, const WAVEFORMATEX * pwfeInput, i
         return ERROR_BAD_PARAMETER;
 
     // verify the wave format
-    if ((pwfeInput->nChannels < 1) || (pwfeInput->nChannels > 32))
+    if ((pwfeInput->nChannels < APE_MINIMUM_CHANNELS) || (pwfeInput->nChannels > APE_MAXIMUM_CHANNELS))
     {
         return ERROR_INPUT_FILE_UNSUPPORTED_CHANNEL_COUNT;
     }
     if ((pwfeInput->wBitsPerSample != 8) && (pwfeInput->wBitsPerSample != 16) && (pwfeInput->wBitsPerSample != 24) && (pwfeInput->wBitsPerSample != 32))
-    {
-        return ERROR_INPUT_FILE_UNSUPPORTED_BIT_DEPTH;
-    }
-    if ((pwfeInput->wBitsPerSample == 32) && (nCompressionLevel > MAC_COMPRESSION_LEVEL_EXTRA_HIGH))
     {
         return ERROR_INPUT_FILE_UNSUPPORTED_BIT_DEPTH;
     }

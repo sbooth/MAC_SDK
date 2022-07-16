@@ -17,11 +17,11 @@ END_MESSAGE_MAP()
 
 CMACApp::CMACApp()
 {
-    m_dScale = 1.0;
-
+    m_dScale = -1.0; // default to an impossible value so the first SetScale(...) call returns that it changed
     m_hSingleInstance = CreateMutex(NULL, FALSE, _T("Mokey's Audio"));
     DWORD dwLastError = GetLastError();
     m_bAnotherInstanceRunning = (dwLastError == ERROR_ALREADY_EXISTS);
+    m_pMACDlg = NULL;
 }
 
 CMACApp::~CMACApp()
@@ -59,19 +59,22 @@ BOOL CMACApp::InitInstance()
     CString strCommandLine = GetCommandLine();
     strCommandLine = strCommandLine.Right(strCommandLine.GetLength() - (strCommandLine.Find(_T(".exe")) + 4));
     strCommandLine.TrimLeft(_T(" \"")); strCommandLine.TrimRight(_T(" \""));
-    
-    // get scale
-    HDC hdc = ::GetDC(NULL);
-    if (hdc)
-    {
-        int _dpiY = GetDeviceCaps(hdc, LOGPIXELSY);
-        m_dScale = double(_dpiY) / 96.0;
-        //m_dScale *= 2.0; // test to try higher scales (since I don't have a high DPI display)
-        ::ReleaseDC(NULL, hdc);
-    }
 
+    // uninstall if specified
+    if (strCommandLine.CompareNoCase(_T("-uninstall")) == 0)
+    {
+        TCHAR cUninstall[MAX_PATH] = { 0 };
+        _tcscat_s(cUninstall, MAX_PATH, GetInstallPath());
+        _tcscat_s(cUninstall, MAX_PATH, _T("uninstall.exe"));
+
+        ShellExecute(NULL, NULL, cUninstall, NULL, NULL, SW_SHOW);
+
+        return FALSE;
+    }
+    
     // show program
     CMACDlg dlg;
+    m_pMACDlg = &dlg;
     m_pMainWnd = &dlg;
     INT_PTR nResponse = dlg.DoModal();
     if (nResponse == IDOK)
@@ -80,6 +83,7 @@ BOOL CMACApp::InitInstance()
     else if (nResponse == IDCANCEL)
     {
     }
+    m_pMACDlg = NULL;
 
     // Since the dialog has been closed, return FALSE so that we exit the
     //  application, rather than start the application's message pump.
@@ -89,7 +93,7 @@ BOOL CMACApp::InitInstance()
 CFormatArray * CMACApp::GetFormatArray()
 {
     if (m_sparyFormats == NULL)
-        m_sparyFormats.Assign(new CFormatArray);
+        m_sparyFormats.Assign(new CFormatArray(m_pMACDlg));
     return m_sparyFormats.GetPtr();
 }
 
@@ -98,6 +102,13 @@ CMACSettings * CMACApp::GetSettings()
     if (m_spSettings == NULL)
         m_spSettings.Assign(new CMACSettings);
     return m_spSettings.GetPtr();
+}
+
+void CMACApp::DeleteImageLists()
+{
+    m_spImageListToolbar.Delete();
+    m_spImageListOptionsList.Delete();
+    m_spImageListOptionsPages.Delete();
 }
 
 CImageList * CMACApp::GetImageList(EImageList Image)
@@ -182,4 +193,15 @@ int CMACApp::GetSizeReverse(int nSize)
 {
     int nNewSize = int(double(nSize) / m_dScale);
     return nNewSize;
+}
+
+bool CMACApp::SetScale(double dScale)
+{
+    bool bResult = false;
+    if (fabs(dScale - m_dScale) > 0.01)
+    {
+        m_dScale = dScale;
+        bResult = true;
+    }
+    return bResult;
 }

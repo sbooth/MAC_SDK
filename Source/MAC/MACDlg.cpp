@@ -13,10 +13,15 @@
 #define IDT_UPDATE_PROGRESS        1
 #define IDT_UPDATE_PROGRESS_MS    100
 
+#define WM_DPICHANGED                   0x02E0
+
 #define TBI(ID) (m_ctrlToolbar.GetToolBarCtrl().CommandToIndex(ID))
 
-CMACDlg::CMACDlg(CWnd * pParent) : CDialog(CMACDlg::IDD, pParent)
+CMACDlg::CMACDlg(CWnd * pParent) : 
+    CDialog(CMACDlg::IDD, pParent),
+    m_ctrlStatusBar(this)
 {
+    m_bLastLoadMenuAndToolbarProcessing = FALSE;
     m_bInitialized = FALSE;
     m_hAcceleratorTable = NULL;
     
@@ -63,7 +68,7 @@ BEGIN_MESSAGE_MAP(CMACDlg, CDialog)
     ON_COMMAND(ID_HELP_HELP, OnHelpHelp)
     ON_COMMAND(ID_HELP_ABOUT, OnHelpAbout)
     ON_COMMAND(ID_HELP_WEBSITE_MONKEYS_AUDIO, OnHelpWebsiteMonkeysAudio)
-    ON_COMMAND(ID_HELP_WEBSITE_MEDIA_JUKEBOX, OnHelpWebsiteMediaJukebox)
+    ON_COMMAND(ID_HELP_WEBSITE_MEDIA_JUKEBOX, OnHelpWebsiteJRiver)
     ON_COMMAND(ID_HELP_WEBSITE_WINAMP, OnHelpWebsiteWinamp)
     ON_COMMAND(ID_HELP_WEBSITE_EAC, OnHelpWebsiteEac)
     ON_COMMAND(ID_TOOLS_OPTIONS, OnToolsOptions)
@@ -72,70 +77,54 @@ BEGIN_MESSAGE_MAP(CMACDlg, CDialog)
     ON_WM_GETMINMAXINFO()
     ON_WM_ENDSESSION()
     ON_WM_QUERYENDSESSION()
+    ON_MESSAGE(WM_DPICHANGED, OnDPIChange)
 END_MESSAGE_MAP()
 
 BOOL CMACDlg::OnInitDialog()
 {
     CDialog::OnInitDialog();
 
+    // layout the window (before getting the scale so the window is on the right monitor but hide the window)
+    WINDOWPLACEMENT WindowPlacement; memset(&WindowPlacement, 0, sizeof(WindowPlacement));
+    if (theApp.GetSettings()->LoadSetting(_T("Main Window Placement"), &WindowPlacement, sizeof(WindowPlacement)))
+    {
+        WindowPlacement.showCmd = SW_HIDE;
+        SetWindowPlacement(&WindowPlacement);
+    }
+    else
+    {
+        SetWindowPos(NULL, 0, 0, theApp.GetSize(780, 0).cx, theApp.GetSize(0, 420).cy, SWP_NOZORDER | SWP_HIDEWINDOW);
+        CenterWindow();
+    }
+
+    // accelerator
     m_hAcceleratorTable = LoadAccelerators(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDR_MAINFRAME));
 
+    // icons
     SetIcon(m_hIcon, TRUE);
     SetIcon(m_hIcon, FALSE);
-    
-    // toolbar
-    m_ctrlToolbar.Create(this, WS_CHILD | WS_VISIBLE | CBRS_TOP | CBRS_TOOLTIPS | CBRS_FLYBY | CBRS_BORDER_BOTTOM | TBSTYLE_FLAT);
-    INITIALIZE_COMMON_CONTROL(m_ctrlToolbar.GetSafeHwnd());
-    m_ctrlToolbar.ModifyStyle(0, TBSTYLE_FLAT);
-
-    m_ctrlToolbar.GetToolBarCtrl().SetExtendedStyle(TBSTYLE_EX_DRAWDDARROWS);
-    m_ctrlToolbar.GetToolBarCtrl().SetImageList(theApp.GetImageList(CMACApp::Image_Toolbar));
-
-    LoadMenuAndToolbar(FALSE);
-
-    // size the toolbar (using the size that it lays out at plus the icon size)
-    CRect rectItem;
-    m_ctrlToolbar.GetItemRect(0, &rectItem);
-    m_ctrlToolbar.SetSizes(CSize(rectItem.Width(), rectItem.Height()), theApp.GetSize(32, 32));
-
-    // load the formats
-    theApp.GetFormatArray()->Load();
-
-    // status bar
-    m_ctrlStatusBar.Create(this);
-    INITIALIZE_COMMON_CONTROL(m_ctrlStatusBar.GetSafeHwnd());
 
     // file list
     m_ctrlList.Initialize(this, &m_aryFiles);
     INITIALIZE_COMMON_CONTROL(m_ctrlList.GetSafeHwnd());
-    
+
+    // load scale
+    LoadScale();
+
+    // load the formats
+    theApp.GetFormatArray()->Load();
+
     // window properties
     SetWindowText(MAC_NAME);
 
     // set the mode to the list
     m_ctrlList.SetMode(theApp.GetSettings()->GetMode());
 
-    // playing with setting the font
-    /*
-    {
-        LOGFONT lf;                        // Used to create the CFont.
+    // load file list
+    m_ctrlList.LoadFileList(GetUserDataPath() + _T("File Lists\\Current.m3u"));
 
-        CFont* currentFont = m_ctrlToolbar.GetToolBarCtrl().GetFont();
-        currentFont->GetLogFont(&lf);
-        LOGFONT lfNew = lf;
-        lfNew.lfHeight = theApp.GetSize(lfNew.lfHeight, 0).cx;                  // Request a 20-pixel-high font
-        CFont font_;
-        font_.CreateFontIndirect(&lf);    // Create the font.
-
-        // Use the font to paint a control.
-        m_ctrlList.SetFont(&font_);
-        m_ctrlStatusBar.SetFont(&font_);
-        m_ctrlToolbar.GetToolBarCtrl().SetFont(&font_);
-    }
-    */
-
-    // layout the window
-    WINDOWPLACEMENT WindowPlacement; memset(&WindowPlacement, 0, sizeof(WindowPlacement));
+    // layout the window (again)
+    memset(&WindowPlacement, 0, sizeof(WindowPlacement));
     if (theApp.GetSettings()->LoadSetting(_T("Main Window Placement"), &WindowPlacement, sizeof(WindowPlacement)))
     {
         SetWindowPlacement(&WindowPlacement);
@@ -145,7 +134,7 @@ BOOL CMACDlg::OnInitDialog()
         SetWindowPos(NULL, 0, 0, theApp.GetSize(780, 0).cx, theApp.GetSize(0, 420).cy, SWP_NOZORDER);
         CenterWindow();
     }
-    
+
     m_bInitialized = TRUE;
     LayoutWindow();
 
@@ -154,6 +143,9 @@ BOOL CMACDlg::OnInitDialog()
 
 BOOL CMACDlg::LoadMenuAndToolbar(BOOL bProcessing)
 {
+    if (m_bInitialized && (bProcessing == m_bLastLoadMenuAndToolbarProcessing))
+        return TRUE;
+    m_bLastLoadMenuAndToolbarProcessing = bProcessing;
     // BTNS_WHOLEDROPDOWN -- requires IE 5.0 //
 
     m_menuMain.DestroyMenu();
@@ -234,7 +226,7 @@ HCURSOR CMACDlg::OnQueryDragIcon()
     return (HCURSOR) m_hIcon;
 }
 
-void CMACDlg::OnToolbarDropDown(NMHDR * pnmtb, LRESULT * plr)
+void CMACDlg::OnToolbarDropDown(NMHDR * pnmtb, LRESULT *)
 {
     NMTOOLBAR * pNMToolbar = (NMTOOLBAR *) pnmtb;
     CMenu menu;    CMenu * pMenu = NULL;
@@ -444,7 +436,7 @@ void CMACDlg::OnFileFileInfo()
     }
     else
     {
-        CAPEInfoDlg dlgInfo(aryFiles, this);
+        CAPEInfoDlg dlgInfo(this, aryFiles);
         dlgInfo.DoModal();
     }
 }
@@ -457,7 +449,7 @@ void CMACDlg::OnFileExit()
 void CMACDlg::OnSize(UINT nType, int cx, int cy) 
 {
     CDialog::OnSize(nType, cx, cy);
-    
+
     LayoutWindow();
 }
 
@@ -829,7 +821,7 @@ void CMACDlg::OnHelpWebsiteMonkeysAudio()
     ShellExecute(NULL, NULL, _T("https://www.monkeysaudio.com"), NULL, NULL, SW_MAXIMIZE);
 }
 
-void CMACDlg::OnHelpWebsiteMediaJukebox() 
+void CMACDlg::OnHelpWebsiteJRiver() 
 {
     ShellExecute(NULL, NULL, _T("https://www.jriver.com"), NULL, NULL, SW_MAXIMIZE);
 }
@@ -846,11 +838,21 @@ void CMACDlg::OnHelpWebsiteEac()
 
 void CMACDlg::OnToolsOptions() 
 {
-    COptionsDlg dlgOptions;    
+    COptionsDlg dlgOptions(this);
     if (dlgOptions.DoModal() == IDOK)
     {
         // update settings...
     }
+}
+
+CSize CMACDlg::MeasureText(const CString & strText)
+{
+    CRect rectSize;
+
+    CPaintDC dc(this);
+    dc.SelectObject(m_Font);
+    dc.DrawText(strText, &rectSize, DT_NOPREFIX | DT_CALCRECT);
+    return rectSize.Size();
 }
 
 BOOL CMACDlg::PreTranslateMessage(MSG * pMsg) 
@@ -927,16 +929,98 @@ BOOL CMACDlg::OnQueryEndSession()
     return TRUE;
 }
 
-void CMACDlg::OnEndSession(BOOL bEnding)
+void CMACDlg::OnEndSession(BOOL)
 {
     SendMessage(WM_CLOSE);
     exit(EXIT_SUCCESS);
 }
 
-void CMACDlg::WinHelp(DWORD_PTR dwData, UINT nCmd)
+LRESULT CMACDlg::OnDPIChange(WPARAM, LPARAM)
+{
+    if (m_bInitialized)
+    {
+        LoadScale();
+        LayoutWindow();
+    }
+    return TRUE;
+}
+
+void CMACDlg::WinHelp(DWORD_PTR, UINT nCmd)
 {
     if (nCmd == HELP_CONTEXT)
         OnHelpHelp();
+}
+
+void CMACDlg::LayoutControlTop(CWnd * pwndLayout, CRect & rectLayout, bool bOnlyControlWidth, bool bCombobox, CWnd * pwndRight)
+{
+    if (pwndLayout == NULL)
+        return;
+
+    CRect rectWindow;
+    pwndLayout->GetWindowRect(&rectWindow);
+
+    // make a standard height
+    rectWindow.bottom = rectWindow.top + theApp.GetSize(22, 0).cx;
+
+    // layout
+    CRect rectRight;
+    if (pwndRight != NULL)
+    {
+        pwndRight->GetWindowRect(&rectRight);
+        pwndRight->SetWindowPos(NULL, rectLayout.right - rectRight.Width(), rectLayout.top, rectRight.Width(), theApp.GetSize(22, 0).cx, SWP_NOZORDER);
+        rectLayout.right -= rectRight.Width() + theApp.GetSize(8, 0).cx;
+    }
+    pwndLayout->SetWindowPos(NULL, rectLayout.left, rectLayout.top, bOnlyControlWidth ? rectWindow.Width() : rectLayout.Width(), bCombobox ? theApp.GetSize(500, 0).cx : rectWindow.Height(), SWP_NOZORDER);
+    rectLayout.top += rectWindow.Height(); // control height
+    if (bOnlyControlWidth)
+        rectLayout.left += rectWindow.Width() + theApp.GetSize(8, 0).cx; // window and border
+    else
+        rectLayout.top += theApp.GetSize(8, 0).cx; // border
+    if (pwndRight != NULL)
+    {
+        rectLayout.right += rectRight.Width() + theApp.GetSize(8, 0).cx;
+    }
+
+    // select nothing
+    if (bCombobox)
+    {
+        CComboBox * pCombo = (CComboBox *) pwndLayout;
+        pCombo->SetEditSel(0, 0);
+    }
+}
+
+void CMACDlg::LayoutControlTopWithDivider(CWnd * pwndLayout, CWnd * pwndDivider, CWnd * pwndImage, CRect & rectLayout)
+{
+    if (pwndLayout == NULL)
+        return;
+
+    CRect rectWindow;
+    pwndLayout->GetWindowRect(&rectWindow);
+    CRect rectDivider;
+    pwndDivider->GetWindowRect(&rectDivider);
+    CRect rectImage;
+    pwndImage->GetWindowRect(&rectImage);
+
+    // size for text
+    CString strWindowText;
+    pwndLayout->GetWindowText(strWindowText);
+    CDC* pDC = pwndLayout->GetDC();
+    pDC->SelectObject(GetFont());
+    CSize sizeText = pDC->GetTextExtent(strWindowText);
+    pwndLayout->ReleaseDC(pDC);
+    rectWindow.right = rectWindow.left + sizeText.cx + theApp.GetSize(8, 0).cx;
+
+    // make a standard height
+    rectWindow.bottom = rectWindow.top + theApp.GetSize(22, 0).cx;
+
+    // layout
+    pwndLayout->SetWindowPos(NULL, rectLayout.left, rectLayout.top, rectWindow.Width(), rectWindow.Height(), SWP_NOZORDER);
+    pwndDivider->SetWindowPos(NULL, rectLayout.left + rectWindow.Width(), rectLayout.top + (rectWindow.Height() / 2) - (rectDivider.Height() / 2), rectLayout.Width() - rectWindow.Width(), rectDivider.Height(), SWP_NOZORDER);
+    pwndImage->SetWindowPos(NULL, rectLayout.left, rectLayout.top + rectWindow.Height() + theApp.GetSize(6, 0).cx, rectImage.Width(), rectImage.Height(), SWP_NOZORDER);
+    rectLayout.top += rectWindow.Height(); // control height
+    rectLayout.top += theApp.GetSize(8, 0).cx; // border
+
+    rectLayout.left += rectImage.Width() + theApp.GetSize(16, 0).cx;
 }
 
 void CMACDlg::PlayDefaultSound()
@@ -947,4 +1031,97 @@ void CMACDlg::PlayDefaultSound()
     sndPlaySound(pSound, SND_MEMORY | SND_ASYNC);
     UnlockResource(hResource);
     FreeResource(hResource);
+}
+
+void CMACDlg::LoadScale()
+{
+    // default to 1.0
+    double dScale = 1.0;
+
+    // check the scale
+    UINT(STDAPICALLTYPE * pGetDpiForWindow) (IN HWND hwnd);
+    HMODULE hUser32 = LoadLibrary(_T("user32.dll"));
+    if (hUser32 != NULL)
+    {
+        (FARPROC &) pGetDpiForWindow = GetProcAddress(hUser32, "GetDpiForWindow");
+        if (pGetDpiForWindow != NULL)
+        {
+            UINT nDPI = pGetDpiForWindow(m_hWnd);
+            dScale = double(nDPI) / double(96.0);
+        }
+        FreeLibrary(hUser32);
+    }
+
+    // set the scale
+    //dScale = 2.0; // test for high scales
+    //dScale = 3.0;
+    //dScale = 4.0;
+    if (theApp.SetScale(dScale) == false)
+        return; // do nothing if the scale didn't change
+
+    // release store image lists
+    theApp.DeleteImageLists();
+
+    // toolbar
+    if (m_ctrlToolbar.GetSafeHwnd() == NULL)
+    {
+        m_ctrlToolbar.Create(this, WS_CHILD | WS_VISIBLE | CBRS_TOP | CBRS_TOOLTIPS | CBRS_FLYBY | CBRS_BORDER_BOTTOM | TBSTYLE_FLAT);
+        INITIALIZE_COMMON_CONTROL(m_ctrlToolbar.GetSafeHwnd());
+        m_ctrlToolbar.ModifyStyle(0, TBSTYLE_FLAT);
+    }
+
+    // status bar
+    if (m_ctrlStatusBar.GetSafeHwnd() == NULL)
+    {
+        m_ctrlStatusBar.Create(this);
+        INITIALIZE_COMMON_CONTROL(m_ctrlStatusBar.GetSafeHwnd());
+    }
+
+    // set images
+    m_ctrlToolbar.GetToolBarCtrl().SetExtendedStyle(TBSTYLE_EX_DRAWDDARROWS);
+    m_ctrlToolbar.GetToolBarCtrl().SetImageList(theApp.GetImageList(CMACApp::Image_Toolbar));
+
+    // set the fonts
+    {
+        // store the start font (stored since we're going to scale after this)
+        if (m_fontStart.GetSafeHandle() == NULL)
+        {
+            CFont * pCurrentFont = m_ctrlList.GetFont();
+            if (pCurrentFont != NULL)
+            {
+                LOGFONT lf; // used to create the CFont
+                pCurrentFont->GetLogFont(&lf);
+                m_fontStart.CreateFontIndirect(&lf);
+            }
+        }
+
+        // build a scaled font
+        if (m_fontStart.GetSafeHandle() != NULL)
+        {
+            LOGFONT lf; // used to create the CFont
+            m_fontStart.GetLogFont(&lf);
+            lf.lfHeight = theApp.GetSize(lf.lfHeight, 0).cx;
+            m_Font.DeleteObject();
+            m_Font.CreateFontIndirect(&lf); // create the font
+
+            // set the font to all the controls
+            m_ctrlList.SetFont(&m_Font);
+            m_ctrlStatusBar.SetFont(&m_Font);
+            m_ctrlToolbar.SetFont(&m_Font);
+            SetFont(&m_Font);
+        }
+    }
+
+    // load menu and toolbar
+    LoadMenuAndToolbar(FALSE);
+
+    // load columns
+    m_ctrlList.LoadColumns();
+
+    // size the toolbar (using the size that it lays out at plus the icon size)
+    CRect rectItem;
+    m_ctrlToolbar.GetItemRect(0, &rectItem);
+    CSize sizeButtons = theApp.GetSize(32, 32);
+    m_ctrlToolbar.SetSizes(CSize(rectItem.Width(), rectItem.Height()), sizeButtons);
+
 }

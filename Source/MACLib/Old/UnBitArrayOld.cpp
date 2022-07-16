@@ -114,7 +114,7 @@ uint32 CUnBitArrayOld::Get_K(uint32 x)
     return k;
 }
 
-uint32 CUnBitArrayOld::DecodeValue(DECODE_VALUE_METHOD DecodeMethod, int nParam1, int nParam2)
+uint32 CUnBitArrayOld::DecodeValue(DECODE_VALUE_METHOD DecodeMethod, int nParam1, int)
 {
     switch (DecodeMethod)
     {
@@ -268,7 +268,7 @@ void CUnBitArrayOld::GenerateArray(int * pOutputArray, int nElements, intn nByte
     }
     else if (m_nVersion <= 3890)
     {
-        GenerateArrayRice(pOutputArray, nElements, int(nBytesRequired));
+        GenerateArrayRice(pOutputArray, nElements);
     }
     else
     {    
@@ -276,7 +276,7 @@ void CUnBitArrayOld::GenerateArray(int * pOutputArray, int nElements, intn nByte
     }
 }
 
-void CUnBitArrayOld::GenerateArrayRice(int * Output_Array, uint32 Number_of_Elements, int Minimum_nCurrentBitIndex_Array_Bytes) 
+void CUnBitArrayOld::GenerateArrayRice(int * Output_Array, uint32 Number_of_Elements) 
 {
     /////////////////////////////////////////////////////////////////////////////
     // decode the bit array

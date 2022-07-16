@@ -7,6 +7,12 @@ template <class INTTYPE, int MULTIPLY, int SHIFT> class CScaledFirstOrderFilter
 {
 public:
     
+    CScaledFirstOrderFilter()
+    {
+        // initialize (to avoid warnings)
+        m_nLastValue = 0;
+    }
+
     __forceinline void Flush()
     {
         m_nLastValue = 0;

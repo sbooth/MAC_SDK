@@ -6,12 +6,12 @@
 CAboutDlg::CAboutDlg(CWnd * pParent)
     : CDialog(CAboutDlg::IDD, pParent)
 {
+    m_bFontsCreated = false;
 }
 
 void CAboutDlg::DoDataExchange(CDataExchange* pDX)
 {
     CDialog::DoDataExchange(pDX);
-    DDX_Control(pDX, IDC_TEXT_PLACE_HOLDER, m_ctrlTextPlaceholder);
 }
 
 BEGIN_MESSAGE_MAP(CAboutDlg, CDialog)
@@ -44,45 +44,67 @@ void CAboutDlg::OnPaint()
     CPaintDC dc(this);
     int nSavedDC = dc.SaveDC();
 
-    CRect rectPaint; m_ctrlTextPlaceholder.GetWindowRect(&rectPaint); ScreenToClient(&rectPaint);
+    CRect rectPaint; GetClientRect(&rectPaint);
+    int nWindowBorder = theApp.GetSize(16, 0).cx;
+    rectPaint.DeflateRect(nWindowBorder, nWindowBorder, nWindowBorder, nWindowBorder);
+
     dc.SetBkMode(TRANSPARENT);
 
-    LOGFONT LogFont; 
-    CFont * pfontGUI = CFont::FromHandle((HFONT) GetStockObject(DEFAULT_GUI_FONT));
+    if (m_bFontsCreated == false)
+    {
+        LOGFONT LogFont; 
+        CFont * pfontGUI = CFont::FromHandle((HFONT) GetStockObject(DEFAULT_GUI_FONT));
 
-    pfontGUI->GetLogFont(&LogFont);
-    LogFont.lfWidth = (LogFont.lfWidth * 180) / 100;
-    LogFont.lfHeight = (LogFont.lfHeight * 180) / 100;
-    LogFont.lfWeight = FW_BOLD;
-    CFont fontLarge; fontLarge.CreateFontIndirect(&LogFont);
+        pfontGUI->GetLogFont(&LogFont);
+        LogFont.lfWidth = (LogFont.lfWidth * 180) / 100;
+        LogFont.lfWidth = theApp.GetSize(LogFont.lfWidth, 0).cx;
+        LogFont.lfHeight = theApp.GetSize(LogFont.lfHeight, 0).cx;
+        LogFont.lfHeight = (LogFont.lfHeight * 180) / 100;
+        LogFont.lfHeight = theApp.GetSize(LogFont.lfHeight, 0).cx;
+        LogFont.lfWeight = FW_BOLD;
+        m_fontLarge.CreateFontIndirect(&LogFont);
     
-    pfontGUI->GetLogFont(&LogFont);
-    LogFont.lfWidth = (LogFont.lfWidth * 120) / 100;
-    LogFont.lfHeight = (LogFont.lfHeight * 120) / 100;
-    CFont fontSmall; fontSmall.CreateFontIndirect(&LogFont);
+        pfontGUI->GetLogFont(&LogFont);
+        LogFont.lfWidth = (LogFont.lfWidth * 120) / 100;
+        LogFont.lfWidth = theApp.GetSize(LogFont.lfWidth, 0).cx;
+        LogFont.lfHeight = (LogFont.lfHeight * 120) / 100;
+        LogFont.lfHeight = theApp.GetSize(LogFont.lfHeight, 0).cx;
+        m_fontSmall.CreateFontIndirect(&LogFont);
+    }
 
-    dc.SelectObject(&fontSmall);
+    dc.SelectObject(&m_fontSmall);
     int nFontSmallHeight = dc.GetTextExtent(_T("Ay")).cy;
-    dc.SelectObject(&fontLarge);
+    dc.SelectObject(&m_fontLarge);
     int nFontLargeHeight = dc.GetTextExtent(_T("Ay")).cy;
-    int nLineSpacing = 3;
+    int nLineSpacing = theApp.GetSize(3, 0).cx;
 
-    int nFullHeight = (nFontLargeHeight * 1) + (nFontSmallHeight * 3) + (nLineSpacing * 3);
+    int nTop = rectPaint.top;
+
+    // size title
+    dc.SelectObject(&m_fontLarge);
+    CRect rectSizeName;
+    dc.DrawText(MAC_NAME, &rectSizeName, DT_CENTER | DT_NOPREFIX | DT_CALCRECT);
+    int nWindowWidth = rectSizeName.Width() + theApp.GetSize(64, 0).cx;
     
-    CRect rectSize;
-    int nTop = rectPaint.top + ((rectPaint.Height() - nFullHeight) / 2);
+    // size copyright
+    dc.SelectObject(&m_fontSmall);
+    CRect rectSizeCopyright;
+    dc.DrawText(MAC_RESOURCE_COPYRIGHT, &rectSizeCopyright, DT_CENTER | DT_NOPREFIX | DT_CALCRECT);
+    nWindowWidth = max(nWindowWidth, rectSizeCopyright.Width() + theApp.GetSize(64, 0).cx);
+    rectPaint.right = rectPaint.left + nWindowWidth;
 
-    dc.SelectObject(&fontLarge);
-    dc.DrawText(MAC_NAME, &rectSize, DT_CENTER | DT_NOPREFIX | DT_CALCRECT);
-    dc.DrawText(MAC_NAME, CRect(rectPaint.left, nTop, rectPaint.right, nTop + rectSize.Height()), DT_CENTER | DT_NOPREFIX);
+    // draw title
+    dc.SelectObject(&m_fontLarge);
+    dc.DrawText(MAC_NAME, CRect(rectPaint.left, nTop, rectPaint.right, nTop + rectSizeName.Height()), DT_CENTER | DT_NOPREFIX);
     nTop += nFontLargeHeight + nLineSpacing;
-    
-    dc.SelectObject(&fontSmall);
-    dc.DrawText(MAC_RESOURCE_COPYRIGHT, &rectSize, DT_CENTER | DT_NOPREFIX | DT_CALCRECT);
-    dc.DrawText(MAC_RESOURCE_COPYRIGHT, CRect(rectPaint.left, nTop, rectPaint.right, nTop + rectSize.Height()), DT_CENTER | DT_NOPREFIX);
+
+    // draw copyright
+    dc.SelectObject(&m_fontSmall);
+    dc.DrawText(MAC_RESOURCE_COPYRIGHT, CRect(rectPaint.left, nTop, rectPaint.right, nTop + rectSizeCopyright.Height()), DT_CENTER | DT_NOPREFIX);
     nTop += nFontSmallHeight + nLineSpacing;
 
-    dc.SelectObject(&fontSmall);
+    dc.SelectObject(&m_fontSmall);
+    CRect rectSize;
     dc.DrawText(_T("All rights reserved."), &rectSize, DT_CENTER | DT_NOPREFIX | DT_CALCRECT);
     dc.DrawText(_T("All rights reserved."), CRect(rectPaint.left, nTop, rectPaint.right, nTop + rectSize.Height()), DT_CENTER | DT_NOPREFIX);
     nTop += nFontSmallHeight + nLineSpacing;
@@ -106,12 +128,6 @@ void CAboutDlg::OnPaint()
         aryCPU.Add(_T("AVX2: no"));
     #endif
 
-    #ifdef ENABLE_MMX_ASSEMBLY
-        aryCPU.Add(_T("MMX: yes"));
-    #else
-        aryCPU.Add(_T("MMX: no"));
-    #endif
-
     if (IsProcessElevated())
         aryCPU.Add(_T("elevated: yes"));
     else
@@ -122,6 +138,19 @@ void CAboutDlg::OnPaint()
     dc.DrawText(strCPU, CRect(rectPaint.left, nTop, rectPaint.right, nTop + rectSize.Height()), DT_CENTER | DT_NOPREFIX);
     nTop += nFontSmallHeight + nLineSpacing;
     
+    CString strScale; strScale.Format(_T("Scale: %.1f"), theApp.GetScale());
+    dc.DrawText(strScale, &rectSize, DT_CENTER | DT_NOPREFIX | DT_CALCRECT);
+    dc.DrawText(strScale, CRect(rectPaint.left, nTop, rectPaint.right, nTop + rectSize.Height()), DT_CENTER | DT_NOPREFIX);
+    nTop += nFontSmallHeight + nLineSpacing;
+
     dc.RestoreDC(nSavedDC);
 
+    // size to height on first draw
+    if (m_bFontsCreated == false)
+    {
+        CRect rectWindow; GetWindowRect(rectWindow);
+        CRect rectClient; GetClientRect(rectClient);
+        SetWindowPos(NULL, 0, 0, nWindowWidth + (rectWindow.Width() - rectClient.Width()) + (2 * nWindowBorder), nTop + nWindowBorder + (rectWindow.Height() - rectClient.Height()) + (0 * nLineSpacing), SWP_NOMOVE);
+    }
+    m_bFontsCreated = true;
 }

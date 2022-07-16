@@ -11,9 +11,6 @@ namespace APE
 /**************************************************************************************************
 Functions to create the interfaces
 **************************************************************************************************/
-IPredictorCompress * __stdcall CreateIPredictorCompress();
-IPredictorDecompress * __stdcall CreateIPredictorDecompress();
-
 #define WINDOW_BLOCKS           4096
 
 #define HISTORY_ELEMENTS        8

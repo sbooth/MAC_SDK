@@ -89,7 +89,7 @@ int __stdcall ConvertFile(const APE::str_ansi * pInputFilename, const APE::str_a
 int __stdcall VerifyFile(const APE::str_ansi * pInputFilename, int * pPercentageDone, APE_PROGRESS_CALLBACK ProgressCallback, int * pKillFlag, bool bQuickVerifyIfPossible)
 {
     CSmartPtr<str_utfn> spInputFile(CAPECharacterHelper::GetUTF16FromANSI(pInputFilename), true);
-    return VerifyFileW(spInputFile, pPercentageDone, ProgressCallback, pKillFlag, false);
+    return VerifyFileW(spInputFile, pPercentageDone, ProgressCallback, pKillFlag, bQuickVerifyIfPossible);
 }
 
 /**************************************************************************************************

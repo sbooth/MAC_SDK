@@ -11,7 +11,7 @@
 ///////////////////////////////////////////////
 struct APE_ENCODER
 {
-    IAPECompress* pAPECompress;
+    IAPECompress * pAPECompress;
     BOOL bConvert32to24;
 };
 
@@ -26,8 +26,8 @@ void SafeDeleteAPEEncoder(APE_ENCODER* pAPEEncoder)
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //FilterWriteSpecialData: 
 /////////////////////////
-__declspec(dllexport) DWORD FAR PASCAL FilterWriteSpecialData(HANDLE hOutput,
-    LPCSTR szListType, LPCSTR szType, char * pData,DWORD dwSize)
+// __declspec(dllexport) DWORD FAR PASCAL FilterWriteSpecialData(HANDLE hOutput, LPCSTR szListType, LPCSTR szType, char* pData, DWORD dwSize)
+__declspec(dllexport) DWORD FAR PASCAL FilterWriteSpecialData(HANDLE, LPCSTR, LPCSTR, char *, DWORD)
 {
     return 0;
 }
@@ -38,7 +38,7 @@ __declspec(dllexport) DWORD FAR PASCAL FilterWriteSpecialData(HANDLE hOutput,
 __declspec(dllexport) HANDLE FAR PASCAL OpenFilterOutput(LPSTR lpstrFilename,long lSamprate,
                                             WORD wBitsPerSample,WORD wChannels,long lSize, long far *lpChunkSize, DWORD dwOptions)
 {
-    APE_ENCODER* pAPEEncoder = new APE_ENCODER;
+    APE_ENCODER * pAPEEncoder = new APE_ENCODER;
     pAPEEncoder->bConvert32to24 = FALSE;
     pAPEEncoder->pAPECompress = CreateIAPECompress();
 
@@ -92,7 +92,7 @@ __declspec(dllexport) HANDLE FAR PASCAL OpenFilterOutput(LPSTR lpstrFilename,lon
 //////////////////////////////////////
 __declspec(dllexport) DWORD FAR PASCAL WriteFilterOutput(HANDLE hOutput, unsigned char far *buf, long lBytes)
 {    
-    APE_ENCODER* pAPEEncoder = (APE_ENCODER*) hOutput;
+    APE_ENCODER * pAPEEncoder = (APE_ENCODER *) hOutput;
     if (hOutput == NULL) return 0;
         
     if (pAPEEncoder->bConvert32to24)
@@ -153,7 +153,7 @@ __declspec(dllexport) DWORD FAR PASCAL WriteFilterOutput(HANDLE hOutput, unsigne
 ///////////////////////////////////////////////
 __declspec(dllexport) void FAR PASCAL CloseFilterOutput(HANDLE hOutput)
 {
-    APE_ENCODER* pAPEEncoder = (APE_ENCODER*) hOutput;
+    APE_ENCODER * pAPEEncoder = (APE_ENCODER *) hOutput;
     if (hOutput != NULL)
     {
         pAPEEncoder->pAPECompress->Finish(NULL, 0, 0);

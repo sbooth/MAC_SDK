@@ -33,8 +33,9 @@ static char THIS_FILE[] = __FILE__;
 /////////////////////////////////////////////////////////////////////////////
 // CHyperLink
 
-CHyperLink::CHyperLink()
+CHyperLink::CHyperLink(CFont * pFont)
 {
+    m_pFont             = pFont;
     m_hLinkCursor       = NULL;                 // No cursor as yet
     m_crLinkColour      = RGB(  0,   0, 238);   // Blue
     m_crVisitedColour   = RGB( 85,  26, 139);   // Purple
@@ -88,7 +89,7 @@ void CHyperLink::PreSubclassWindow()
         SetWindowText(m_strURL);
     }
 
-    CFont* pFont = GetFont();
+    CFont* pFont = m_pFont ? m_pFont : GetFont();
     if (!pFont)
     {
         HFONT hFont = (HFONT)GetStockObject(DEFAULT_GUI_FONT);
@@ -141,8 +142,9 @@ void CHyperLink::OnClicked()
         SetVisited();                        // Repaint to show visited colour
 }
 
-HBRUSH CHyperLink::CtlColor(CDC* pDC, UINT nCtlColor) 
+HBRUSH CHyperLink::CtlColor(CDC * pDC, UINT nCtlColor) 
 {
+    (void) nCtlColor;
     ASSERT(nCtlColor == CTLCOLOR_STATIC);
 
     if (m_bOverControl)

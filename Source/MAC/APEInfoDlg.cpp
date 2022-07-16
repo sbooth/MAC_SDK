@@ -1,11 +1,13 @@
 #include "stdafx.h"
 #include "MAC.h"
 #include "APEInfoDlg.h"
+#include "MACDlg.h"
 
-CAPEInfoDlg::CAPEInfoDlg(CStringArray & aryFiles, CWnd * pParent) :
-    CDialog(CAPEInfoDlg::IDD, pParent),
-    m_dlgFormat(this)
+CAPEInfoDlg::CAPEInfoDlg(CMACDlg * pMACDlg, CStringArray & aryFiles) :
+    CDialog(CAPEInfoDlg::IDD, pMACDlg),
+    m_dlgFormat(pMACDlg, this)
 {
+    m_pMACDlg = pMACDlg;
     m_aryFiles.Copy(aryFiles);
 }
 
@@ -26,7 +28,11 @@ END_MESSAGE_MAP()
 BOOL CAPEInfoDlg::OnInitDialog() 
 {
     CDialog::OnInitDialog();
-    
+
+    // set the font to all the controls
+    SetFont(&m_pMACDlg->GetFont());
+    SendMessageToDescendants(WM_SETFONT, (WPARAM) m_pMACDlg->GetFont().GetSafeHandle(), MAKELPARAM(FALSE, 0), TRUE);
+
     CRect rectFiles; m_ctrlFiles.GetWindowRect(&rectFiles); ScreenToClient(&rectFiles);
     m_ctrlFiles.InsertColumn(0, _T("Files"), LVCFMT_LEFT, rectFiles.Width() - GetSystemMetrics(SM_CXVSCROLL) - 2);
     for (int z = 0; z < m_aryFiles.GetSize(); z++)
@@ -40,10 +46,13 @@ BOOL CAPEInfoDlg::OnInitDialog()
 
     CRect rectTabs; m_ctrlTabs.GetWindowRect(&rectTabs); ScreenToClient(&rectTabs);
     CRect rectTab; m_ctrlTabs.GetItemRect(0, &rectTab);
-    int nTabTitleBarHeight = rectTab.Height() + 2;
+    int nTabTitleBarHeight = rectTab.Height() + theApp.GetSize(2, 0).cx;
 
     m_dlgFormat.Create(IDD_APE_INFO_FORMAT, this);
-    m_dlgFormat.SetWindowPos(&m_ctrlTabs, rectTabs.left + 8, rectTabs.top + nTabTitleBarHeight + 8, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE);
+    
+    int nBorder = theApp.GetSize(8, 0).cx;
+    m_dlgFormat.SetWindowPos(&m_ctrlTabs, rectTabs.left + nBorder, rectTabs.top + nTabTitleBarHeight + nBorder, rectTabs.Width() - (2 * nBorder), rectTabs.Height() - (2 * nBorder) - nTabTitleBarHeight, SWP_SHOWWINDOW);
+    m_dlgFormat.Layout();
 
     m_dlgFormat.SetFiles(m_aryFiles);
     
@@ -63,10 +72,8 @@ void CAPEInfoDlg::OnBnClickedFilesSelectNone()
         m_ctrlFiles.SetItemState(z, 0, LVIS_SELECTED);
 }
 
-void CAPEInfoDlg::OnLvnItemchangedFileList(NMHDR *pNMHDR, LRESULT *pResult)
+void CAPEInfoDlg::OnLvnItemchangedFileList(NMHDR *, LRESULT * pResult)
 {
-    //LPNMLISTVIEW pNMLV = reinterpret_cast<LPNMLISTVIEW>(pNMHDR);
-    
     CStringArray arySelected;
     POSITION Pos = m_ctrlFiles.GetFirstSelectedItemPosition();
     while (Pos)

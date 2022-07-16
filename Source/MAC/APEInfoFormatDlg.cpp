@@ -3,11 +3,13 @@
 #include "APEInfoFormatDlg.h"
 #include "APETag.h"
 #include "WAVInputSource.h"
+#include "MACDlg.h"
 
 IMPLEMENT_DYNAMIC(CAPEInfoFormatDlg, CDialog)
-CAPEInfoFormatDlg::CAPEInfoFormatDlg(CWnd * pParent)
+CAPEInfoFormatDlg::CAPEInfoFormatDlg(CMACDlg * pMACDlg, CWnd * pParent)
     : CDialog(CAPEInfoFormatDlg::IDD, pParent)
 {
+    m_pMACDlg = pMACDlg;
 }
 
 CAPEInfoFormatDlg::~CAPEInfoFormatDlg()
@@ -20,9 +22,26 @@ void CAPEInfoFormatDlg::DoDataExchange(CDataExchange* pDX)
     DDX_Control(pDX, IDC_FORMAT, m_ctrlFormat);
 }
 
+BOOL CAPEInfoFormatDlg::OnInitDialog()
+{
+    // set the font to all the controls
+    SetFont(&m_pMACDlg->GetFont());
+    SendMessageToDescendants(WM_SETFONT, (WPARAM) m_pMACDlg->GetFont().GetSafeHandle(), MAKELPARAM(FALSE, 0), TRUE);
+
+    // parent
+    return CDialog::OnInitDialog();
+}
 
 BEGIN_MESSAGE_MAP(CAPEInfoFormatDlg, CDialog)
 END_MESSAGE_MAP()
+
+void CAPEInfoFormatDlg::Layout()
+{
+    CRect rectWindow;
+    GetClientRect(&rectWindow);
+    const int nBorder = 0;
+    m_ctrlFormat.SetWindowPos(NULL, theApp.GetSize(nBorder, 0).cx, theApp.GetSize(nBorder, 0).cx, rectWindow.Width() - theApp.GetSize(nBorder * 2, 0).cx, rectWindow.Height() - theApp.GetSize(nBorder * 2, 0).cx, SWP_NOZORDER);
+}
 
 BOOL CAPEInfoFormatDlg::SetFiles(CStringArray & aryFiles)
 {
@@ -61,7 +80,7 @@ CString CAPEInfoFormatDlg::GetSummary(const CString & strFilename)
 
         strLine.Format(_T("Monkey's Audio %.2f (%s)"),
             double(spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_FILE_VERSION)) / double(1000),
-            theApp.GetSettings()->GetAPECompressionName(int(spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_COMPRESSION_LEVEL))));
+            (LPCTSTR) theApp.GetSettings()->GetAPECompressionName(int(spAPEDecompress->GetInfo(IAPEDecompress::APE_INFO_COMPRESSION_LEVEL))));
         strSummary += strLine + _T("\r\n");
         
         strLine.Format(_T("Format: %.1f khz, %d bit, %d ch"),
@@ -73,7 +92,7 @@ CString CAPEInfoFormatDlg::GetSummary(const CString & strFilename)
         strSummary += strLine + _T("\r\n");
 
         strLine.Format(_T("Length: %s (%d blocks)"),
-            FormatDuration(double(spAPEDecompress->GetInfo(IAPEDecompress::APE_DECOMPRESS_LENGTH_MS)) / 1000.0, FALSE),
+            (LPCTSTR) FormatDuration(double(spAPEDecompress->GetInfo(IAPEDecompress::APE_DECOMPRESS_LENGTH_MS)) / 1000.0, FALSE),
             spAPEDecompress->GetInfo(IAPEDecompress::APE_DECOMPRESS_TOTAL_BLOCKS));
         strSummary += strLine + _T("\r\n");
 
@@ -86,7 +105,7 @@ CString CAPEInfoFormatDlg::GetSummary(const CString & strFilename)
             else if (pTag->GetHasID3Tag())
                 strTag = _T("ID3v1.1");
             strLine.Format(_T("Tag: %s (%d bytes)"),
-                strTag, pTag->GetTagBytes());
+                (LPCTSTR) strTag, pTag->GetTagBytes());
             strSummary += strLine + _T("\r\n");
 
             int nTagIndex = 0; CAPETagField * pTagField = NULL;

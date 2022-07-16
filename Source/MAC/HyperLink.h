@@ -17,7 +17,7 @@
 class CHyperLink : public CStatic
 {
 public:
-    CHyperLink();
+    CHyperLink(CFont * pFont);
     virtual ~CHyperLink();
 
     enum UnderLineOptions { ulHover = -1, ulNone = 0, ulAlways = 1};
@@ -56,6 +56,7 @@ protected:
     void PositionWindow();
     void SetDefaultCursor();
 
+    CFont *  m_pFont;
     COLORREF m_crLinkColour, m_crVisitedColour;     // Hyperlink colours
     COLORREF m_crHoverColour;                       // Hover colour
     BOOL     m_bOverControl;                        // cursor over control?
@@ -69,11 +70,11 @@ protected:
     CToolTipCtrl m_ToolTip;                         // The tooltip
     UINT     m_nTimerID;
 
-    afx_msg HBRUSH CtlColor(CDC* pDC, UINT nCtlColor);
+    afx_msg HBRUSH CtlColor(CDC * pDC, UINT nCtlColor);
     afx_msg BOOL OnSetCursor(CWnd* pWnd, UINT nHitTest, UINT message);
     afx_msg void OnMouseMove(UINT nFlags, CPoint point);
     afx_msg void OnTimer(UINT_PTR nIDEvent);
-    afx_msg BOOL OnEraseBkgnd(CDC* pDC);
+    afx_msg BOOL OnEraseBkgnd(CDC * pDC);
     afx_msg void OnClicked();
     DECLARE_MESSAGE_MAP()
 };

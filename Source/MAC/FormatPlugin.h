@@ -2,6 +2,7 @@
 
 #include "Format.h"
 #include "Markup.h"
+class CMACDlg;
 
 class CFormatPluginLevelInfo
 {
@@ -33,7 +34,7 @@ class CFormatPlugin : public IFormat
 {
 public:
 
-    CFormatPlugin(int nIndex, const CString & strAPXFilename = _T(""));
+    CFormatPlugin(CMACDlg * pMACDlg, int nIndex, const CString & strAPXFilename = _T(""));
     virtual ~CFormatPlugin();
 
     BOOL Load(const CString & strAPXFilename);
@@ -54,6 +55,9 @@ protected:
     void ParseModeInfo(CMarkup & XML, MAC_MODES Mode, const CString & strKeyword);
     CFormatPluginLevelInfo * GetLevelInfo(MAC_MODES Mode, const CString & strInputFilename, int nLevel);
     
+    // parent
+    CMACDlg * m_pMACDlg;
+
     // properties
     BOOL m_bIsValid;
     int m_nIndex;

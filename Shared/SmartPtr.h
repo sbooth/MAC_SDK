@@ -3,12 +3,6 @@
 namespace APE
 {
 
-// disable the operator -> on UDT warning
-#ifdef _MSC_VER
-    #pragma warning(push)
-    #pragma warning(disable : 4284)
-#endif
-
 /**************************************************************************************************
 CSmartPtr - a simple smart pointer class that can automatically initialize and free memory
     note: (doesn't do garbage collection / reference counting because of the many pitfalls)
@@ -26,12 +20,12 @@ public:
         m_pObject = NULL;
         m_bArray = false;
     }
-    CSmartPtr(TYPE * a_pObject, bool a_bArray = false, bool a_bDelete = true)
+    CSmartPtr(TYPE * pObject, bool bArray = false, bool bDelete = true)
     {
         m_bDelete = true;
         m_pObject = NULL;
         m_bArray = false;
-        Assign(a_pObject, a_bArray, a_bDelete);
+        Assign(pObject, bArray, bDelete);
     }
 
     ~CSmartPtr()
@@ -39,13 +33,13 @@ public:
         Delete();
     }
 
-    void Assign(TYPE * a_pObject, bool a_bArray = false, bool a_bDelete = true)
+    void Assign(TYPE * pObject, bool bArray = false, bool bDelete = true)
     {
         Delete();
 
-        m_bDelete = a_bDelete;
-        m_bArray = a_bArray;
-        m_pObject = a_pObject;
+        m_bDelete = bDelete;
+        m_bArray = bArray;
+        m_pObject = pObject;
     }
 
     void Delete()
@@ -61,9 +55,9 @@ public:
         }
     }
 
-    void SetDelete(const bool a_bDelete)
+    void SetDelete(const bool bDelete)
     {
-        m_bDelete = a_bDelete;
+        m_bDelete = bDelete;
     }
 
     __forceinline TYPE * GetPtr() const
@@ -85,9 +79,5 @@ public:
     // that way we can't carelessly mix smart pointers and regular pointers
     __forceinline void * operator =(void *) const;
 };
-
-#ifdef _MSC_VER
-    #pragma warning(pop)
-#endif
 
 }

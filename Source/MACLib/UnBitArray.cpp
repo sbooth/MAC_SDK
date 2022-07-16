@@ -39,7 +39,7 @@ CUnBitArray::~CUnBitArray()
     SAFE_ARRAY_DELETE(m_pBitArray)
 }
 
-uint32 CUnBitArray::DecodeValue(DECODE_VALUE_METHOD DecodeMethod, int nParam1, int nParam2)
+uint32 CUnBitArray::DecodeValue(DECODE_VALUE_METHOD DecodeMethod, int, int)
 {
     switch (DecodeMethod)
     {
@@ -52,7 +52,7 @@ uint32 CUnBitArray::DecodeValue(DECODE_VALUE_METHOD DecodeMethod, int nParam1, i
     return 0;
 }
 
-void CUnBitArray::GenerateArray(int * pOutputArray, int nElements, intn nBytesRequired)
+void CUnBitArray::GenerateArray(int * pOutputArray, int nElements, intn)
 {
     GenerateArrayRange(pOutputArray, nElements);
 }

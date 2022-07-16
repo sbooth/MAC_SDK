@@ -2,7 +2,7 @@
 #define _MEMDC_H_
 
 //////////////////////////////////////////////////
-// CMemDC.h - memory DC
+// CMemoryDC.h - memory DC
 //
 // This class implements a memory Device Context which allows
 // flicker free drawing.
@@ -14,14 +14,14 @@
 // Just save the GDI Handle and select it back.
 
 
-class CMemDC : public CDC {
+class CMemoryDC : public CDC {
 private:
 
 
     CBitmap    m_bitmap;        // Offscreen bitmap
     CBitmap* m_pbitmap;       // Offscreen bitmap
 
-    CBitmap* m_poldBitmap; // bitmap originally found in CMemDC
+    CBitmap* m_poldBitmap; // bitmap originally found in CMemoryDC
     CDC* m_pDC;           // Saves CDC passed in constructor
     CRect      m_rect;          // Rectangle of drawing area.
     BOOL       m_bMemDC;        // TRUE if CDC really is a Memory DC.
@@ -31,7 +31,7 @@ private:
 public:
 
 
-    CMemDC(CDC* pDC, const CRect* pRect = NULL) : CDC()
+    CMemoryDC(CDC* pDC, const CRect* pRect = NULL) : CDC()
     {
         ASSERT(pDC != NULL);
 
@@ -88,7 +88,7 @@ public:
 
     }
 
-    ~CMemDC()
+    ~CMemoryDC()
     {
 
         if (m_bMemDC) {
@@ -113,13 +113,13 @@ public:
     }
 
     // Allow usage as a pointer    
-    CMemDC* operator->()
+    CMemoryDC* operator->()
     {
         return this;
     }
 
     // Allow usage as a pointer    
-    operator CMemDC* ()
+    operator CMemoryDC* ()
     {
         return this;
     }

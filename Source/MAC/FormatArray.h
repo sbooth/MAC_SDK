@@ -3,12 +3,13 @@
 #include "Format.h"
 
 class MAC_FILE;
+class CMACDlg;
 
 class CFormatArray  
 {
 public:
 
-    CFormatArray();
+    CFormatArray(CMACDlg * pMACDlg);
     virtual ~CFormatArray();
 
     BOOL Load();
@@ -29,6 +30,7 @@ public:
 
 protected:
     
+    CMACDlg * m_pMACDlg;
     CArray<IFormat *, IFormat *> m_aryFormats;
     CArray<CMenu *, CMenu *> m_aryMenus;
 

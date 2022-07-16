@@ -161,7 +161,7 @@ CString GetUniqueFilename(CString strFilename)
     {
         nNumber++;
 
-        CString strTemp; strTemp.Format(_T("%s (%d)"), strName, nNumber);
+        CString strTemp; strTemp.Format(_T("%s (%d)"), (LPCTSTR) strName, nNumber);
         CString strNewFilename = fnFilename.BuildFilename(NULL, NULL, strTemp, NULL);
 
         if (FileExists(strNewFilename) == FALSE)

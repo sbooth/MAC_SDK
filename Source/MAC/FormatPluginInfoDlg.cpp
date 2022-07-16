@@ -1,10 +1,13 @@
 #include "stdafx.h"
 #include "MAC.h"
 #include "FormatPluginInfoDlg.h"
+#include "MACDlg.h"
 
-CFormatPluginInfoDlg::CFormatPluginInfoDlg(CString strName, CString strVersion, CString strAuthor, CString strDescription, CString strURL, CWnd * pParent)
-    : CDialog(CFormatPluginInfoDlg::IDD, pParent)
+CFormatPluginInfoDlg::CFormatPluginInfoDlg(CMACDlg * pMACDlg, CString strName, CString strVersion, CString strAuthor, CString strDescription, CString strURL, CWnd * pParent)
+    : CDialog(CFormatPluginInfoDlg::IDD, pParent),
+    m_ctrlURL(&pMACDlg->GetFont())
 {
+    m_pMACDlg = pMACDlg;
     m_strURL = strURL;
     m_strDescription1 = strName;
     if (strVersion.GetLength() > 0)
@@ -28,7 +31,12 @@ END_MESSAGE_MAP()
 BOOL CFormatPluginInfoDlg::OnInitDialog() 
 {
     CDialog::OnInitDialog();
-    
+
+    // set the font to all the controls
+    SetFont(&m_pMACDlg->GetFont());
+    m_ctrlURL.SetFont(&m_pMACDlg->GetFont());
+    SendMessageToDescendants(WM_SETFONT, (WPARAM) m_pMACDlg->GetFont().GetSafeHandle(), MAKELPARAM(FALSE, 0), TRUE);
+  
     if (m_strURL.IsEmpty())
     {
         m_ctrlURL.SetWindowText(_T("no webpage available"));
